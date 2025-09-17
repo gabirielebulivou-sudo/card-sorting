@@ -368,43 +368,49 @@
         // FUNCTIONS
 
         function createStudy() {
-            const name = studyNameInput.value.trim();
-            const cardsText = cardsInput.value.trim();
-            const instructions = instructionsInput.value.trim();
+    const name = studyNameInput.value.trim();
+    const cardsText = cardsInput.value.trim();
+    const instructions = instructionsInput.value.trim();
 
-            if (!name || !cardsText) {
-                alert('Please provide a study name and at least one card');
-                return;
-            }
+    if (!name || !cardsText) {
+        alert('Please provide a study name and at least one card');
+        return;
+    }
 
-            const cardsArray = cardsText.split('\n')
-                .map(line => line.trim())
-                .filter(line => line.length > 0);
+    const cardsArray = cardsText.split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
 
-            const study = {
-                id: 'study_' + Date.now(),
-                name: name,
-                cards: cardsArray,
-                instructions: instructions,
-                createdAt: new Date().toISOString()
-            };
+    const study = {
+        id: 'study_' + Date.now(),
+        name: name,
+        cards: cardsArray,
+        instructions: instructions,
+        createdAt: new Date().toISOString()
+    };
 
-            const studyRef = database.ref('studies/' + study.id);
-            studyRef.set({
-                name: study.name,
-                cards: study.cards,
-                instructions: study.instructions,
-                createdAt: study.createdAt
-            });
+    const studyRef = database.ref('studies/' + study.id);
 
-            currentStudy = study;
+    studyRef.set({
+        name: study.name,
+        cards: study.cards,
+        instructions: study.instructions,
+        createdAt: study.createdAt
+    })
+    .then(() => {
+        currentStudy = study;
 
-            const shareableURL = `${window.location.origin}${window.location.pathname}?study=${study.id}`;
-            studyLinkInput.value = shareableURL;
+        const shareableURL = `${window.location.origin}${window.location.pathname}?study=${study.id}`;
+        studyLinkInput.value = shareableURL;
 
-            setupView.classList.remove('active');
-            studyCreatedView.classList.add('active');
-        }
+        setupView.classList.remove('active');
+        studyCreatedView.classList.add('active');
+    })
+    .catch(error => {
+        console.error("Error saving study:", error);
+        alert("Failed to create study: " + error.message);
+    });
+}
 
         function copyLink() {
             studyLinkInput.select();
