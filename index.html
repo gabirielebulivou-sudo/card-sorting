@@ -126,6 +126,33 @@ async function migrateStudies(uid) {
 }
 migrateStudies('THE_RESEARCHER_UID');
 
+  // Call this after you're logged in to migrate legacy studies
+function migrateOldStudiesToUser(uid) {
+  const oldRef = db.ref('studies'); // old location
+  oldRef.once('value').then(snapshot => {
+    const oldStudies = snapshot.val() || {};
+    const moves = [];
+
+    Object.entries(oldStudies).forEach(([studyId, study]) => {
+      // copy the study under the researcher's path
+      moves.push(
+        db.ref(`users/${uid}/studies/${studyId}`).set(study)
+      );
+    });
+
+    return Promise.all(moves);
+  })
+  .then(() => {
+    alert('Migration completed ✅. All old studies copied to your user account.');
+    // OPTIONAL: delete the old studies path after confirming it's safe:
+    // return db.ref('studies').remove();
+  })
+  .catch(err => {
+    console.error("Migration error:", err);
+    alert("Migration failed: " + err.message);
+  });
+}
+
   // DOM refs
   const authView=document.getElementById('authView'),dashboardView=document.getElementById('dashboardView'),
     setupView=document.getElementById('setupView'),studyCreatedView=document.getElementById('studyCreatedView'),
@@ -271,6 +298,7 @@ function addStudyToDashboard(uid, studyId, study){
 </script>
 </body>
 </html>
+
 
 
 
