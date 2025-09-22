@@ -155,20 +155,35 @@ const firebaseConfig = {
   });
 
   function showDashboard(uid){
-  db.ref(`users/${uid}/studies`).on('value', snap=>{
-    studiesList.innerHTML = '';
-    const data = snap.val() || {};
+  studiesList.innerHTML = '';
 
+  // Fetch new-format studies
+  db.ref(`users/${uid}/studies`).once('value').then(snap=>{
+    const data = snap.val() || {};
     Object.entries(data).forEach(([studyId, study])=>{
-      const div = document.createElement('div');
-      div.className = 'study-item';
-      div.innerHTML = `
-        <span>${study.name}</span>
-        <button class="btn btn-success">Results</button>`;
-      div.querySelector('button').onclick = () => viewResults(uid, studyId);
-      studiesList.appendChild(div);
+      addStudyToDashboard(uid, studyId, study);
     });
   });
+
+  // Fetch old-format studies (if any still exist)
+  db.ref('studies').once('value').then(snap=>{
+    const data = snap.val() || {};
+    Object.entries(data).forEach(([studyId, study])=>{
+      if(study.ownerUid === uid){   // if you included ownerUid in the study object
+        addStudyToDashboard(uid, studyId, study);
+      }
+    });
+  });
+}
+
+function addStudyToDashboard(uid, studyId, study){
+  const div=document.createElement('div');
+  div.className='study-item';
+  div.innerHTML=`
+    <span>${study.name}</span>
+    <button class="btn btn-success">Results</button>`;
+  div.querySelector('button').onclick=()=>viewResults(uid, studyId);
+  studiesList.appendChild(div);
 }
   // Parse link for participant
   const params=new URLSearchParams(location.search);const uid=params.get('uid'),studyId=params.get('study');
@@ -239,6 +254,7 @@ const firebaseConfig = {
 </script>
 </body>
 </html>
+
 
 
 
