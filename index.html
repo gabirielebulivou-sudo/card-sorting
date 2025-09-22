@@ -109,6 +109,23 @@ const firebaseConfig = {
   if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
   const auth=firebase.auth();const db=firebase.database();
 
+  // Assumes you've already initialized Firebase Admin SDK in Node.js
+const admin = require('firebase-admin');
+admin.initializeApp();
+const db = admin.database();
+
+async function migrateStudies(uid) {
+  const oldSnap = await db.ref('studies').once('value');
+  const oldStudies = oldSnap.val() || {};
+  
+  for (const [studyId, study] of Object.entries(oldStudies)) {
+    // Copy to new path
+    await db.ref(`users/${uid}/studies/${studyId}`).set(study);
+    console.log(`Moved study ${studyId} to users/${uid}/studies`);
+  }
+}
+migrateStudies('THE_RESEARCHER_UID');
+
   // DOM refs
   const authView=document.getElementById('authView'),dashboardView=document.getElementById('dashboardView'),
     setupView=document.getElementById('setupView'),studyCreatedView=document.getElementById('studyCreatedView'),
@@ -254,6 +271,7 @@ function addStudyToDashboard(uid, studyId, study){
 </script>
 </body>
 </html>
+
 
 
 
