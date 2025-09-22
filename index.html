@@ -44,15 +44,16 @@
       <button id="signupBtn" class="btn">Sign Up</button>
     </div>
 
-    <!-- Dashboard -->
-    <div id="dashboardView" class="view">
-      <h2>Dashboard</h2>
-      <button id="createStudyBtn" class="btn">Create New Study</button>
-      <button id="logoutBtn" class="btn btn-accent">Logout</button>
-      <h3>Your Studies</h3>
-      <div id="studiesList"></div>
-    </div>
-
+  <!-- Dashboard -->
+<div id="dashboardView" class="view">
+  <h2>Dashboard</h2>
+  <button id="createStudyBtn" class="btn">Create New Study</button>
+  <button id="migrateBtn" class="btn btn-accent">Migrate My Old Studies</button>
+  <button id="logoutBtn" class="btn btn-accent">Logout</button>
+  <h3>Your Studies</h3>
+  <div id="studiesList"></div>
+</div>
+    
     <!-- Create Study -->
     <div id="setupView" class="view">
       <h2>Create a New Study</h2>
@@ -114,27 +115,18 @@ const admin = require('firebase-admin');
 admin.initializeApp();
 const db = admin.database();
 
-async function migrateStudies(uid) {
-  const oldSnap = await db.ref('studies').once('value');
-  const oldStudies = oldSnap.val() || {};
-  
-  for (const [studyId, study] of Object.entries(oldStudies)) {
-    // Copy to new path
-    await db.ref(`users/${uid}/studies/${studyId}`).set(study);
-    console.log(`Moved study ${studyId} to users/${uid}/studies`);
-  }
-}
-migrateStudies('THE_RESEARCHER_UID');
-
-  // Call this after you're logged in to migrate legacy studies
+// Migration function
 function migrateOldStudiesToUser(uid) {
-  const oldRef = db.ref('studies'); // old location
+  const oldRef = db.ref('studies'); // old global path
   oldRef.once('value').then(snapshot => {
     const oldStudies = snapshot.val() || {};
+    if (Object.keys(oldStudies).length === 0) {
+      alert('No old studies found at /studies.');
+      return;
+    }
     const moves = [];
-
     Object.entries(oldStudies).forEach(([studyId, study]) => {
-      // copy the study under the researcher's path
+      // Copy under new user-based path
       moves.push(
         db.ref(`users/${uid}/studies/${studyId}`).set(study)
       );
@@ -143,8 +135,8 @@ function migrateOldStudiesToUser(uid) {
     return Promise.all(moves);
   })
   .then(() => {
-    alert('Migration completed ✅. All old studies copied to your user account.');
-    // OPTIONAL: delete the old studies path after confirming it's safe:
+    alert('🎉 Migration completed! Old studies copied under your account. Reload dashboard to see them.');
+    // If you want to delete old root studies after success, uncomment:
     // return db.ref('studies').remove();
   })
   .catch(err => {
@@ -153,6 +145,15 @@ function migrateOldStudiesToUser(uid) {
   });
 }
 
+// Hook up the button
+document.getElementById('migrateBtn').onclick = () => {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("You must be logged in as a researcher to migrate.");
+    return;
+  }
+  migrateOldStudiesToUser(user.uid);
+};
   // DOM refs
   const authView=document.getElementById('authView'),dashboardView=document.getElementById('dashboardView'),
     setupView=document.getElementById('setupView'),studyCreatedView=document.getElementById('studyCreatedView'),
@@ -298,6 +299,7 @@ function addStudyToDashboard(uid, studyId, study){
 </script>
 </body>
 </html>
+
 
 
 
