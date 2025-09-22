@@ -109,9 +109,17 @@ document.addEventListener('DOMContentLoaded',function(){
     resultsStudyName=document.getElementById('resultsStudyName'),resultsContainer=document.getElementById('resultsContainer'),
     aggregateResults=document.getElementById('aggregateResults'),noResultsMessage=document.getElementById('noResultsMessage');
   let currentStudy=null;
-  // Firebase init
-  const firebaseConfig={apiKey:"YOUR_APIKEY",authDomain:"YOUR_AUTHDOMAIN",databaseURL:"YOUR_DB_URL",projectId:"YOUR_PROJECTID",
-    storageBucket:"YOUR_BUCKET",messagingSenderId:"YOUR_SENDER",appId:"YOUR_APPID"};
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAu1hawycY2uQgzWolaHeTfCdWtSWux7XA",
+  authDomain: "card-sorting-tool-762a3.firebaseapp.com",
+  databaseURL: "https://card-sorting-tool-762a3-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "card-sorting-tool-762a3",
+  storageBucket: "card-sorting-tool-762a3.firebasestorage.app",
+  messagingSenderId: "361630774945",
+  appId: "1:361630774945:web:402edb363d388a61baa2e0",
+  measurementId: "G-BGV3P2HQZP"
+};
   if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
   const database=firebase.database();
 
@@ -232,3 +240,4 @@ document.addEventListener('DOMContentLoaded',function(){
 </script>
 </body>
 </html>
+
