@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Open Card Sorting Tool - Researcher Accounts</title>
   <style>
-    :root {
-      --primary:#4a6fa5;--secondary:#6b8cae;--accent:#ff6b6b;--light:#f8f9fa;--dark:#343a40;--success:#28a745;--border:#dee2e6;
-    }
+    :root {--primary:#4a6fa5;--secondary:#6b8cae;--accent:#ff6b6b;--light:#f8f9fa;--dark:#343a40;--success:#28a745;--border:#dee2e6;}
     *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',sans-serif}
     body{background:#f5f7fa;color:var(--dark);line-height:1.5}
     .container{max-width:1200px;margin:0 auto;padding:20px}
@@ -18,11 +16,13 @@
     .btn:hover{background:var(--secondary)}
     .btn-success{background:var(--success)}
     input,textarea{width:100%;padding:.5rem;margin-bottom:1rem;border:1px solid var(--border);border-radius:4px}
-    .study-item{border:1px solid var(--border);padding:.75rem;margin-bottom:.5rem;display:flex;justify-content:space-between}
+    .study-item{border:1px solid var(--border);padding:.75rem;margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:center}
     .instructions{background:#e9ecef;padding:1rem;margin-bottom:1rem;border-radius:4px}
     .category-card{background:#eee;padding:.25rem .5rem;border-radius:4px;margin:.25rem}
     table{border-collapse:collapse;margin-top:1rem}
     th,td{border:1px solid var(--border);padding:.5rem;text-align:center}
+    .card{background:white;border:1px solid var(--border);padding:1rem;margin:.25rem;border-radius:4px;cursor:grab}
+    .category{background:var(--light);border:2px dashed var(--secondary);border-radius:8px;padding:1rem;margin:1rem 0}
   </style>
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -55,7 +55,7 @@
 
     <!-- Create Study -->
     <div id="setupView" class="view">
-      <h2>Create a New Card Sorting Study</h2>
+      <h2>Create a New Study</h2>
       <input type="text" id="studyName" placeholder="Study name">
       <textarea id="cardsInput" placeholder="Cards, one per line"></textarea>
       <textarea id="instructionsInput" placeholder="Instructions (optional)"></textarea>
@@ -75,7 +75,10 @@
     <div id="participantView" class="view">
       <h2 id="participantStudyName"></h2>
       <div id="participantInstructions" class="instructions"></div>
-      <div class="card-pool" id="cardPool"><h3>Cards</h3><div id="availableCards"></div></div>
+      <div class="card-pool">
+        <h3>Cards</h3>
+        <div id="availableCards"></div>
+      </div>
       <div id="sortingArea"></div>
       <button id="addCategoryBtn" class="btn">Add Category</button>
       <button id="submitSortingBtn" class="btn btn-success">Submit</button>
@@ -92,7 +95,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded',function(){
-  // Firebase init
+  // Firebase config (replace with your actual config!!)
   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyAu1hawycY2uQgzWolaHeTfCdWtSWux7XA",
@@ -104,31 +107,33 @@ const firebaseConfig = {
   appId: "1:361630774945:web:402edb363d388a61baa2e0",
   measurementId: "G-BGV3P2HQZP"
 };
-  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
+  if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+  const auth=firebase.auth();const db=firebase.database();
 
-  // DOM
-  const authView=document.getElementById('authView'),dashboardView=document.getElementById('dashboardView'),setupView=document.getElementById('setupView'),
-    studyCreatedView=document.getElementById('studyCreatedView'),participantView=document.getElementById('participantView'),resultsView=document.getElementById('resultsView');
-  const email=document.getElementById('email'),password=document.getElementById('password');
-  const studiesList=document.getElementById('studiesList'),studyNameInput=document.getElementById('studyName'),
-    cardsInput=document.getElementById('cardsInput'),instructionsInput=document.getElementById('instructionsInput'),
-    studyLinkInput=document.getElementById('studyLink');
-  const availableCardsContainer=document.getElementById('availableCards'),sortingArea=document.getElementById('sortingArea'),
-    participantStudyName=document.getElementById('participantStudyName'),participantInstructions=document.getElementById('participantInstructions'),
-    resultsStudyName=document.getElementById('resultsStudyName'),resultsContainer=document.getElementById('resultsContainer'),
-    aggregateResults=document.getElementById('aggregateResults');
-  // Buttons
-  document.getElementById('loginBtn').onclick=()=>auth.signInWithEmailAndPassword(email.value,password.value).catch(e=>alert(e.message));
-  document.getElementById('signupBtn').onclick=()=>auth.createUserWithEmailAndPassword(email.value,password.value).catch(e=>alert(e.message));
+  // DOM refs
+  const authView=document.getElementById('authView'),dashboardView=document.getElementById('dashboardView'),
+    setupView=document.getElementById('setupView'),studyCreatedView=document.getElementById('studyCreatedView'),
+    participantView=document.getElementById('participantView'),resultsView=document.getElementById('resultsView');
+  const studyNameInput=document.getElementById('studyName'),cardsInput=document.getElementById('cardsInput'),
+    instructionsInput=document.getElementById('instructionsInput'),studyLinkInput=document.getElementById('studyLink');
+  const studiesList=document.getElementById('studiesList'),availableCardsContainer=document.getElementById('availableCards'),
+    sortingArea=document.getElementById('sortingArea'),participantStudyName=document.getElementById('participantStudyName'),
+    participantInstructions=document.getElementById('participantInstructions'),resultsStudyName=document.getElementById('resultsStudyName'),
+    resultsContainer=document.getElementById('resultsContainer'),aggregateResults=document.getElementById('aggregateResults');
+
+  // Auth buttons
+  document.getElementById('loginBtn').onclick=()=>auth.signInWithEmailAndPassword(
+    document.getElementById('email').value,document.getElementById('password').value).catch(e=>alert(e.message));
+  document.getElementById('signupBtn').onclick=()=>auth.createUserWithEmailAndPassword(
+    document.getElementById('email').value,document.getElementById('password').value).catch(e=>alert(e.message));
   document.getElementById('logoutBtn').onclick=()=>auth.signOut();
+
+  // Study creation
   document.getElementById('createStudyBtn').onclick=()=>{dashboardView.classList.remove('active');setupView.classList.add('active');};
   document.getElementById('cancelCreateBtn').onclick=()=>{setupView.classList.remove('active');dashboardView.classList.add('active');};
-
   document.getElementById('saveStudyBtn').onclick=()=>{
     const name=studyNameInput.value.trim(),cards=cardsInput.value.trim().split('\n').map(l=>l.trim()).filter(Boolean);
-    if(!name||cards.length==0){alert('Add name and cards');return;}
+    if(!name||cards.length===0){alert('Enter name and at least one card');return;}
     const study={id:'study_'+Date.now(),name,cards,instructions:instructionsInput.value.trim(),createdAt:new Date().toISOString()};
     const uid=auth.currentUser.uid;
     db.ref(`users/${uid}/studies/${study.id}`).set(study).then(()=>{
@@ -137,12 +142,18 @@ const db = firebase.database();
     });
   };
   document.getElementById('backToDashboardBtn').onclick=()=>{studyCreatedView.classList.remove('active');dashboardView.classList.add('active');};
-  document.getElementById('copyLinkBtn').onclick=()=>navigator.clipboard.writeText(studyLinkInput.value).then(()=>alert('Link copied'));
+  document.getElementById('copyLinkBtn').onclick=()=>navigator.clipboard.writeText(studyLinkInput.value).then(()=>alert('Link copied!'));
   document.getElementById('backToDashboardFromResultsBtn').onclick=()=>{resultsView.classList.remove('active');dashboardView.classList.add('active');};
 
-  // Participant Submit
+  // Participant category controls
   document.getElementById('addCategoryBtn').onclick=()=>addCategory();
-  document.getElementById('submitSortingBtn').onclick=submitSorting;
+  document.getElementById('submitSortingBtn').onclick=()=>submitSorting();
+
+  // Auth state change
+  auth.onAuthStateChanged(user=>{
+    if(user){authView.classList.remove('active');dashboardView.classList.add('active');showDashboard(user.uid);}
+    else{dashboardView.classList.remove('active');authView.classList.add('active');}
+  });
 
   function showDashboard(uid){
     db.ref(`users/${uid}/studies`).on('value',snap=>{
@@ -155,12 +166,8 @@ const db = firebase.database();
       });
     });
   }
-  auth.onAuthStateChanged(user=>{
-    if(user){authView.classList.remove('active');dashboardView.classList.add('active');showDashboard(user.uid);}
-    else{dashboardView.classList.remove('active');authView.classList.add('active');}
-  });
 
-  // URL param for participant
+  // Parse link for participant
   const params=new URLSearchParams(location.search);const uid=params.get('uid'),studyId=params.get('study');
   if(uid&&studyId){loadParticipantView(uid,studyId);}
 
@@ -175,7 +182,7 @@ const db = firebase.database();
       });
       new Sortable(availableCardsContainer,{group:'shared',animation:150});
       sortingArea.innerHTML='';addCategory();
-      authView.classList.remove('active');dashboardView.classList.remove('active');participantView.classList.add('active');
+      participantView.classList.add('active');authView.classList.remove('active');dashboardView.classList.remove('active');
       participantView.dataset.uid=uid;participantView.dataset.studyId=studyId;
     });
   }
@@ -191,31 +198,33 @@ const db = firebase.database();
       const cards=[...c.querySelectorAll('.card')].map(card=>card.dataset.cardText);
       if(cards.length>0)cats.push({name,cards});
     });
-    if(cats.length==0){alert('Please sort cards');return}
+    if(cats.length===0){alert('Please sort at least one card.');return;}
     const result={timestamp:new Date().toISOString(),categories:cats};
     db.ref(`users/${uid}/studies/${studyId}/results`).push(result).then(()=>{
-      participantView.innerHTML='<h2>Thank you!</h2>';
+      participantView.innerHTML='<h2>Thank you!</h2><p>Your responses have been recorded.</p>';
     });
   }
   function viewResults(uid,studyId){
     db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap=>{
       const study=snap.val();resultsStudyName.textContent=study.name;
       db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2=>{
-        const results=snap2.val()||{};resultsContainer.innerHTML='';
+        const results=snap2.val()||{};resultsContainer.innerHTML='';aggregateResults.innerHTML='';
         const arr=Object.values(results);
+        if(arr.length===0){resultsContainer.innerHTML='<p>No results yet.</p>';return;}
+        // Each participant's results
         arr.forEach((res,i)=>{
           const div=document.createElement('div');div.innerHTML=`<h4>Participant ${i+1}</h4>`;
           res.categories.forEach(cat=>{
-            div.innerHTML+=`<p><strong>${cat.name}</strong> ${cat.cards.map(c=>'<span class="category-card">'+c+'</span>').join('')}</p>`;
+            div.innerHTML+=`<p><strong>${cat.name}</strong> ${(cat.cards||[]).map(c=>'<span class="category-card">'+c+'</span>').join('')}</p>`;
           });resultsContainer.appendChild(div);
         });
-        // aggregate
-        const cards=study.cards;const matrix={};cards.forEach(a=>{matrix[a]={};cards.forEach(b=>matrix[a][b]=0)});
-        let totalCats=0;arr.forEach(r=>{totalCats+=(r.categories||[]).length;
-          (r.categories||[]).forEach(cat=>{
-            const cs=cat.cards;cs.forEach(a=>cs.forEach(b=>matrix[a][b]++));
-        })});
-        let html=`<p>Participants: ${arr.length}</p><p>Avg categories: ${(totalCats/arr.length||0).toFixed(2)}</p>`;
+        // Aggregate analysis
+        const cards=study.cards;const matrix={};cards.forEach(a=>{matrix[a]={};cards.forEach(b=>matrix[a][b]=0);});
+        let totalCats=0;arr.forEach(r=>{
+          totalCats+=r.categories.length;
+          r.categories.forEach(cat=>{const cs=cat.cards;cs.forEach(a=>cs.forEach(b=>matrix[a][b]++));});
+        });
+        let html=`<p>Participants: ${arr.length}</p><p>Avg categories: ${(totalCats/arr.length).toFixed(2)}</p>`;
         html+='<table><tr><th></th>'+cards.map(c=>'<th>'+c+'</th>').join('')+'</tr>';
         cards.forEach(a=>{html+='<tr><th>'+a+'</th>'+cards.map(b=>'<td>'+matrix[a][b]+'</td>').join('')+'</tr>';});
         html+='</table>';aggregateResults.innerHTML=html;
@@ -227,4 +236,3 @@ const db = firebase.database();
 </script>
 </body>
 </html>
-
