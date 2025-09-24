@@ -42,8 +42,9 @@
 
     .study-item {
       border:1px solid var(--border); padding:.75rem; margin-bottom:.5rem;
-      display:flex; justify-content:space-between; align-items:center; gap:.75rem;
+      display:flex; justify-content:space-between; align-items:center; gap:.5rem; flex-wrap:wrap;
     }
+    .study-actions { display:flex; gap:.25rem; flex-wrap:wrap }
 
     .instructions { background:#e9ecef; padding:1rem; margin-bottom:1rem; border-radius:4px }
 
@@ -67,6 +68,9 @@
       background:#fff; border:1px dashed var(--border);
       border-radius:6px; min-height:48px; padding:.5rem; margin-top:.5rem
     }
+
+    .muted { color:#6c757d }
+    .badge { display:inline-block; padding:.1rem .4rem; border-radius:.25rem; font-size:.8rem; background:#edf2ff; color:#2f4e8b; border:1px solid #dbe4ff }
   </style>
 
   <!-- Firebase SDK (Compat) -->
@@ -144,6 +148,8 @@
       <h2 id="participantStudyName"></h2>
       <div id="participantInstructions" class="instructions hidden" aria-live="polite"></div>
 
+      <div id="participantStatus" class="muted"></div>
+
       <div class="card-pool">
         <h3>Cards</h3>
         <div id="availableCards"></div>
@@ -202,11 +208,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const sortingArea = document.getElementById('sortingArea');
   const participantStudyName = document.getElementById('participantStudyName');
   const participantInstructions = document.getElementById('participantInstructions');
+  const participantStatus = document.getElementById('participantStatus');
   const resultsStudyName = document.getElementById('resultsStudyName');
   const resultsContainer = document.getElementById('resultsContainer');
   const aggregateResults = document.getElementById('aggregateResults');
 
-  // Auth controls
   const authForm = document.getElementById('authForm');
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
@@ -223,9 +229,11 @@ document.addEventListener('DOMContentLoaded', function() {
     view.classList.add('active');
   }
 
-  function escapeText(text) {
-    // For completeness if ever needed to set via innerHTML
-    return String(text).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+  function makeShareLink(uid, studyId) {
+    const base = new URL(window.location.href);
+    base.search = '';
+    base.hash = '';
+    return `${base.toString()}?uid=${uid}&study=${studyId}`;
   }
 
   // Auth actions
@@ -252,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('signupBtn').onclick = doSignup;
   document.getElementById('logoutBtn').onclick = () => auth.signOut();
 
-  // Create study flow
+  // Create study flow (default publish so participant links work immediately)
   document.getElementById('createStudyBtn').onclick = () => {
     show(setupView);
     setTimeout(() => studyNameInput.focus(), 0);
@@ -281,14 +289,12 @@ document.addEventListener('DOMContentLoaded', function() {
       instructions: instructionsInput.value.trim(),
       createdAt: new Date().toISOString(),
       ownerUid: user.uid,
-      isPublic: true // <-- add this
+      isPublic: true // publish by default so the participant link works immediately
     };
 
     db.ref(`users/${user.uid}/studies/${studyId}`).set(study).then(() => {
-      const base = new URL(window.location.href);
-      base.search = '';
-      base.hash = '';
-      studyLinkInput.value = `${base.toString()}?uid=${user.uid}&study=${studyId}`;
+      const link = makeShareLink(user.uid, studyId);
+      studyLinkInput.value = link;
       show(studyCreatedView);
       document.getElementById('copyLinkBtn').focus();
     }).catch(err => alert(err.message));
@@ -327,7 +333,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const updates = {};
       ids.forEach(studyId => {
         updates[`users/${uid}/studies/${studyId}`] = oldStudies[studyId];
-        // Optionally delete old copies after successful migration:
+        // Optional: remove old copies after successful migration:
         // updates[`studies/${studyId}`] = null;
       });
 
@@ -347,7 +353,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Auth state change
   auth.onAuthStateChanged(user => {
-    if (hasParticipantLink) return; // Don't override participant view
+    if (hasParticipantLink) {
+      // Keep participant view visible for participants regardless of auth state
+      show(participantView);
+      return;
+    }
     if (user) {
       show(dashboardView);
       showDashboard(user.uid);
@@ -388,63 +398,114 @@ document.addEventListener('DOMContentLoaded', function() {
     const div = document.createElement('div');
     div.className = 'study-item';
 
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = study.name || '(Untitled study)';
+    const left = document.createElement('div');
+    const title = document.createElement('div');
+    title.textContent = study.name || '(Untitled study)';
+    const pub = document.createElement('div');
+    pub.className = 'muted';
+    pub.innerHTML = `<span class="badge">${study.isPublic ? 'Published' : 'Unpublished'}</span>`;
 
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-success';
-    btn.textContent = 'Results';
-    btn.onclick = () => viewResults(uid, studyId);
+    left.appendChild(title);
+    left.appendChild(pub);
 
-    div.appendChild(nameSpan);
-    div.appendChild(btn);
+    const actions = document.createElement('div');
+    actions.className = 'study-actions';
+
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'btn';
+    shareBtn.textContent = 'Share Link';
+    shareBtn.onclick = async () => {
+      const link = makeShareLink(uid, studyId);
+      try {
+        await navigator.clipboard.writeText(link);
+        alert('Link copied to clipboard.');
+      } catch {
+        prompt('Copy this link:', link);
+      }
+    };
+
+    const publishBtn = document.createElement('button');
+    publishBtn.className = 'btn';
+    publishBtn.textContent = study.isPublic ? 'Unpublish' : 'Publish';
+    publishBtn.onclick = async () => {
+      const newVal = !Boolean(study.isPublic);
+      await db.ref(`users/${uid}/studies/${studyId}/isPublic`).set(newVal);
+      study.isPublic = newVal;
+      publishBtn.textContent = newVal ? 'Unpublish' : 'Publish';
+      pub.innerHTML = `<span class="badge">${newVal ? 'Published' : 'Unpublished'}</span>`;
+    };
+
+    const resultsBtn = document.createElement('button');
+    resultsBtn.className = 'btn btn-success';
+    resultsBtn.textContent = 'Results';
+    resultsBtn.onclick = () => viewResults(uid, studyId);
+
+    actions.appendChild(shareBtn);
+    actions.appendChild(publishBtn);
+    actions.appendChild(resultsBtn);
+
+    div.appendChild(left);
+    div.appendChild(actions);
     studiesList.appendChild(div);
   }
 
-  // Participant loading
+  // Participant loading: show participant view immediately so it doesn't fall back to login
   if (hasParticipantLink) {
+    show(participantView);
+    participantStudyName.textContent = 'Loading study...';
+    participantStatus.textContent = 'If this page does not load, the study may be private.';
     loadParticipantView(pUid, pStudyId);
   }
 
   function loadParticipantView(uid, studyId) {
-    db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => {
-      const study = snap.val();
-      if (!study) { alert('Study not found or not published'); return; }
+    db.ref(`users/${uid}/studies/${studyId}`).once('value')
+      .then(snap => {
+        const study = snap.val();
+        if (!study) {
+          participantStudyName.textContent = 'Study unavailable';
+          participantStatus.textContent = 'This study could not be found. Please check the link with the researcher.';
+          return;
+        }
+        if (study.isPublic !== true) {
+          participantStudyName.textContent = 'Study not published';
+          participantStatus.textContent = 'This study is currently not available to participants. Please contact the researcher.';
+          return;
+        }
 
-      participantStudyName.textContent = study.name || '';
-      if (study.instructions) {
-        participantInstructions.textContent = study.instructions;
-        participantInstructions.classList.remove('hidden');
-      } else {
-        participantInstructions.textContent = '';
-        participantInstructions.classList.add('hidden');
-      }
+        participantStatus.textContent = '';
+        participantStudyName.textContent = study.name || '';
+        if (study.instructions) {
+          participantInstructions.textContent = study.instructions;
+          participantInstructions.classList.remove('hidden');
+        } else {
+          participantInstructions.textContent = '';
+          participantInstructions.classList.add('hidden');
+        }
 
-      // Cards
-      availableCardsContainer.innerHTML = '';
-      (study.cards || []).forEach(card => {
-        const d = document.createElement('div');
-        d.className = 'card';
-        d.textContent = card;
-        d.dataset.cardText = card;
-        availableCardsContainer.appendChild(d);
+        // Cards
+        availableCardsContainer.innerHTML = '';
+        (study.cards || []).forEach(card => {
+          const d = document.createElement('div');
+          d.className = 'card';
+          d.textContent = card;
+          d.dataset.cardText = card;
+          availableCardsContainer.appendChild(d);
+        });
+        new Sortable(availableCardsContainer, { group:'shared', animation:150 });
+
+        // Sorting area
+        sortingArea.innerHTML = '';
+        addCategory();
+
+        participantView.dataset.uid = uid;
+        participantView.dataset.studyId = studyId;
+      })
+      .catch(err => {
+        console.error(err);
+        participantStudyName.textContent = 'Unable to load study';
+        participantStatus.textContent = 'This study is not publicly accessible. Ask the researcher to publish it.';
       });
-      new Sortable(availableCardsContainer, { group:'shared', animation:150 });
-
-      // Sorting area
-      sortingArea.innerHTML = '';
-      addCategory();
-
-      participantView.dataset.uid = uid;
-      participantView.dataset.studyId = studyId;
-
-       show(participantView);
-    })
-    .catch(err => {
-      console.error(err);
-      alert('This study is not publicly accessible. Ask the researcher to publish it.');
-    });
-}
+  }
 
   function addCategory() {
     const wrapper = document.createElement('div');
@@ -469,6 +530,8 @@ document.addEventListener('DOMContentLoaded', function() {
   function submitSorting() {
     const uid = participantView.dataset.uid;
     const studyId = participantView.dataset.studyId;
+
+    if (!uid || !studyId) { alert('Study not loaded yet.'); return; }
 
     const cats = [];
     sortingArea.querySelectorAll('.category').forEach(c => {
@@ -595,4 +658,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </body>
 </html>
-
