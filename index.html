@@ -89,6 +89,21 @@
     legend { padding:0 .25rem; font-weight:600 }
     .radio-row { display:flex; gap:1rem; margin-top:.5rem }
     .radio-row label { font-weight:500; margin:0; display:flex; align-items:center; gap:.35rem }
+
+    /* Tabs */
+    .tabs { display:flex; gap:.5rem; margin: .5rem 0 1rem; border-bottom:1px solid var(--border) }
+    .tab-btn { background:transparent; color:var(--dark); border:none; padding:.5rem .75rem; cursor:pointer; border-bottom:3px solid transparent }
+    .tab-btn.active { border-bottom-color:var(--primary); color:var(--primary); font-weight:600 }
+    .tab-pane { display:none }
+    .tab-pane.active { display:block }
+
+    /* Simple bar chart */
+    .chart-wrap { margin-top:.5rem }
+    .chart { display:flex; align-items:flex-end; gap:8px; height:220px; padding:8px; border-left:1px solid var(--border); border-bottom:1px solid var(--border) }
+    .bar { background:linear-gradient(180deg, var(--secondary), var(--primary)); flex:1; min-width:24px; border-radius:4px 4px 0 0; position:relative }
+    .bar span { position:absolute; bottom:100%; transform:translateY(-4px); font-size:.8rem; color:var(--dark) }
+    .xlabels { display:flex; gap:8px; margin-top:4px }
+    .xlabel { flex:1; min-width:24px; text-align:center; font-size:.8rem; color:var(--dark) }
   </style>
 
   <!-- Firebase SDK (Compat) -->
@@ -222,9 +237,35 @@
     <!-- Results -->
     <div id="resultsView" class="view">
       <h2>Study Results: <span id="resultsStudyName"></span></h2>
-      <div id="resultsContainer"></div>
-      <div id="aggregateResults"></div>
-      <div>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="participants">Participants</button>
+        <button class="tab-btn" data-tab="categories">Categories</button>
+        <button class="tab-btn" data-tab="matrix">Similarity Matrix</button>
+      </div>
+
+      <!-- Participants Tab -->
+      <div id="tabParticipants" class="tab-pane active">
+        <div id="participantsSummary"></div>
+        <div id="participantsDetails"></div>
+      </div>
+
+      <!-- Categories Tab -->
+      <div id="tabCategories" class="tab-pane">
+        <div id="categoriesSummary"></div>
+        <div class="chart-wrap">
+          <div class="chart" id="categoriesChart"></div>
+          <div class="xlabels" id="categoriesLabels"></div>
+        </div>
+      </div>
+
+      <!-- Matrix Tab -->
+      <div id="tabMatrix" class="tab-pane">
+        <div id="matrixMeta"></div>
+        <div id="matrixTableWrap" class="table-wrap"></div>
+      </div>
+
+      <div style="margin-top: 1rem">
         <button id="downloadCsvBtn" class="btn">Download CSV</button>
         <button id="backToDashboardFromResultsBtn" class="btn">Back to Dashboard</button>
       </div>
@@ -269,8 +310,22 @@ document.addEventListener('DOMContentLoaded', function() {
   const participantInstructions = document.getElementById('participantInstructions');
   const participantStatus = document.getElementById('participantStatus');
   const resultsStudyName = document.getElementById('resultsStudyName');
-  const resultsContainer = document.getElementById('resultsContainer');
-  const aggregateResults = document.getElementById('aggregateResults');
+
+  // Results tab refs
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  const tabParticipants = document.getElementById('tabParticipants');
+  const tabCategories = document.getElementById('tabCategories');
+  const tabMatrix = document.getElementById('tabMatrix');
+
+  const participantsSummary = document.getElementById('participantsSummary');
+  const participantsDetails = document.getElementById('participantsDetails');
+
+  const categoriesSummary = document.getElementById('categoriesSummary');
+  const categoriesChart = document.getElementById('categoriesChart');
+  const categoriesLabels = document.getElementById('categoriesLabels');
+
+  const matrixMeta = document.getElementById('matrixMeta');
+  const matrixTableWrap = document.getElementById('matrixTableWrap');
 
   const authForm = document.getElementById('authForm');
   const emailInput = document.getElementById('email');
@@ -296,8 +351,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const hasParticipantLink = Boolean(pUid && pStudyId);
 
   // In-memory caches
-  let participantMeta = null; // {name, idNumber, address, course, nationality, ethnicity, outsideHome}
+  let participantMeta = null; // participant details
   let lastResultsCache = null; // {arr, study, uid, studyId}
+  let currentUserForResults = null; // used to rebuild after delete etc.
 
   // Helpers
   function show(view) {
@@ -350,6 +406,17 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   function closeParticipantModal() {
     participantModal.classList.add('hidden');
+  }
+
+  function formatDuration(ms) {
+    if (typeof ms !== 'number' || !isFinite(ms) || ms < 0) return '';
+    let s = Math.floor(ms / 1000);
+    const h = Math.floor(s / 3600);
+    s %= 3600;
+    const m = Math.floor(s / 60);
+    s %= 60;
+    if (h) return `${h}h ${m}m ${s}s`;
+    return `${m}m ${s}s`;
   }
 
   // CSV helpers
@@ -461,8 +528,8 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('addCategoryBtn').onclick = () => addCategory();
   document.getElementById('submitSortingBtn').onclick = () => submitSorting();
 
-  // Handle modal submit
-  document.getElementById('startSortingBtn').onclick = () => {
+  // Handle participant modal submit: create "started" result
+  startSortingBtn.onclick = async () => {
     const name = pName.value.trim();
     const idNumber = pId.value.trim();
     const address = pAddress.value.trim();
@@ -476,6 +543,28 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     participantMeta = { name, idNumber, address, course, nationality, ethnicity, outsideHome };
+
+    const uid = participantView.dataset.uid;
+    const studyId = participantView.dataset.studyId;
+    if (!uid || !studyId) { alert('Study not loaded yet.'); return; }
+
+    const startedAt = new Date().toISOString();
+    participantView.dataset.startedAt = startedAt;
+
+    try {
+      // Create a started result entry and keep its key
+      const ref = db.ref(`users/${uid}/studies/${studyId}/results`).push();
+      await ref.set({
+        timestamp: startedAt, // treat as startedAt
+        participant: participantMeta,
+        status: 'started'
+      });
+      participantView.dataset.resultKey = ref.key;
+    } catch (e) {
+      console.error('Failed to create started result:', e);
+      // Non-fatal; we'll still allow sorting but duration may be missing
+    }
+
     closeParticipantModal();
   };
 
@@ -487,7 +576,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const ids = Object.keys(oldStudies);
       if (!ids.length) { alert('No old studies found under /studies for this account.'); return; }
 
-    const updates = {};
+      const updates = {};
       ids.forEach(studyId => {
         updates[`users/${uid}/studies/${studyId}`] = oldStudies[studyId];
         // Optional: remove old copies after successful migration:
@@ -511,7 +600,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // Auth state change
   auth.onAuthStateChanged(user => {
     if (hasParticipantLink) {
-      // Keep participant view visible for participants regardless of auth state
       show(participantView);
       return;
     }
@@ -527,6 +615,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Dashboard
   function showDashboard(uid) {
+    currentUserForResults = uid;
     studiesList.textContent = '';
     const seen = new Set();
 
@@ -556,16 +645,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const confirmed = confirm(`Delete the study "${studyName || studyId}" and all of its results? This cannot be undone.`);
     if (!confirmed) return;
 
-    // Disable row buttons during delete
     const buttons = rowEl ? rowEl.querySelectorAll('button') : [];
     buttons.forEach(b => b.disabled = true);
 
     try {
       const updates = {};
-      // Remove the new-format study
       updates[`users/${uid}/studies/${studyId}`] = null;
 
-      // If an old-format study exists and belongs to this user, remove it too
       const oldSnap = await db.ref(`studies/${studyId}`).once('value');
       if (oldSnap.exists()) {
         const oldData = oldSnap.val();
@@ -576,10 +662,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
       await db.ref().update(updates);
 
-      // Remove row from UI
       if (rowEl && rowEl.parentNode) rowEl.parentNode.removeChild(rowEl);
 
-      // If currently viewing this study's results, return to dashboard
       if (lastResultsCache && lastResultsCache.uid === uid && lastResultsCache.studyId === studyId) {
         lastResultsCache = null;
         show(dashboardView);
@@ -679,7 +763,6 @@ document.addEventListener('DOMContentLoaded', function() {
     wrapper.appendChild(zone);
     sortingArea.appendChild(wrapper);
 
-    // Initialize Sortable if available; otherwise mark for later init
     if (window.Sortable) {
       new Sortable(zone, { group:'shared', animation:150 });
     } else {
@@ -705,7 +788,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-          // Title and instructions
           participantStudyName.textContent = study.name || '';
           if (study.instructions) {
             participantInstructions.textContent = study.instructions;
@@ -715,7 +797,6 @@ document.addEventListener('DOMContentLoaded', function() {
             participantInstructions.classList.add('hidden');
           }
 
-          // Cards
           availableCardsContainer.innerHTML = '';
           (study.cards || []).forEach(card => {
             const d = document.createElement('div');
@@ -725,11 +806,9 @@ document.addEventListener('DOMContentLoaded', function() {
             availableCardsContainer.appendChild(d);
           });
 
-          // Category area
           sortingArea.innerHTML = '';
           addCategory();
 
-          // Ensure Sortable is loaded, then init all containers
           await ensureSortableLoaded();
           if (window.Sortable) {
             try {
@@ -737,7 +816,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (e) {
               console.warn('Failed to init Sortable for available cards:', e);
             }
-            initPendingDropzones(); // in case first category was created before Sortable loaded
+            initPendingDropzones();
           } else {
             console.warn('SortableJS not available; drag-and-drop disabled.');
           }
@@ -745,9 +824,7 @@ document.addEventListener('DOMContentLoaded', function() {
           participantView.dataset.uid = uid;
           participantView.dataset.studyId = studyId;
 
-          participantStatus.textContent = ''; // clear status on success
-
-          // Force participant info collection before sorting
+          participantStatus.textContent = '';
           participantMeta = null;
           openParticipantModal();
 
@@ -779,15 +856,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (cats.length === 0) { alert('Please sort at least one card.'); return; }
 
-    const result = {
-      timestamp: new Date().toISOString(),
+    const startedAtIso = participantView.dataset.startedAt || null;
+    const now = new Date();
+    const durationMs = startedAtIso ? (now.getTime() - new Date(startedAtIso).getTime()) : null;
+
+    const resultData = {
       participant: participantMeta,
-      categories: cats
+      categories: cats,
+      status: 'completed',
+      completedAt: now.toISOString()
     };
-    db.ref(`users/${uid}/studies/${studyId}/results`).push(result).then(() => {
+    if (durationMs != null) resultData.durationMs = durationMs;
+
+    const resultsRef = db.ref(`users/${uid}/studies/${studyId}/results`);
+    const existingKey = participantView.dataset.resultKey;
+
+    const promise = existingKey ?
+      resultsRef.child(existingKey).update(resultData) :
+      resultsRef.push({ timestamp: now.toISOString(), ...resultData });
+
+    promise.then(() => {
       participantView.innerHTML = '<h2>Thank you!</h2><p>Your responses have been recorded.</p>';
     }).catch(err => alert(err.message));
   }
+
+  // Tabs
+  function activateTab(name) {
+    tabButtons.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === name);
+    });
+    tabParticipants.classList.toggle('active', name === 'participants');
+    tabCategories.classList.toggle('active', name === 'categories');
+    tabMatrix.classList.toggle('active', name === 'matrix');
+  }
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => activateTab(btn.dataset.tab));
+  });
 
   // Results
   function viewResults(uid, studyId) {
@@ -797,29 +901,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
       db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => {
         const results = snap2.val() || {};
-        resultsContainer.innerHTML = '';
-        aggregateResults.innerHTML = '';
         lastResultsCache = null;
         downloadCsvBtn.disabled = true;
 
         let arr = Object.values(results);
         if (arr.length === 0) {
-          const p = document.createElement('p');
-          p.textContent = 'No results yet.';
-          resultsContainer.appendChild(p);
+          // Clear tabs
+          participantsSummary.textContent = 'No results yet.';
+          participantsDetails.innerHTML = '';
+          categoriesSummary.textContent = '';
+          categoriesChart.innerHTML = '';
+          categoriesLabels.innerHTML = '';
+          matrixMeta.textContent = '';
+          matrixTableWrap.innerHTML = '';
           show(resultsView);
+          activateTab('participants');
           return;
         }
 
         // Sort by timestamp ascending if available
         arr = arr.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
 
-        // Cache for CSV export
-        lastResultsCache = { arr, study, uid, studyId };
-        downloadCsvBtn.disabled = false;
+        // Prepare derived sets
+        const completed = arr.filter(r => r.status === 'completed' || (Array.isArray(r.categories)));
+        const startedCount = arr.length;
+        const completedCount = completed.length;
 
-        // Render each participant safely
-        arr.forEach((res, i) => {
+        // Average sorting time (among completed with duration)
+        const durations = completed.map(r => r.durationMs).filter(v => typeof v === 'number' && isFinite(v) && v >= 0);
+        const avgDurationMs = durations.length ? Math.round(durations.reduce((a,b)=>a+b,0) / durations.length) : null;
+
+        // Participants tab: summary
+        const parts = [];
+        parts.push(`Started: ${startedCount}`);
+        parts.push(`Completed: ${completedCount}`);
+        parts.push(`Avg sorting time: ${avgDurationMs != null ? formatDuration(avgDurationMs) + ` (n=${durations.length})` : 'N/A'}`);
+        participantsSummary.textContent = parts.join(' | ');
+
+        // Participants tab: details (completed only, same as before with additions)
+        participantsDetails.innerHTML = '';
+        completed.forEach((res, i) => {
           const wrapper = document.createElement('div');
           const h4 = document.createElement('h4');
           const pinfo = res.participant || {};
@@ -827,17 +948,19 @@ document.addEventListener('DOMContentLoaded', function() {
           h4.textContent = `Participant ${i + 1}${displayName}`;
           wrapper.appendChild(h4);
 
-          // Participant details (muted)
           const meta = document.createElement('div');
           meta.className = 'muted';
-          meta.textContent = [
+          const bits = [
             pinfo.idNumber ? `ID: ${pinfo.idNumber}` : '',
             pinfo.course ? `Course: ${pinfo.course}` : '',
             pinfo.nationality ? `Nationality: ${pinfo.nationality}` : '',
             pinfo.ethnicity ? `Ethnicity: ${pinfo.ethnicity}` : '',
             pinfo.outsideHome ? `Home outside Suva/Nausori: ${pinfo.outsideHome}` : '',
-            res.timestamp ? `Time: ${new Date(res.timestamp).toLocaleString()}` : ''
-          ].filter(Boolean).join(' | ');
+            res.completedAt ? `Completed: ${new Date(res.completedAt).toLocaleString()}` :
+              (res.timestamp ? `Time: ${new Date(res.timestamp).toLocaleString()}` : ''),
+            (typeof res.durationMs === 'number') ? `Duration: ${formatDuration(res.durationMs)}` : ''
+          ].filter(Boolean);
+          meta.textContent = bits.join(' | ');
           if (meta.textContent) wrapper.appendChild(meta);
 
           (res.categories || []).forEach(cat => {
@@ -856,16 +979,57 @@ document.addEventListener('DOMContentLoaded', function() {
             wrapper.appendChild(p);
           });
 
-          resultsContainer.appendChild(wrapper);
+          participantsDetails.appendChild(wrapper);
         });
 
-        // Aggregate co-occurrence matrix (exclude diagonal for readability)
+        // Categories tab: distribution and average categories (completed only)
+        const catsPerParticipant = completed.map(r => (r.categories || []).length);
+        const avgCats = catsPerParticipant.length ? (catsPerParticipant.reduce((a,b)=>a+b,0) / catsPerParticipant.length) : 0;
+        categoriesSummary.textContent = `Average number of categories: ${avgCats.toFixed(2)} (n=${completedCount})`;
+
+        const dist = new Map();
+        catsPerParticipant.forEach(n => dist.set(n, (dist.get(n) || 0) + 1));
+        const maxBuckets = dist.size ? Math.max(...dist.keys()) : 0;
+
+        categoriesChart.innerHTML = '';
+        categoriesLabels.innerHTML = '';
+
+        if (maxBuckets > 0) {
+          const counts = [];
+          for (let i = 1; i <= maxBuckets; i++) counts.push(dist.get(i) || 0);
+          const peak = Math.max(...counts, 1);
+
+          counts.forEach((count, idx) => {
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            const pct = Math.round((count / peak) * 100);
+            bar.style.height = pct + '%';
+            const val = document.createElement('span');
+            val.textContent = count;
+            bar.appendChild(val);
+            categoriesChart.appendChild(bar);
+
+            const xl = document.createElement('div');
+            xl.className = 'xlabel';
+            xl.textContent = String(idx + 1);
+            categoriesLabels.appendChild(xl);
+          });
+        } else {
+          const p = document.createElement('p');
+          p.textContent = 'No completed participants yet.';
+          categoriesChart.appendChild(p);
+        }
+
+        // Matrix tab: co-occurrence matrix (completed only)
+        matrixMeta.innerHTML = '';
+        matrixTableWrap.innerHTML = '';
+
         const cards = study?.cards || [];
         const matrix = {};
         cards.forEach(a => { matrix[a] = {}; cards.forEach(b => { matrix[a][b] = 0; }); });
 
         let totalCats = 0;
-        arr.forEach(r => {
+        completed.forEach(r => {
           const catsR = r.categories || [];
           totalCats += catsR.length;
           catsR.forEach(cat => {
@@ -874,14 +1038,11 @@ document.addEventListener('DOMContentLoaded', function() {
           });
         });
 
-        const meta = document.createElement('p');
-        meta.textContent = `Participants: ${arr.length} | Avg categories: ${(totalCats / arr.length).toFixed(2)}`;
-        aggregateResults.appendChild(meta);
+        const mm = document.createElement('p');
+        mm.textContent = `Started: ${startedCount} | Completed: ${completedCount} | Avg categories: ${completedCount ? (totalCats / completedCount).toFixed(2) : '0.00'}`;
+        matrixMeta.appendChild(mm);
 
-        const tableWrap = document.createElement('div');
-        tableWrap.className = 'table-wrap';
         const table = document.createElement('table');
-
         const thead = document.createElement('thead');
         const headRow = document.createElement('tr');
         headRow.appendChild(document.createElement('th'));
@@ -909,10 +1070,14 @@ document.addEventListener('DOMContentLoaded', function() {
           tbody.appendChild(tr);
         });
         table.appendChild(tbody);
-        tableWrap.appendChild(table);
-        aggregateResults.appendChild(tableWrap);
+        matrixTableWrap.appendChild(table);
+
+        // Cache for CSV export
+        lastResultsCache = { arr, study, uid, studyId };
+        downloadCsvBtn.disabled = false;
 
         show(resultsView);
+        activateTab('participants');
       });
     });
   }
@@ -940,14 +1105,18 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
     const lines = [headers.join(',')];
 
-    arr.forEach((res, idx) => {
+    let idxCounter = 0;
+    arr.forEach((res) => {
+      // Only export completed rows with categories; skip started-only
+      if (!(res.status === 'completed' || Array.isArray(res.categories))) return;
+      idxCounter += 1;
       const p = res.participant || {};
-      const ts = res.timestamp || '';
+      const ts = res.timestamp || res.completedAt || '';
       (res.categories || []).forEach(cat => {
         const catName = cat.name || 'Unnamed';
         (cat.cards || []).forEach(card => {
           const row = [
-            csvEscape(idx + 1),
+            csvEscape(idxCounter),
             csvEscape(ts),
             csvEscape(p.name || ''),
             csvEscape(p.idNumber || ''),
@@ -966,6 +1135,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     downloadCSV(`${studyName}_results.csv`, lines.join('\n'));
   };
+
+  // Expose viewResults globally for dashboard buttons (optional)
+  window.viewResults = viewResults;
 });
 </script>
 </body>
