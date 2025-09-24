@@ -85,6 +85,10 @@
     .modal h3 { margin-bottom:.5rem }
     .modal p { margin:.25rem 0 1rem }
     .modal .actions { display:flex; justify-content:flex-end; gap:.5rem; margin-top:.25rem }
+    fieldset { border:1px solid var(--border); border-radius:6px; padding:.75rem; margin-bottom:1rem }
+    legend { padding:0 .25rem; font-weight:600 }
+    .radio-row { display:flex; gap:1rem; margin-top:.5rem }
+    .radio-row label { font-weight:500; margin:0; display:flex; align-items:center; gap:.35rem }
   </style>
 
   <!-- Firebase SDK (Compat) -->
@@ -195,6 +199,20 @@
         <label for="pCourse">Course</label>
         <input id="pCourse" type="text" placeholder="Your course" required>
 
+        <label for="pNationality">Nationality</label>
+        <input id="pNationality" type="text" placeholder="Your nationality" required>
+
+        <label for="pEthnicity">Ethnicity</label>
+        <input id="pEthnicity" type="text" placeholder="Your ethnicity" required>
+
+        <fieldset>
+          <legend>Is your family home outside of Suva/Nausori? (Yes/No)</legend>
+          <div class="radio-row">
+            <label><input type="radio" name="pOutsideHome" value="Yes" required> Yes</label>
+            <label><input type="radio" name="pOutsideHome" value="No" required> No</label>
+          </div>
+        </fieldset>
+
         <div class="actions">
           <button id="startSortingBtn" class="btn btn-success">Start Sorting</button>
         </div>
@@ -264,6 +282,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const pId = document.getElementById('pId');
   const pAddress = document.getElementById('pAddress');
   const pCourse = document.getElementById('pCourse');
+  const pNationality = document.getElementById('pNationality');
+  const pEthnicity = document.getElementById('pEthnicity');
   const startSortingBtn = document.getElementById('startSortingBtn');
 
   // Results export
@@ -276,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const hasParticipantLink = Boolean(pUid && pStudyId);
 
   // In-memory caches
-  let participantMeta = null; // {name, idNumber, address, course}
+  let participantMeta = null; // {name, idNumber, address, course, nationality, ethnicity, outsideHome}
   let lastResultsCache = null; // {arr, study, uid, studyId}
 
   // Helpers
@@ -441,16 +461,21 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('addCategoryBtn').onclick = () => addCategory();
   document.getElementById('submitSortingBtn').onclick = () => submitSorting();
 
-  startSortingBtn.onclick = () => {
+  // Handle modal submit
+  document.getElementById('startSortingBtn').onclick = () => {
     const name = pName.value.trim();
     const idNumber = pId.value.trim();
     const address = pAddress.value.trim();
     const course = pCourse.value.trim();
-    if (!name || !idNumber || !address || !course) {
+    const nationality = pNationality.value.trim();
+    const ethnicity = pEthnicity.value.trim();
+    const outsideHome = (document.querySelector('input[name="pOutsideHome"]:checked') || {}).value || '';
+
+    if (!name || !idNumber || !address || !course || !nationality || !ethnicity || !outsideHome) {
       alert('Please complete all fields to begin.');
       return;
     }
-    participantMeta = { name, idNumber, address, course };
+    participantMeta = { name, idNumber, address, course, nationality, ethnicity, outsideHome };
     closeParticipantModal();
   };
 
@@ -760,6 +785,9 @@ document.addEventListener('DOMContentLoaded', function() {
           meta.textContent = [
             pinfo.idNumber ? `ID: ${pinfo.idNumber}` : '',
             pinfo.course ? `Course: ${pinfo.course}` : '',
+            pinfo.nationality ? `Nationality: ${pinfo.nationality}` : '',
+            pinfo.ethnicity ? `Ethnicity: ${pinfo.ethnicity}` : '',
+            pinfo.outsideHome ? `Home outside Suva/Nausori: ${pinfo.outsideHome}` : '',
             res.timestamp ? `Time: ${new Date(res.timestamp).toLocaleString()}` : ''
           ].filter(Boolean).join(' | ');
           if (meta.textContent) wrapper.appendChild(meta);
@@ -856,6 +884,9 @@ document.addEventListener('DOMContentLoaded', function() {
       'ID Number',
       'Address',
       'Course',
+      'Nationality',
+      'Ethnicity',
+      'HomeOutsideSuvaNausori',
       'Category',
       'Card'
     ];
@@ -874,6 +905,9 @@ document.addEventListener('DOMContentLoaded', function() {
             csvEscape(p.idNumber || ''),
             csvEscape(p.address || ''),
             csvEscape(p.course || ''),
+            csvEscape(p.nationality || ''),
+            csvEscape(p.ethnicity || ''),
+            csvEscape(p.outsideHome || ''),
             csvEscape(catName),
             csvEscape(card)
           ].join(',');
