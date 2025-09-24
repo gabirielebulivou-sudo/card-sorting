@@ -487,7 +487,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const ids = Object.keys(oldStudies);
       if (!ids.length) { alert('No old studies found under /studies for this account.'); return; }
 
-      const updates = {};
+    const updates = {};
       ids.forEach(studyId => {
         updates[`users/${uid}/studies/${studyId}`] = oldStudies[studyId];
         // Optional: remove old copies after successful migration:
@@ -551,6 +551,48 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // Delete a study (and results)
+  async function deleteStudy(uid, studyId, studyName, rowEl) {
+    const confirmed = confirm(`Delete the study "${studyName || studyId}" and all of its results? This cannot be undone.`);
+    if (!confirmed) return;
+
+    // Disable row buttons during delete
+    const buttons = rowEl ? rowEl.querySelectorAll('button') : [];
+    buttons.forEach(b => b.disabled = true);
+
+    try {
+      const updates = {};
+      // Remove the new-format study
+      updates[`users/${uid}/studies/${studyId}`] = null;
+
+      // If an old-format study exists and belongs to this user, remove it too
+      const oldSnap = await db.ref(`studies/${studyId}`).once('value');
+      if (oldSnap.exists()) {
+        const oldData = oldSnap.val();
+        if (!oldData.ownerUid || oldData.ownerUid === uid) {
+          updates[`studies/${studyId}`] = null;
+        }
+      }
+
+      await db.ref().update(updates);
+
+      // Remove row from UI
+      if (rowEl && rowEl.parentNode) rowEl.parentNode.removeChild(rowEl);
+
+      // If currently viewing this study's results, return to dashboard
+      if (lastResultsCache && lastResultsCache.uid === uid && lastResultsCache.studyId === studyId) {
+        lastResultsCache = null;
+        show(dashboardView);
+      }
+
+      alert('Study deleted.');
+    } catch (e) {
+      console.error('Delete failed:', e);
+      alert('Delete failed: ' + e.message);
+      buttons.forEach(b => b.disabled = false);
+    }
+  }
+
   function addStudyToDashboard(uid, studyId, study) {
     const div = document.createElement('div');
     div.className = 'study-item';
@@ -597,9 +639,15 @@ document.addEventListener('DOMContentLoaded', function() {
     resultsBtn.textContent = 'Results';
     resultsBtn.onclick = () => viewResults(uid, studyId);
 
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn btn-accent';
+    deleteBtn.textContent = 'Delete';
+    deleteBtn.onclick = () => deleteStudy(uid, studyId, study.name, div);
+
     actions.appendChild(shareBtn);
     actions.appendChild(publishBtn);
     actions.appendChild(resultsBtn);
+    actions.appendChild(deleteBtn);
 
     div.appendChild(left);
     div.appendChild(actions);
