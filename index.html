@@ -78,8 +78,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-  <!-- SortableJS -->
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js" integrity="sha256-8cHzQbzsfnb7vD8EAgnQADutqI6T9U1fC2JankX5oF0=" crossorigin="anonymous"></script>
+  <!-- SortableJS (no SRI to avoid blocking; we'll also lazy-load as fallback) -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -236,6 +236,38 @@ document.addEventListener('DOMContentLoaded', function() {
     return `${base.toString()}?uid=${uid}&study=${studyId}`;
   }
 
+  function loadScriptOnce(src) {
+    return new Promise((resolve, reject) => {
+      const existing = [...document.scripts].some(s => s.src === src);
+      if (existing) { resolve(); return; }
+      const s = document.createElement('script');
+      s.src = src;
+      s.async = true;
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  async function ensureSortableLoaded() {
+    if (window.Sortable) return;
+    try {
+      await loadScriptOnce('https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js');
+    } catch (e) {
+      console.warn('Failed to load SortableJS dynamically:', e);
+    }
+  }
+
+  function initPendingDropzones() {
+    const zones = sortingArea.querySelectorAll('.dropzone[data-needs-sortable="1"]');
+    zones.forEach(zone => {
+      if (window.Sortable) {
+        new Sortable(zone, { group: 'shared', animation: 150 });
+        zone.removeAttribute('data-needs-sortable');
+      }
+    });
+  }
+
   // Auth actions
   async function doLogin() {
     try {
@@ -260,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('signupBtn').onclick = doSignup;
   document.getElementById('logoutBtn').onclick = () => auth.signOut();
 
-  // Create study flow (default publish so participant links work immediately)
+  // Create study flow (publish by default so participant links work immediately)
   document.getElementById('createStudyBtn').onclick = () => {
     show(setupView);
     setTimeout(() => studyNameInput.focus(), 0);
@@ -289,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
       instructions: instructionsInput.value.trim(),
       createdAt: new Date().toISOString(),
       ownerUid: user.uid,
-      isPublic: true // publish by default so the participant link works immediately
+      isPublic: true // publish by default
     };
 
     db.ref(`users/${user.uid}/studies/${studyId}`).set(study).then(() => {
@@ -449,62 +481,12 @@ document.addEventListener('DOMContentLoaded', function() {
     studiesList.appendChild(div);
   }
 
-  // Participant loading: show participant view immediately so it doesn't fall back to login
+  // Participant loading
   if (hasParticipantLink) {
     show(participantView);
     participantStudyName.textContent = 'Loading study...';
-    participantStatus.textContent = 'If this page does not load, the study may be private.';
+    participantStatus.textContent = 'Please wait while we prepare your card sort.';
     loadParticipantView(pUid, pStudyId);
-  }
-
-  function loadParticipantView(uid, studyId) {
-    db.ref(`users/${uid}/studies/${studyId}`).once('value')
-      .then(snap => {
-        const study = snap.val();
-        if (!study) {
-          participantStudyName.textContent = 'Study unavailable';
-          participantStatus.textContent = 'This study could not be found. Please check the link with the researcher.';
-          return;
-        }
-        if (study.isPublic !== true) {
-          participantStudyName.textContent = 'Study not published';
-          participantStatus.textContent = 'This study is currently not available to participants. Please contact the researcher.';
-          return;
-        }
-
-        participantStatus.textContent = '';
-        participantStudyName.textContent = study.name || '';
-        if (study.instructions) {
-          participantInstructions.textContent = study.instructions;
-          participantInstructions.classList.remove('hidden');
-        } else {
-          participantInstructions.textContent = '';
-          participantInstructions.classList.add('hidden');
-        }
-
-        // Cards
-        availableCardsContainer.innerHTML = '';
-        (study.cards || []).forEach(card => {
-          const d = document.createElement('div');
-          d.className = 'card';
-          d.textContent = card;
-          d.dataset.cardText = card;
-          availableCardsContainer.appendChild(d);
-        });
-        new Sortable(availableCardsContainer, { group:'shared', animation:150 });
-
-        // Sorting area
-        sortingArea.innerHTML = '';
-        addCategory();
-
-        participantView.dataset.uid = uid;
-        participantView.dataset.studyId = studyId;
-      })
-      .catch(err => {
-        console.error(err);
-        participantStudyName.textContent = 'Unable to load study';
-        participantStatus.textContent = 'This study is not publicly accessible. Ask the researcher to publish it.';
-      });
   }
 
   function addCategory() {
@@ -524,7 +506,83 @@ document.addEventListener('DOMContentLoaded', function() {
     wrapper.appendChild(zone);
     sortingArea.appendChild(wrapper);
 
-    new Sortable(zone, { group:'shared', animation:150 });
+    // Initialize Sortable if available; otherwise mark for later init
+    if (window.Sortable) {
+      new Sortable(zone, { group:'shared', animation:150 });
+    } else {
+      zone.setAttribute('data-needs-sortable', '1');
+    }
+  }
+
+  async function loadParticipantView(uid, studyId) {
+    participantStatus.textContent = 'Loading study...';
+
+    db.ref(`users/${uid}/studies/${studyId}`).once('value')
+      .then(async snap => {
+        const study = snap.val();
+        if (!study) {
+          participantStudyName.textContent = 'Study unavailable';
+          participantStatus.textContent = 'This study could not be found. Please check the link with the researcher.';
+          return;
+        }
+        if (study.isPublic !== true) {
+          participantStudyName.textContent = 'Study not published';
+          participantStatus.textContent = 'This study is currently not available to participants. Please contact the researcher.';
+          return;
+        }
+
+        try {
+          // Title and instructions
+          participantStudyName.textContent = study.name || '';
+          if (study.instructions) {
+            participantInstructions.textContent = study.instructions;
+            participantInstructions.classList.remove('hidden');
+          } else {
+            participantInstructions.textContent = '';
+            participantInstructions.classList.add('hidden');
+          }
+
+          // Cards
+          availableCardsContainer.innerHTML = '';
+          (study.cards || []).forEach(card => {
+            const d = document.createElement('div');
+            d.className = 'card';
+            d.textContent = card;
+            d.dataset.cardText = card;
+            availableCardsContainer.appendChild(d);
+          });
+
+          // Category area
+          sortingArea.innerHTML = '';
+          addCategory();
+
+          // Ensure Sortable is loaded, then init all containers
+          await ensureSortableLoaded();
+          if (window.Sortable) {
+            try {
+              new Sortable(availableCardsContainer, { group:'shared', animation:150 });
+            } catch (e) {
+              console.warn('Failed to init Sortable for available cards:', e);
+            }
+            initPendingDropzones(); // in case first category was created before Sortable loaded
+          } else {
+            console.warn('SortableJS not available; drag-and-drop disabled.');
+          }
+
+          participantView.dataset.uid = uid;
+          participantView.dataset.studyId = studyId;
+
+          participantStatus.textContent = ''; // clear status on success
+        } catch (renderErr) {
+          console.error('Render error:', renderErr);
+          participantStatus.textContent = 'Something went wrong while rendering the study. Please refresh the page.';
+        }
+      })
+      .catch(err => {
+        console.error('DB read failed:', err);
+        participantStudyName.textContent = 'Unable to load study';
+        participantStatus.textContent = 'This study is not publicly accessible. Ask the researcher to publish it.';
+      });
   }
 
   function submitSorting() {
