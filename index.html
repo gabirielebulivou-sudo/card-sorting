@@ -72,7 +72,7 @@
     .muted { color:#6c757d }
     .badge { display:inline-block; padding:.1rem .4rem; border-radius:.25rem; font-size:.8rem; background:#edf2ff; color:#2f4e8b; border:1px solid #dbe4ff }
 
-    /* Modal (participant info) */
+    /* Modal (participant info + instructions) */
     .modal-backdrop {
       position:fixed; inset:0; background:rgba(0,0,0,.5);
       display:flex; align-items:center; justify-content:center;
@@ -89,7 +89,10 @@
     legend { padding:0 .25rem; font-weight:600 }
     .radio-row { display:flex; gap:1rem; margin-top:.5rem }
     .radio-row label { font-weight:500; margin:0; display:flex; align-items:center; gap:.35rem }
-
+    .modal ol { margin-left:1.25rem; }
+    .modal ol li { margin: .25rem 0; }
+    .modal strong { font-weight:700; }
+    
     /* Tabs */
     .tabs { display:flex; gap:.5rem; margin: .5rem 0 1rem; border-bottom:1px solid var(--border) }
     .tab-btn { background:transparent; color:var(--dark); border:none; padding:.5rem .75rem; cursor:pointer; border-bottom:3px solid transparent }
@@ -192,7 +195,7 @@
 
       <div>
         <button id="addCategoryBtn" class="btn">Add Category</button>
-        <button id="submitSortingBtn" class="btn btn-success">Submit</button>
+        <button id="submitSortingBtn" class="btn btn-success">Finish</button>
       </div>
     </div>
 
@@ -229,7 +232,24 @@
         </fieldset>
 
         <div class="actions">
-          <button id="startSortingBtn" class="btn btn-success">Start Sorting</button>
+          <button id="startSortingBtn" class="btn btn-success">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instructions Modal (shown after details) -->
+    <div id="instructionsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="instructionsModalTitle">
+      <div class="modal">
+        <h3 id="instructionsModalTitle">Instructions</h3>
+        <p><strong>Here's how it works:</strong></p>
+        <ol>
+          <li>You will be presented with a list of cards.</li>
+          <li>Drag and drop the cards into the categories that you think they fit the most.</li>
+          <li>If you change your opinion, feel free to move the cards between the different categories until you're satisfied.</li>
+          <li>Once done, click <strong>Finish</strong> to complete the card sort.</li>
+        </ol>
+        <div class="actions">
+          <button id="beginSortingBtn" class="btn btn-success">Begin</button>
         </div>
       </div>
     </div>
@@ -331,8 +351,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
 
-  // Participant modal refs
+  // Participant modals
   const participantModal = document.getElementById('participantModal');
+  const instructionsModal = document.getElementById('instructionsModal');
   const pName = document.getElementById('pName');
   const pId = document.getElementById('pId');
   const pAddress = document.getElementById('pAddress');
@@ -340,6 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const pNationality = document.getElementById('pNationality');
   const pEthnicity = document.getElementById('pEthnicity');
   const startSortingBtn = document.getElementById('startSortingBtn');
+  const beginSortingBtn = document.getElementById('beginSortingBtn');
 
   // Results export
   const downloadCsvBtn = document.getElementById('downloadCsvBtn');
@@ -353,7 +375,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // In-memory caches
   let participantMeta = null; // participant details
   let lastResultsCache = null; // {arr, study, uid, studyId}
-  let currentUserForResults = null; // used to rebuild after delete etc.
+  let currentUserForResults = null;
 
   // Helpers
   function show(view) {
@@ -406,6 +428,13 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   function closeParticipantModal() {
     participantModal.classList.add('hidden');
+  }
+  function openInstructionsModal() {
+    instructionsModal.classList.remove('hidden');
+    setTimeout(() => beginSortingBtn.focus(), 0);
+  }
+  function closeInstructionsModal() {
+    instructionsModal.classList.add('hidden');
   }
 
   function formatDuration(ms) {
@@ -466,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('signupBtn').onclick = doSignup;
   document.getElementById('logoutBtn').onclick = () => auth.signOut();
 
-  // Create study flow (publish by default so participant links work immediately)
+  // Create study flow
   document.getElementById('createStudyBtn').onclick = () => {
     show(setupView);
     setTimeout(() => studyNameInput.focus(), 0);
@@ -495,20 +524,18 @@ document.addEventListener('DOMContentLoaded', function() {
       instructions: instructionsInput.value.trim(),
       createdAt: new Date().toISOString(),
       ownerUid: user.uid,
-      isPublic: true // publish by default
+      isPublic: true
     };
 
     db.ref(`users/${user.uid}/studies/${studyId}`).set(study).then(() => {
-      const link = makeShareLink(user.uid, studyId);
-      studyLinkInput.value = link;
+      const base = new URL(window.location.href); base.search = ''; base.hash = '';
+      studyLinkInput.value = `${base.toString()}?uid=${user.uid}&study=${studyId}`;
       show(studyCreatedView);
       document.getElementById('copyLinkBtn').focus();
     }).catch(err => alert(err.message));
   };
 
-  document.getElementById('backToDashboardBtn').onclick = () => {
-    show(dashboardView);
-  };
+  document.getElementById('backToDashboardBtn').onclick = () => show(dashboardView);
   document.getElementById('copyLinkBtn').onclick = async () => {
     try {
       await navigator.clipboard.writeText(studyLinkInput.value);
@@ -520,16 +547,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
 
-  document.getElementById('backToDashboardFromResultsBtn').onclick = () => {
-    show(dashboardView);
-  };
+  document.getElementById('backToDashboardFromResultsBtn').onclick = () => show(dashboardView);
 
   // Participant controls
   document.getElementById('addCategoryBtn').onclick = () => addCategory();
   document.getElementById('submitSortingBtn').onclick = () => submitSorting();
 
-  // Handle participant modal submit: create "started" result
-  startSortingBtn.onclick = async () => {
+  // Step 1: details -> open instructions modal
+  startSortingBtn.onclick = () => {
     const name = pName.value.trim();
     const idNumber = pId.value.trim();
     const address = pAddress.value.trim();
@@ -543,7 +568,12 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     participantMeta = { name, idNumber, address, course, nationality, ethnicity, outsideHome };
+    closeParticipantModal();
+    openInstructionsModal();
+  };
 
+  // Step 2: instructions modal -> mark started and allow sorting
+  beginSortingBtn.onclick = async () => {
     const uid = participantView.dataset.uid;
     const studyId = participantView.dataset.studyId;
     if (!uid || !studyId) { alert('Study not loaded yet.'); return; }
@@ -552,20 +582,18 @@ document.addEventListener('DOMContentLoaded', function() {
     participantView.dataset.startedAt = startedAt;
 
     try {
-      // Create a started result entry and keep its key
       const ref = db.ref(`users/${uid}/studies/${studyId}/results`).push();
       await ref.set({
-        timestamp: startedAt, // treat as startedAt
+        timestamp: startedAt,
         participant: participantMeta,
         status: 'started'
       });
       participantView.dataset.resultKey = ref.key;
     } catch (e) {
-      console.error('Failed to create started result:', e);
-      // Non-fatal; we'll still allow sorting but duration may be missing
+      console.warn('Could not create started result entry:', e);
     }
 
-    closeParticipantModal();
+    closeInstructionsModal();
   };
 
   // Migration (client-side)
@@ -579,8 +607,6 @@ document.addEventListener('DOMContentLoaded', function() {
       const updates = {};
       ids.forEach(studyId => {
         updates[`users/${uid}/studies/${studyId}`] = oldStudies[studyId];
-        // Optional: remove old copies after successful migration:
-        // updates[`studies/${studyId}`] = null;
       });
 
       await db.ref().update(updates);
@@ -590,7 +616,6 @@ document.addEventListener('DOMContentLoaded', function() {
       alert('Migration failed: ' + err.message);
     }
   }
-
   document.getElementById('migrateBtn').onclick = () => {
     const user = auth.currentUser;
     if (!user) { alert('You must be logged in as a researcher to migrate.'); return; }
@@ -599,18 +624,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Auth state change
   auth.onAuthStateChanged(user => {
-    if (hasParticipantLink) {
-      show(participantView);
-      return;
-    }
-    if (user) {
-      show(dashboardView);
-      showDashboard(user.uid);
-      document.getElementById('createStudyBtn').focus();
-    } else {
-      show(authView);
-      document.getElementById('email').focus();
-    }
+    if (hasParticipantLink) { show(participantView); return; }
+    if (user) { show(dashboardView); showDashboard(user.uid); document.getElementById('createStudyBtn').focus(); }
+    else { show(authView); document.getElementById('email').focus(); }
   });
 
   // Dashboard
@@ -619,32 +635,26 @@ document.addEventListener('DOMContentLoaded', function() {
     studiesList.textContent = '';
     const seen = new Set();
 
-    // New-format studies
     db.ref(`users/${uid}/studies`).once('value').then(snap => {
       const data = snap.val() || {};
       Object.entries(data).forEach(([studyId, study]) => {
         if (seen.has(studyId)) return;
-        addStudyToDashboard(uid, studyId, study);
-        seen.add(studyId);
+        addStudyToDashboard(uid, studyId, study); seen.add(studyId);
       });
     });
 
-    // Old-format studies (ownerUid filter)
     db.ref('studies').orderByChild('ownerUid').equalTo(uid).once('value').then(snap => {
       const data = snap.val() || {};
       Object.entries(data).forEach(([studyId, study]) => {
         if (seen.has(studyId)) return;
-        addStudyToDashboard(uid, studyId, study);
-        seen.add(studyId);
+        addStudyToDashboard(uid, studyId, study); seen.add(studyId);
       });
     });
   }
 
-  // Delete a study (and results)
   async function deleteStudy(uid, studyId, studyName, rowEl) {
     const confirmed = confirm(`Delete the study "${studyName || studyId}" and all of its results? This cannot be undone.`);
     if (!confirmed) return;
-
     const buttons = rowEl ? rowEl.querySelectorAll('button') : [];
     buttons.forEach(b => b.disabled = true);
 
@@ -655,20 +665,15 @@ document.addEventListener('DOMContentLoaded', function() {
       const oldSnap = await db.ref(`studies/${studyId}`).once('value');
       if (oldSnap.exists()) {
         const oldData = oldSnap.val();
-        if (!oldData.ownerUid || oldData.ownerUid === uid) {
-          updates[`studies/${studyId}`] = null;
-        }
+        if (!oldData.ownerUid || oldData.ownerUid === uid) updates[`studies/${studyId}`] = null;
       }
 
       await db.ref().update(updates);
 
       if (rowEl && rowEl.parentNode) rowEl.parentNode.removeChild(rowEl);
-
       if (lastResultsCache && lastResultsCache.uid === uid && lastResultsCache.studyId === studyId) {
-        lastResultsCache = null;
-        show(dashboardView);
+        lastResultsCache = null; show(dashboardView);
       }
-
       alert('Study deleted.');
     } catch (e) {
       console.error('Delete failed:', e);
@@ -699,12 +704,8 @@ document.addEventListener('DOMContentLoaded', function() {
     shareBtn.textContent = 'Share Link';
     shareBtn.onclick = async () => {
       const link = makeShareLink(uid, studyId);
-      try {
-        await navigator.clipboard.writeText(link);
-        alert('Link copied to clipboard.');
-      } catch {
-        prompt('Copy this link:', link);
-      }
+      try { await navigator.clipboard.writeText(link); alert('Link copied to clipboard.'); }
+      catch { prompt('Copy this link:', link); }
     };
 
     const publishBtn = document.createElement('button');
@@ -776,16 +777,8 @@ document.addEventListener('DOMContentLoaded', function() {
     db.ref(`users/${uid}/studies/${studyId}`).once('value')
       .then(async snap => {
         const study = snap.val();
-        if (!study) {
-          participantStudyName.textContent = 'Study unavailable';
-          participantStatus.textContent = 'This study could not be found. Please check the link with the researcher.';
-          return;
-        }
-        if (study.isPublic !== true) {
-          participantStudyName.textContent = 'Study not published';
-          participantStatus.textContent = 'This study is currently not available to participants. Please contact the researcher.';
-          return;
-        }
+        if (!study) { participantStudyName.textContent = 'Study unavailable'; participantStatus.textContent = 'This study could not be found. Please check the link with the researcher.'; return; }
+        if (study.isPublic !== true) { participantStudyName.textContent = 'Study not published'; participantStatus.textContent = 'This study is currently not available to participants. Please contact the researcher.'; return; }
 
         try {
           participantStudyName.textContent = study.name || '';
@@ -811,14 +804,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
           await ensureSortableLoaded();
           if (window.Sortable) {
-            try {
-              new Sortable(availableCardsContainer, { group:'shared', animation:150 });
-            } catch (e) {
-              console.warn('Failed to init Sortable for available cards:', e);
-            }
+            try { new Sortable(availableCardsContainer, { group:'shared', animation:150 }); }
+            catch (e) { console.warn('Failed to init Sortable for available cards:', e); }
             initPendingDropzones();
-          } else {
-            console.warn('SortableJS not available; drag-and-drop disabled.');
           }
 
           participantView.dataset.uid = uid;
@@ -882,16 +870,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Tabs
   function activateTab(name) {
-    tabButtons.forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.tab === name);
-    });
-    tabParticipants.classList.toggle('active', name === 'participants');
-    tabCategories.classList.toggle('active', name === 'categories');
-    tabMatrix.classList.toggle('active', name === 'matrix');
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
+    document.getElementById('tabParticipants').classList.toggle('active', name === 'participants');
+    document.getElementById('tabCategories').classList.toggle('active', name === 'categories');
+    document.getElementById('tabMatrix').classList.toggle('active', name === 'matrix');
   }
-  tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => activateTab(btn.dataset.tab));
-  });
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
 
   // Results
   function viewResults(uid, studyId) {
@@ -906,7 +890,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let arr = Object.values(results);
         if (arr.length === 0) {
-          // Clear tabs
           participantsSummary.textContent = 'No results yet.';
           participantsDetails.innerHTML = '';
           categoriesSummary.textContent = '';
@@ -919,26 +902,21 @@ document.addEventListener('DOMContentLoaded', function() {
           return;
         }
 
-        // Sort by timestamp ascending if available
         arr = arr.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
 
-        // Prepare derived sets
         const completed = arr.filter(r => r.status === 'completed' || (Array.isArray(r.categories)));
         const startedCount = arr.length;
         const completedCount = completed.length;
 
-        // Average sorting time (among completed with duration)
         const durations = completed.map(r => r.durationMs).filter(v => typeof v === 'number' && isFinite(v) && v >= 0);
         const avgDurationMs = durations.length ? Math.round(durations.reduce((a,b)=>a+b,0) / durations.length) : null;
 
-        // Participants tab: summary
         const parts = [];
         parts.push(`Started: ${startedCount}`);
         parts.push(`Completed: ${completedCount}`);
-        parts.push(`Avg sorting time: ${avgDurationMs != null ? formatDuration(avgDurationMs) + ` (n=${durations.length})` : 'N/A'}`);
+        parts.push(`Avg sorting time: ${avgDurationMs != null ? formatDuration(avgDurationMs) + ' (n=' + durations.length + ')' : 'N/A'}`);
         participantsSummary.textContent = parts.join(' | ');
 
-        // Participants tab: details (completed only, same as before with additions)
         participantsDetails.innerHTML = '';
         completed.forEach((res, i) => {
           const wrapper = document.createElement('div');
@@ -982,7 +960,6 @@ document.addEventListener('DOMContentLoaded', function() {
           participantsDetails.appendChild(wrapper);
         });
 
-        // Categories tab: distribution and average categories (completed only)
         const catsPerParticipant = completed.map(r => (r.categories || []).length);
         const avgCats = catsPerParticipant.length ? (catsPerParticipant.reduce((a,b)=>a+b,0) / catsPerParticipant.length) : 0;
         categoriesSummary.textContent = `Average number of categories: ${avgCats.toFixed(2)} (n=${completedCount})`;
@@ -993,7 +970,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         categoriesChart.innerHTML = '';
         categoriesLabels.innerHTML = '';
-
         if (maxBuckets > 0) {
           const counts = [];
           for (let i = 1; i <= maxBuckets; i++) counts.push(dist.get(i) || 0);
@@ -1020,10 +996,8 @@ document.addEventListener('DOMContentLoaded', function() {
           categoriesChart.appendChild(p);
         }
 
-        // Matrix tab: co-occurrence matrix (completed only)
         matrixMeta.innerHTML = '';
         matrixTableWrap.innerHTML = '';
-
         const cards = study?.cards || [];
         const matrix = {};
         cards.forEach(a => { matrix[a] = {}; cards.forEach(b => { matrix[a][b] = 0; }); });
@@ -1060,19 +1034,16 @@ document.addEventListener('DOMContentLoaded', function() {
           const rowHeader = document.createElement('th');
           rowHeader.textContent = a;
           tr.appendChild(rowHeader);
-
           cards.forEach(b => {
             const td = document.createElement('td');
             td.textContent = (a === b) ? '-' : matrix[a][b];
             tr.appendChild(td);
           });
-
           tbody.appendChild(tr);
         });
         table.appendChild(tbody);
         matrixTableWrap.appendChild(table);
 
-        // Cache for CSV export
         lastResultsCache = { arr, study, uid, studyId };
         downloadCsvBtn.disabled = false;
 
@@ -1084,30 +1055,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // CSV export click
   downloadCsvBtn.onclick = () => {
-    if (!lastResultsCache) {
-      alert('No results to export.');
-      return;
-    }
+    if (!lastResultsCache) { alert('No results to export.'); return; }
     const { arr, study } = lastResultsCache;
     const studyName = (study?.name || 'study').replace(/[^\w\-]+/g, '_');
-    const headers = [
-      'Participant #',
-      'Timestamp',
-      'Name',
-      'ID Number',
-      'Address',
-      'Course',
-      'Nationality',
-      'Ethnicity',
-      'HomeOutsideSuvaNausori',
-      'Category',
-      'Card'
-    ];
+    const headers = ['Participant #','Timestamp','Name','ID Number','Address','Course','Nationality','Ethnicity','HomeOutsideSuvaNausori','Category','Card'];
     const lines = [headers.join(',')];
 
     let idxCounter = 0;
     arr.forEach((res) => {
-      // Only export completed rows with categories; skip started-only
       if (!(res.status === 'completed' || Array.isArray(res.categories))) return;
       idxCounter += 1;
       const p = res.participant || {};
@@ -1116,27 +1071,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const catName = cat.name || 'Unnamed';
         (cat.cards || []).forEach(card => {
           const row = [
-            csvEscape(idxCounter),
-            csvEscape(ts),
-            csvEscape(p.name || ''),
-            csvEscape(p.idNumber || ''),
-            csvEscape(p.address || ''),
-            csvEscape(p.course || ''),
-            csvEscape(p.nationality || ''),
-            csvEscape(p.ethnicity || ''),
-            csvEscape(p.outsideHome || ''),
-            csvEscape(catName),
-            csvEscape(card)
+            csvEscape(idxCounter), csvEscape(ts), csvEscape(p.name || ''), csvEscape(p.idNumber || ''),
+            csvEscape(p.address || ''), csvEscape(p.course || ''), csvEscape(p.nationality || ''),
+            csvEscape(p.ethnicity || ''), csvEscape(p.outsideHome || ''), csvEscape(catName), csvEscape(card)
           ].join(',');
           lines.push(row);
         });
       });
     });
 
-    downloadCSV(`${studyName}_results.csv`, lines.join('\n'));
+    const csv = lines.join('\n');
+    const filename = `${studyName}_results.csv`;
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    if (navigator.msSaveBlob) navigator.msSaveBlob(blob, filename);
+    else {
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.href = url; link.download = filename; link.style.visibility = 'hidden';
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
   };
 
-  // Expose viewResults globally for dashboard buttons (optional)
+  // Expose viewResults globally (used by dashboard buttons)
   window.viewResults = viewResults;
 });
 </script>
