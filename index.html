@@ -280,7 +280,8 @@ document.addEventListener('DOMContentLoaded', function() {
       cards,
       instructions: instructionsInput.value.trim(),
       createdAt: new Date().toISOString(),
-      ownerUid: user.uid
+      ownerUid: user.uid,
+      isPublic: true // <-- add this
     };
 
     db.ref(`users/${user.uid}/studies/${studyId}`).set(study).then(() => {
@@ -408,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function loadParticipantView(uid, studyId) {
     db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => {
       const study = snap.val();
-      if (!study) { alert('Study not found'); return; }
+      if (!study) { alert('Study not found or not published'); return; }
 
       participantStudyName.textContent = study.name || '';
       if (study.instructions) {
@@ -437,10 +438,13 @@ document.addEventListener('DOMContentLoaded', function() {
       participantView.dataset.uid = uid;
       participantView.dataset.studyId = studyId;
 
-      show(participantView);
-      document.getElementById('addCategoryBtn').focus();
+       show(participantView);
+    })
+    .catch(err => {
+      console.error(err);
+      alert('This study is not publicly accessible. Ask the researcher to publish it.');
     });
-  }
+}
 
   function addCategory() {
     const wrapper = document.createElement('div');
@@ -591,3 +595,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </body>
 </html>
+
