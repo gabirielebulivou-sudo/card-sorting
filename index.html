@@ -71,6 +71,20 @@
 
     .muted { color:#6c757d }
     .badge { display:inline-block; padding:.1rem .4rem; border-radius:.25rem; font-size:.8rem; background:#edf2ff; color:#2f4e8b; border:1px solid #dbe4ff }
+
+    /* Modal (participant info) */
+    .modal-backdrop {
+      position:fixed; inset:0; background:rgba(0,0,0,.5);
+      display:flex; align-items:center; justify-content:center;
+      z-index:9999; padding:1rem;
+    }
+    .modal {
+      background:#fff; border-radius:10px; width:min(640px, 100%); padding:1.25rem 1.25rem 1rem;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+    .modal h3 { margin-bottom:.5rem }
+    .modal p { margin:.25rem 0 1rem }
+    .modal .actions { display:flex; justify-content:flex-end; gap:.5rem; margin-top:.25rem }
   </style>
 
   <!-- Firebase SDK (Compat) -->
@@ -78,7 +92,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-  <!-- SortableJS (no SRI to avoid blocking; we'll also lazy-load as fallback) -->
+  <!-- SortableJS (load + fallback) -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 </head>
 <body>
@@ -163,12 +177,39 @@
       </div>
     </div>
 
+    <!-- Participant Info Modal -->
+    <div id="participantModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="participantModalTitle">
+      <div class="modal">
+        <h3 id="participantModalTitle">Before you begin</h3>
+        <p>Please enter your details to proceed.</p>
+
+        <label for="pName">Full name</label>
+        <input id="pName" type="text" placeholder="Your name" required>
+
+        <label for="pId">ID number</label>
+        <input id="pId" type="text" placeholder="Your ID number" required>
+
+        <label for="pAddress">Address</label>
+        <textarea id="pAddress" rows="3" placeholder="Your address" required></textarea>
+
+        <label for="pCourse">Course</label>
+        <input id="pCourse" type="text" placeholder="Your course" required>
+
+        <div class="actions">
+          <button id="startSortingBtn" class="btn btn-success">Start Sorting</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Results -->
     <div id="resultsView" class="view">
       <h2>Study Results: <span id="resultsStudyName"></span></h2>
       <div id="resultsContainer"></div>
       <div id="aggregateResults"></div>
-      <button id="backToDashboardFromResultsBtn" class="btn">Back to Dashboard</button>
+      <div>
+        <button id="downloadCsvBtn" class="btn">Download CSV</button>
+        <button id="backToDashboardFromResultsBtn" class="btn">Back to Dashboard</button>
+      </div>
     </div>
   </div>
 
@@ -217,11 +258,26 @@ document.addEventListener('DOMContentLoaded', function() {
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
 
+  // Participant modal refs
+  const participantModal = document.getElementById('participantModal');
+  const pName = document.getElementById('pName');
+  const pId = document.getElementById('pId');
+  const pAddress = document.getElementById('pAddress');
+  const pCourse = document.getElementById('pCourse');
+  const startSortingBtn = document.getElementById('startSortingBtn');
+
+  // Results export
+  const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+
   // Participant link handling
   const params = new URLSearchParams(location.search);
   const pUid = params.get('uid');
   const pStudyId = params.get('study');
   const hasParticipantLink = Boolean(pUid && pStudyId);
+
+  // In-memory caches
+  let participantMeta = null; // {name, idNumber, address, course}
+  let lastResultsCache = null; // {arr, study, uid, studyId}
 
   // Helpers
   function show(view) {
@@ -266,6 +322,37 @@ document.addEventListener('DOMContentLoaded', function() {
         zone.removeAttribute('data-needs-sortable');
       }
     });
+  }
+
+  function openParticipantModal() {
+    participantModal.classList.remove('hidden');
+    setTimeout(() => pName.focus(), 0);
+  }
+  function closeParticipantModal() {
+    participantModal.classList.add('hidden');
+  }
+
+  // CSV helpers
+  function csvEscape(v) {
+    const s = (v == null ? '' : String(v));
+    if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+  function downloadCSV(filename, text) {
+    const blob = new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8;" });
+    if (navigator.msSaveBlob) {
+      navigator.msSaveBlob(blob, filename);
+    } else {
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.download = filename;
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
   }
 
   // Auth actions
@@ -353,6 +440,19 @@ document.addEventListener('DOMContentLoaded', function() {
   // Participant controls
   document.getElementById('addCategoryBtn').onclick = () => addCategory();
   document.getElementById('submitSortingBtn').onclick = () => submitSorting();
+
+  startSortingBtn.onclick = () => {
+    const name = pName.value.trim();
+    const idNumber = pId.value.trim();
+    const address = pAddress.value.trim();
+    const course = pCourse.value.trim();
+    if (!name || !idNumber || !address || !course) {
+      alert('Please complete all fields to begin.');
+      return;
+    }
+    participantMeta = { name, idNumber, address, course };
+    closeParticipantModal();
+  };
 
   // Migration (client-side)
   async function migrateOldStudiesToUser(uid) {
@@ -573,6 +673,11 @@ document.addEventListener('DOMContentLoaded', function() {
           participantView.dataset.studyId = studyId;
 
           participantStatus.textContent = ''; // clear status on success
+
+          // Force participant info collection before sorting
+          participantMeta = null;
+          openParticipantModal();
+
         } catch (renderErr) {
           console.error('Render error:', renderErr);
           participantStatus.textContent = 'Something went wrong while rendering the study. Please refresh the page.';
@@ -590,6 +695,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const studyId = participantView.dataset.studyId;
 
     if (!uid || !studyId) { alert('Study not loaded yet.'); return; }
+    if (!participantMeta) { alert('Please enter your details before submitting.'); openParticipantModal(); return; }
 
     const cats = [];
     sortingArea.querySelectorAll('.category').forEach(c => {
@@ -600,7 +706,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (cats.length === 0) { alert('Please sort at least one card.'); return; }
 
-    const result = { timestamp: new Date().toISOString(), categories: cats };
+    const result = {
+      timestamp: new Date().toISOString(),
+      participant: participantMeta,
+      categories: cats
+    };
     db.ref(`users/${uid}/studies/${studyId}/results`).push(result).then(() => {
       participantView.innerHTML = '<h2>Thank you!</h2><p>Your responses have been recorded.</p>';
     }).catch(err => alert(err.message));
@@ -616,6 +726,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const results = snap2.val() || {};
         resultsContainer.innerHTML = '';
         aggregateResults.innerHTML = '';
+        lastResultsCache = null;
+        downloadCsvBtn.disabled = true;
 
         let arr = Object.values(results);
         if (arr.length === 0) {
@@ -629,12 +741,28 @@ document.addEventListener('DOMContentLoaded', function() {
         // Sort by timestamp ascending if available
         arr = arr.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
 
+        // Cache for CSV export
+        lastResultsCache = { arr, study, uid, studyId };
+        downloadCsvBtn.disabled = false;
+
         // Render each participant safely
         arr.forEach((res, i) => {
           const wrapper = document.createElement('div');
           const h4 = document.createElement('h4');
-          h4.textContent = `Participant ${i + 1}`;
+          const pinfo = res.participant || {};
+          const displayName = pinfo.name ? ` — ${pinfo.name}` : '';
+          h4.textContent = `Participant ${i + 1}${displayName}`;
           wrapper.appendChild(h4);
+
+          // Participant details (muted)
+          const meta = document.createElement('div');
+          meta.className = 'muted';
+          meta.textContent = [
+            pinfo.idNumber ? `ID: ${pinfo.idNumber}` : '',
+            pinfo.course ? `Course: ${pinfo.course}` : '',
+            res.timestamp ? `Time: ${new Date(res.timestamp).toLocaleString()}` : ''
+          ].filter(Boolean).join(' | ');
+          if (meta.textContent) wrapper.appendChild(meta);
 
           (res.categories || []).forEach(cat => {
             const p = document.createElement('p');
@@ -712,6 +840,50 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
   }
+
+  // CSV export click
+  downloadCsvBtn.onclick = () => {
+    if (!lastResultsCache) {
+      alert('No results to export.');
+      return;
+    }
+    const { arr, study } = lastResultsCache;
+    const studyName = (study?.name || 'study').replace(/[^\w\-]+/g, '_');
+    const headers = [
+      'Participant #',
+      'Timestamp',
+      'Name',
+      'ID Number',
+      'Address',
+      'Course',
+      'Category',
+      'Card'
+    ];
+    const lines = [headers.join(',')];
+
+    arr.forEach((res, idx) => {
+      const p = res.participant || {};
+      const ts = res.timestamp || '';
+      (res.categories || []).forEach(cat => {
+        const catName = cat.name || 'Unnamed';
+        (cat.cards || []).forEach(card => {
+          const row = [
+            csvEscape(idx + 1),
+            csvEscape(ts),
+            csvEscape(p.name || ''),
+            csvEscape(p.idNumber || ''),
+            csvEscape(p.address || ''),
+            csvEscape(p.course || ''),
+            csvEscape(catName),
+            csvEscape(card)
+          ].join(',');
+          lines.push(row);
+        });
+      });
+    });
+
+    downloadCSV(`${studyName}_results.csv`, lines.join('\n'));
+  };
 });
 </script>
 </body>
