@@ -5,7 +5,145 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Open Card Sorting Tool - Researcher Accounts</title>
   <style>
-    /* --- (styles unchanged, shortened for clarity; keep your original styles here) --- */
+    :root {
+      --primary:#4a6fa5;
+      --secondary:#6b8cae;
+      --accent:#ff6b6b;
+      --light:#f8f9fa;
+      --dark:#343a40;
+      --success:#28a745;
+      --border:#dee2e6;
+    }
+
+    * { box-sizing:border-box; margin:0; padding:0; font-family:'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif }
+
+    body { background:#f5f7fa; color:var(--dark); line-height:1.5 }
+
+    .container { max-width:1200px; margin:0 auto; padding:20px }
+
+    header { background:var(--primary); color:white; padding:1rem; text-align:center; margin-bottom:2rem; border-radius:5px }
+
+    .view { display:none; background:white; padding:2rem; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,.1); margin-bottom:2rem }
+    .active { display:block }
+
+    .btn { padding:.5rem 1rem; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer; margin:.25rem; touch-action:manipulation }
+    .btn:hover { background:var(--secondary) }
+    .btn:disabled { opacity:.6; cursor:not-allowed }
+    .btn-success { background:var(--success) }
+    .btn-accent { background:var(--accent); color:#fff }
+    .btn-accent:hover { filter:brightness(0.95) }
+
+    .hidden { display:none !important }
+
+    label { display:block; margin:.25rem 0 .25rem; font-weight:600 }
+    input, textarea {
+      width:100%; padding:.5rem; margin-bottom:1rem; border:1px solid var(--border); border-radius:4px;
+    }
+
+    .study-item {
+      border:1px solid var(--border); padding:.75rem; margin-bottom:.5rem;
+      display:flex; justify-content:space-between; align-items:center; gap:.5rem; flex-wrap:wrap;
+    }
+    .study-actions { display:flex; gap:.25rem; flex-wrap:wrap }
+
+    .instructions { background:#e9ecef; padding:1rem; margin-bottom:1rem; border-radius:4px }
+
+    .category-card { background:#eee; padding:.25rem .5rem; border-radius:4px; margin:.25rem; display:inline-block }
+
+    .table-wrap { overflow:auto; margin-top:1rem; border:1px solid var(--border); border-radius:6px }
+    table { border-collapse:collapse; min-width:600px; width:100% }
+    th, td { border:1px solid var(--border); padding:.5rem; text-align:center; white-space:nowrap }
+
+    .card { background:white; border:1px solid var(--border); padding:1rem; margin:.25rem; border-radius:6px; cursor:grab; user-select:none; box-shadow:0 1px 0 rgba(0,0,0,0.05) }
+    .card:active { cursor:grabbing }
+
+    .muted { color:#6c757d }
+    .badge { display:inline-block; padding:.1rem .4rem; border-radius:.25rem; font-size:.8rem; background:#edf2ff; color:#2f4e8b; border:1px solid #dbe4ff }
+
+    /* Participant workspace layout (cards left, canvas right) */
+    .workspace { display:grid; grid-template-columns: 340px 1fr; gap:18px; align-items:start; }
+    .left-panel {
+      background:#d1d1cf; border:1px solid #c5c5c3; border-radius:10px; padding:12px;
+      position:sticky; top:12px; max-height:calc(100vh - 180px); overflow:auto;
+    }
+    .left-panel h3 { margin:.25rem 0 .5rem; }
+    .cards-list { display:flex; flex-direction:column; gap:.5rem; }
+
+    .right-panel { min-height:60vh; }
+    .toolbar { margin-bottom:.5rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap }
+
+    /* Step boxes on the canvas before categories appear */
+    .steps { display:flex; flex-direction:column; gap:18px; margin-bottom:18px; }
+    .stepbox {
+      border:2px dashed #ddd; border-radius:14px; padding:18px; background:#fff;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+    }
+    .stepbox h3 { font-size:1.35rem; margin-bottom:.5rem }
+    .stepbox ol { margin-left:1.25rem }
+    .stepbox li { margin:.25rem 0 }
+    .new-cat-dropzone {
+      border:2px dashed #cfcfcf; border-radius:10px; min-height:90px; padding:12px; background:#fafafa; margin-top:.5rem;
+    }
+
+    /* Categories canvas */
+    .categories-wrap {
+      display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap:16px;
+    }
+
+    /* Category card with dark header */
+    .category {
+      background:#fff; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,.06); border:1px solid var(--border); overflow:hidden;
+    }
+    .cat-header {
+      background:#3d4038; color:#fff; padding:.5rem .75rem; font-weight:600; text-align:center; position:relative;
+    }
+    .cat-title { cursor:text }
+    .cat-delete, .cat-toggle {
+      position:absolute; top:6px; color:#fff; cursor:pointer; opacity:.9; user-select:none
+    }
+    .cat-delete { left:8px }
+    .cat-toggle { right:8px }
+    .cat-body {
+      padding:.5rem; background:#fff; margin:.5rem; border:1px solid var(--border); border-radius:8px; min-height:80px;
+    }
+    .cat-footer { text-align:center; font-size:.75rem; color:#6b6b6b; padding:.25rem .5rem .6rem; text-transform:uppercase; letter-spacing:.02em }
+
+    /* Modal (participant info + instructions) */
+    .modal-backdrop {
+      position:fixed; inset:0; background:rgba(0,0,0,.5);
+      display:flex; align-items:center; justify-content:center;
+      z-index:9999; padding:1rem;
+    }
+    .modal {
+      background:#fff; border-radius:10px; width:min(640px, 100%); padding:1.25rem 1.25rem 1rem;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+    .modal h3 { margin-bottom:.5rem }
+    .modal p { margin:.25rem 0 1rem }
+    .modal .actions { display:flex; justify-content:flex-end; gap:.5rem; margin-top:.25rem }
+    fieldset { border:1px solid var(--border); border-radius:6px; padding:.75rem; margin-bottom:1rem }
+    legend { padding:0 .25rem; font-weight:600 }
+    .radio-row { display:flex; gap:1rem; margin-top:.5rem }
+    .radio-row label { font-weight:500; margin:0; display:flex; align-items:center; gap:.35rem }
+    .modal ol { margin-left:1.25rem; }
+    .modal ol li { margin: .25rem 0; }
+    .modal strong { font-weight:700; }
+
+    /* Tabs (results) */
+    .tabs { display:flex; gap:.5rem; margin: .5rem 0 1rem; border-bottom:1px solid var(--border) }
+    .tab-btn { background:transparent; color:var(--dark); border:none; padding:.5rem .75rem; cursor:pointer; border-bottom:3px solid transparent }
+    .tab-btn.active { border-bottom-color:var(--primary); color:var(--primary); font-weight:600 }
+    .tab-pane { display:none }
+    .tab-pane.active { display:block }
+
+    /* Simple bar chart */
+    .chart-wrap { margin-top:.5rem }
+    .chart { display:flex; align-items:flex-end; gap:8px; height:220px; padding:8px; border-left:1px solid var(--border); border-bottom:1px solid var(--border) }
+    .bar { background:linear-gradient(180deg, var(--secondary), var(--primary)); flex:1; min-width:24px; border-radius:4px 4px 0 0; position:relative }
+    .bar span { position:absolute; bottom:100%; transform:translateY(-4px); font-size:.8rem; color:var(--dark) }
+    .xlabels { display:flex; gap:8px; margin-top:4px }
+    .xlabel { flex:1; min-width:24px; text-align:center; font-size:.8rem; color:var(--dark) }
   </style>
 
   <!-- Firebase SDK -->
@@ -72,8 +210,139 @@
       </div>
     </div>
 
-    <!-- Participant, Results and Modals remain unchanged -->
-    <!-- keep your existing participantView, participantModal, instructionsModal, resultsView HTML here -->
+    <!-- Participant -->
+    <div id="participantView" class="view">
+      <h2 id="participantStudyName"></h2>
+      <div id="participantInstructions" class="instructions hidden" aria-live="polite"></div>
+      <div id="participantStatus" class="muted"></div>
+
+      <div class="workspace">
+        <aside class="left-panel">
+          <h3>Cards</h3>
+          <div class="muted" style="margin-bottom:.5rem;">Drag a card to the right to create or fill categories.</div>
+          <div id="availableCards" class="cards-list"></div>
+        </aside>
+
+        <section class="right-panel">
+          <!-- Helper steps shown until at least one category exists -->
+          <div id="stepsWrap" class="steps">
+            <div class="stepbox">
+              <h3>Step 1</h3>
+              <ol>
+                <li>Review the list of cards on the left.</li>
+                <li>Split the cards into categories that feel right to you.</li>
+                <li>There’s no right or wrong way. Sort by your intuition.</li>
+              </ol>
+            </div>
+            <div class="stepbox">
+              <h3>Step 2</h3>
+              <p>Drag a card from the left and drop it here. This will create a new category.</p>
+              <div id="newCategoryDropzone" class="new-cat-dropzone"></div>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <button id="addCategoryBtn" class="btn">Add Category</button>
+            <button id="submitSortingBtn" class="btn btn-success">Finish</button>
+          </div>
+
+          <div id="sortingArea" class="categories-wrap"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Participant Info Modal -->
+    <div id="participantModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="participantModalTitle">
+      <div class="modal">
+        <h3 id="participantModalTitle">Before you begin</h3>
+        <p>Please enter your details to proceed.</p>
+
+        <label for="pName">Full name</label>
+        <input id="pName" type="text" placeholder="Your name" required>
+
+        <label for="pId">ID number</label>
+        <input id="pId" type="text" placeholder="Your ID number" required>
+
+        <label for="pAddress">Address</label>
+        <textarea id="pAddress" rows="3" placeholder="Your address" required></textarea>
+
+        <label for="pCourse">Course</label>
+        <input id="pCourse" type="text" placeholder="Your course" required>
+
+        <label for="pNationality">Nationality</label>
+        <input id="pNationality" type="text" placeholder="Your nationality" required>
+
+        <label for="pEthnicity">Ethnicity</label>
+        <input id="pEthnicity" type="text" placeholder="Your ethnicity" required>
+
+        <fieldset>
+          <legend>Is your family home outside of Suva/Nausori? (Yes/No)</legend>
+          <div class="radio-row">
+            <label><input type="radio" name="pOutsideHome" value="Yes" required> Yes</label>
+            <label><input type="radio" name="pOutsideHome" value="No" required> No</label>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <button id="startSortingBtn" class="btn btn-success">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instructions Modal (after details) -->
+    <div id="instructionsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="instructionsModalTitle">
+      <div class="modal">
+        <h3 id="instructionsModalTitle">Instructions</h3>
+        <p><strong>Here's how it works:</strong></p>
+        <ol>
+          <li>You will be presented with a list of cards.</li>
+          <li>Drag and drop the cards into the categories that you think they fit the most.</li>
+          <li>If you change your opinion, feel free to move the cards between the different categories until you're satisfied.</li>
+          <li>Once done, click <strong>Finish</strong> to complete the card sort.</li>
+        </ol>
+        <div class="actions">
+          <button id="beginSortingBtn" class="btn btn-success">Begin</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsView" class="view">
+      <h2>Study Results: <span id="resultsStudyName"></span></h2>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="participants">Participants</button>
+        <button class="tab-btn" data-tab="categories">Categories</button>
+        <button class="tab-btn" data-tab="matrix">Similarity Matrix</button>
+      </div>
+
+      <!-- Participants Tab -->
+      <div id="tabParticipants" class="tab-pane active">
+        <div id="participantsSummary"></div>
+        <div id="participantsDetails"></div>
+      </div>
+
+      <!-- Categories Tab -->
+      <div id="tabCategories" class="tab-pane">
+        <div id="categoriesSummary"></div>
+        <div class="chart-wrap">
+          <div class="chart" id="categoriesChart"></div>
+          <div class="xlabels" id="categoriesLabels"></div>
+        </div>
+      </div>
+
+      <!-- Matrix Tab -->
+      <div id="tabMatrix" class="tab-pane">
+        <div id="matrixMeta"></div>
+        <div id="matrixTableWrap" class="table-wrap"></div>
+      </div>
+
+      <div style="margin-top: 1rem">
+        <button id="downloadCsvBtn" class="btn">Download CSV</button>
+        <button id="backToDashboardFromResultsBtn" class="btn">Back to Dashboard</button>
+      </div>
+    </div>
+
   </div>
 
 <script>
@@ -157,3 +426,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </body>
 </html>
+
