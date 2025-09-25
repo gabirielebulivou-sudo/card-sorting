@@ -637,6 +637,21 @@
       const publicResultsLink = document.getElementById('publicResultsLink');
       const copyPublicResultsBtn = document.getElementById('copyPublicResultsBtn');
 
+      // Tabs DOM refs
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const tabParticipants = document.getElementById('tabParticipants');
+      const tabCategories = document.getElementById('tabCategories');
+      const tabMatrix = document.getElementById('tabMatrix');
+
+      // Tab controls (added)
+      function activateTab(name) {
+        tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
+        tabParticipants.classList.toggle('active', name === 'participants');
+        tabCategories.classList.toggle('active', name === 'categories');
+        tabMatrix.classList.toggle('active', name === 'matrix');
+      }
+      tabButtons.forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
+
       // Participant modals
       const participantModal = document.getElementById('participantModal');
       const instructionsModal = document.getElementById('instructionsModal');
@@ -884,7 +899,7 @@
         const delBtn = cat.querySelector('.cat-delete');
         const togBtn = cat.querySelector('.cat-toggle');
 
-        // Important: don't delete on Backspace while editing
+        // Prevent Backspace from deleting the whole category while typing
         input.addEventListener('keydown', (e) => { e.stopPropagation(); });
         input.addEventListener('input', () => { input.value = sanitizeText(input.value).slice(0, 80); });
 
@@ -992,7 +1007,7 @@
           new Sortable(sortingArea, {
             group: 'cards',
             animation: 150,
-            sort: false, // categories themselves not re-ordered by drag
+            sort: false,
             onAdd: (evt) => {
               const cardEl = evt.item;
               const idx = evt.newIndex;
@@ -1005,7 +1020,7 @@
             }
           });
 
-          // Optional drop targets (visible before categories exist / as a helper)
+          // Optional helper dropzones
           new Sortable(newCategoryDropzone, {
             group: 'cards',
             animation: 150,
@@ -1133,6 +1148,8 @@
             categoriesLabels.innerHTML = '';
             matrixMeta.textContent = '';
             matrixTableWrap.innerHTML = '';
+            // Ensure default tab is selected
+            activateTab('participants');
             return;
           }
           db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => {
@@ -1157,6 +1174,7 @@
           matrixMeta.textContent = '';
           matrixTableWrap.innerHTML = '';
           show(resultsView);
+          activateTab('participants'); // default tab
           return;
         }
 
@@ -1295,6 +1313,7 @@
         if (!opts.publicViewer) { downloadCsvBtn.disabled = false; downloadMatrixBtn.disabled = false; }
 
         show(resultsView);
+        activateTab('participants'); // default tab on open
       }
 
       // CSV exports
