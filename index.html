@@ -117,10 +117,13 @@
       position:fixed; inset:0; background:rgba(0,0,0,.5);
       display:flex; align-items:center; justify-content:center;
       z-index:9999; padding:1rem;
+      overflow-y: auto;
     }
     .modal {
-      background:#fff; border-radius:10px; width:min(90%, 640px); padding:1.25rem 1.25rem 1rem;
+      background:#fff; border-radius:10px; width:min(90%, 640px); max-height: 90vh; padding:1.25rem 1.25rem 1rem;
       box-shadow:0 10px 30px rgba(0,0,0,.25);
+      overflow-y: auto;
+      outline: none;
     }
     .modal h3 { margin-bottom:.5rem }
     .modal p { margin:.25rem 0 1rem }
@@ -269,10 +272,10 @@
     </div>
 
     <!-- Participant Info Modal -->
-    <div id="participantModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="participantModalTitle">
-      <div class="modal" tabindex="-1">
+    <div id="participantModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="participantModalTitle" aria-describedby="participantModalDesc">
+      <div class="modal" tabindex="0" role="document">
         <h3 id="participantModalTitle">Before you begin</h3>
-        <p>Please enter your details to proceed.</p>
+        <p id="participantModalDesc">Please enter your details to proceed.</p>
         <label for="pName">Full name</label>
         <input id="pName" type="text" placeholder="Your name" required>
         <label for="pId">ID number</label>
@@ -299,10 +302,10 @@
     </div>
 
     <!-- Instructions Modal -->
-    <div id="instructionsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="instructionsModalTitle">
-      <div class="modal" tabindex="-1">
+    <div id="instructionsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="instructionsModalTitle" aria-describedby="instructionsModalDesc">
+      <div class="modal" tabindex="0" role="document">
         <h3 id="instructionsModalTitle">Instructions</h3>
-        <p><strong>Here's how it works:</strong></p>
+        <p id="instructionsModalDesc"><strong>Here's how it works:</strong></p>
         <ol>
           <li>You will be presented with a list of cards.</li>
           <li>Drag and drop the cards into the categories that you think they fit the most.</li>
@@ -1244,7 +1247,6 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.modal').forEach(modal => {
     modal.setAttribute('aria-modal', 'true');
     modal.setAttribute('role', 'dialog');
-    modal.querySelector('button').setAttribute('aria-label', 'Close');
   });
 });
 </script>
