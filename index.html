@@ -21,7 +21,11 @@
 
     .container { max-width:1200px; margin:0 auto; padding:20px }
 
-    header { background:var(--primary); color:white; padding:1rem; text-align:center; margin-bottom:2rem; border-radius:5px }
+    header {
+      background:var(--primary); color:white; padding:1rem; text-align:center; margin-bottom:2rem; border-radius:5px
+    }
+    #welcomeBanner { margin-top:.25rem; opacity:.95 }
+    #headActions { margin-top:.5rem; display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap }
 
     .view { display:none; background:white; padding:2rem; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,.1); margin-bottom:2rem }
     .active { display:block }
@@ -59,7 +63,7 @@
     .card:focus { outline:3px solid #9ec5fe; outline-offset:2px }
     .card[aria-selected="true"] { box-shadow:0 0 0 3px #ffae42 inset }
 
-    .muted { color:#6c757d }
+    .muted { color:#e7eef8 }
     .badge { display:inline-block; padding:.1rem .4rem; border-radius:.25rem; font-size:.8rem; background:#edf2ff; color:#2f4e8b; border:1px solid #dbe4ff }
 
     /* Participant workspace layout (cards left, canvas right) */
@@ -198,12 +202,22 @@
   </nav>
 
   <div class="container">
-    <header><h1>Open Card Sorting Tool</h1></header>
+    <header>
+      <h1>Open Card Sorting Tool</h1>
+      <div id="welcomeBanner" class="muted" aria-live="polite"></div>
+      <div id="headActions">
+        <button id="gotoResearcherBtn" class="btn btn-accent hidden" type="button">Researcher Login</button>
+        <button id="gotoParticipantBtn" class="btn hidden" type="button">Back to Participant View</button>
+      </div>
+    </header>
 
     <!-- Login / Signup -->
     <div id="authView" class="view active">
       <h2 id="authHeading">Researcher Login</h2>
       <form id="authForm" novalidate>
+        <label for="displayName">Full name (for new sign-ups)</label>
+        <input type="text" id="displayName" placeholder="e.g., John Doe" autocomplete="name">
+
         <label for="email">Email</label>
         <input type="email" id="email" placeholder="name@example.com" autocomplete="username" inputmode="email" required>
 
@@ -213,6 +227,7 @@
         <div>
           <button id="loginBtn" type="submit" class="btn">Login</button>
           <button id="signupBtn" type="button" class="btn btn-accent">Sign Up</button>
+          <button id="forgotPwdBtn" type="button" class="btn">Forgot Password</button>
         </div>
       </form>
     </div>
@@ -440,6 +455,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const resultsStudyName = document.getElementById('resultsStudyName');
 
+  // Header actions
+  const welcomeBanner = document.getElementById('welcomeBanner');
+  const gotoResearcherBtn = document.getElementById('gotoResearcherBtn');
+  const gotoParticipantBtn = document.getElementById('gotoParticipantBtn');
+
   // Results tab refs
   const tabButtons = document.querySelectorAll('.tab-btn');
   const tabParticipants = document.getElementById('tabParticipants');
@@ -458,6 +478,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const matrixTableWrap = document.getElementById('matrixTableWrap');
 
   const authForm = document.getElementById('authForm');
+  const displayNameInput = document.getElementById('displayName');
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
 
@@ -477,11 +498,34 @@ document.addEventListener('DOMContentLoaded', function() {
   const downloadCsvBtn = document.getElementById('downloadCsvBtn');
   const downloadMatrixBtn = document.getElementById('downloadMatrixBtn');
 
-  // Participant link handling
+  // Participant link handling and mode switching
   const params = new URLSearchParams(location.search);
   const pUid = params.get('uid');
   const pStudyId = params.get('study');
   const hasParticipantLink = Boolean(pUid && pStudyId);
+  let participantLoaded = false;
+
+  const storedMode = sessionStorage.getItem('mode');
+  const defaultMode = hasParticipantLink ? 'participant' : 'researcher';
+  let appMode = storedMode || defaultMode;
+
+  function setMode(mode){
+    appMode = mode;
+    sessionStorage.setItem('mode', mode);
+    updateHeaderModeButtons();
+    route();
+  }
+  function updateHeaderModeButtons(){
+    if(hasParticipantLink){
+      gotoResearcherBtn.classList.toggle('hidden', appMode !== 'participant');
+      gotoParticipantBtn.classList.toggle('hidden', appMode !== 'researcher');
+    } else {
+      gotoResearcherBtn.classList.add('hidden');
+      gotoParticipantBtn.classList.add('hidden');
+    }
+  }
+  gotoResearcherBtn.addEventListener('click', () => setMode('researcher'));
+  gotoParticipantBtn.addEventListener('click', () => setMode('participant'));
 
   // In-memory caches
   let participantMeta = null;
@@ -536,12 +580,84 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Auth actions
-  async function doLogin(){ try{ await auth.signInWithEmailAndPassword(emailInput.value.trim(), passwordInput.value); }catch(e){ alert(e.message); } }
-  async function doSignup(){ try{ await auth.createUserWithEmailAndPassword(emailInput.value.trim(), passwordInput.value); }catch(e){ alert(e.message); } }
+  async function doLogin(){
+    try{
+      await auth.signInWithEmailAndPassword(emailInput.value.trim(), passwordInput.value);
+      // onAuthStateChanged will route to dashboard
+    }catch(e){ alert(e.message); }
+  }
+  async function doSignup(){
+    try{
+      const email = emailInput.value.trim();
+      const pwd = passwordInput.value;
+      const name = sanitizeText(displayNameInput.value);
+      if(!name){ alert('Please enter your full name for sign-up.'); displayNameInput.focus(); return; }
+      const cred = await auth.createUserWithEmailAndPassword(email, pwd);
+      if (cred.user) {
+        await cred.user.updateProfile({ displayName: name });
+        await db.ref(`users/${cred.user.uid}/profile`).set({
+          name,
+          email,
+          createdAt: new Date().toISOString()
+        });
+      }
+      alert('Account created! You are now logged in.');
+      // onAuthStateChanged will route to dashboard
+    }catch(e){ alert(e.message); }
+  }
+  async function doForgotPassword(){
+    try{
+      const email = prompt('Enter your registered email address:');
+      if(!email) return;
+      await auth.sendPasswordResetEmail(email.trim());
+      alert('Password reset email sent. Please check your inbox.');
+    }catch(e){ alert(e.message); }
+  }
+
   authForm.addEventListener('submit', e => { e.preventDefault(); doLogin(); });
   document.getElementById('loginBtn').onclick = doLogin;
   document.getElementById('signupBtn').onclick = doSignup;
+  document.getElementById('forgotPwdBtn').onclick = doForgotPassword;
   document.getElementById('logoutBtn').onclick = () => auth.signOut();
+
+  // Greeting
+  function updateWelcome(user){
+    if(user && (user.displayName || user.email)){
+      welcomeBanner.textContent = `Welcome, ${user.displayName || user.email} 👋`;
+    } else {
+      welcomeBanner.textContent = '';
+    }
+  }
+
+  // Router based on mode + auth
+  function route(){
+    const user = auth.currentUser;
+    updateWelcome(user);
+    updateHeaderModeButtons();
+
+    if(appMode === 'participant' && hasParticipantLink){
+      show(participantView);
+      if(!participantLoaded){
+        participantStudyName.textContent='Loading study...';
+        participantStatus.textContent='Please wait while we prepare your card sort.';
+        loadParticipantView(pUid, pStudyId);
+        participantLoaded = true;
+      }
+    } else {
+      // Researcher mode
+      if(user){
+        show(dashboardView);
+        showDashboard(user.uid);
+        document.getElementById('createStudyBtn').focus();
+      } else {
+        show(authView);
+        document.getElementById('email').focus();
+      }
+    }
+  }
+
+  // Auth state change
+  auth.onAuthStateChanged(()=> route());
 
   // Create study flow
   document.getElementById('createStudyBtn').onclick = () => { show(setupView); setTimeout(()=>studyNameInput.focus(),0); };
@@ -573,6 +689,7 @@ document.addEventListener('DOMContentLoaded', function() {
     db.ref(`users/${uid}/studies`).once('value').then(snap=>{
       const data=snap.val()||{}; Object.entries(data).forEach(([studyId,study])=>{ if(seen.has(studyId))return; addStudyToDashboard(uid,studyId,study); seen.add(studyId); });
     });
+    // "Migrate old studies" removed
   }
   async function deleteStudy(uid, studyId, studyName, rowEl){
     const confirmed = confirm(`Delete the study "${studyName||studyId}" and all of its results? This cannot be undone.`); if(!confirmed) return;
@@ -601,14 +718,7 @@ document.addEventListener('DOMContentLoaded', function() {
     div.appendChild(left); div.appendChild(actions); studiesList.appendChild(div);
   }
 
-  // Participant layout
-  if(hasParticipantLink){
-    show(participantView);
-    participantStudyName.textContent='Loading study...';
-    participantStatus.textContent='Please wait while we prepare your card sort.';
-    loadParticipantView(pUid,pStudyId);
-  }
-
+  // Participant helper UI
   function updateStepsVisibility(){
     const hasAny = sortingArea.querySelectorAll('.category').length > 0;
     stepsWrap.classList.toggle('hidden', hasAny);
@@ -802,7 +912,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .catch(err=>{ console.error('DB read failed:',err); participantStudyName.textContent='Unable to load study'; participantStatus.textContent='This study is not publicly accessible. Ask the researcher to publish it.'; });
   }
 
-  // Submit sorting (must sort ALL cards)
+  // Submit sorting (must sort ALL cards; and ALL category labels must be filled)
   function submitSorting(){
     const uid = participantView.dataset.uid, studyId = participantView.dataset.studyId;
     if(!uid||!studyId){ alert('Study not loaded yet.'); return; }
@@ -815,12 +925,25 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
+    // Build categories and verify names
     const cats = [];
+    let firstInvalidCatInput = null;
     sortingArea.querySelectorAll('.category').forEach(cat=>{
-      const name = sanitizeText(cat.querySelector('.cat-title-input')?.value || 'Unnamed') || 'Unnamed';
+      const input = cat.querySelector('.cat-title-input');
+      const name = sanitizeText(input?.value || '');
       const cards = [...cat.querySelectorAll('.cat-body .card')].map(c=>c.dataset.cardText);
-      if(cards.length>0) cats.push({ name, cards });
+      if(cards.length>0){
+        if(!name && !firstInvalidCatInput){ firstInvalidCatInput = input; }
+        cats.push({ name: name || 'Unnamed', cards });
+      }
     });
+
+    if (firstInvalidCatInput){
+      alert('Please name all categories before finishing.');
+      firstInvalidCatInput.focus();
+      firstInvalidCatInput.scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
     if(cats.length===0){ alert('Please sort at least one card.'); return; }
 
     const startedAtIso = participantView.dataset.startedAt || null;
@@ -839,7 +962,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Tabs
   tabButtons.forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
 
-  // Results (same as previous version with matrix percentages and CSVs)
+  // Results
   function viewResults(uid, studyId){
     db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap=>{
       const study=snap.val();
@@ -948,9 +1071,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const td=document.createElement('td');
             if(a===b){ td.textContent='—'; }
             else{
-              const pct = completedCount ? (matrixCounts[a][b] / completedCount * 100) : 0;
+              const pct = completed.length ? (matrixCounts[a][b] / completed.length * 100) : 0;
               td.textContent = `${pct.toFixed(0)}%`;
-              td.title = `${matrixCounts[a][b]} of ${completedCount} participants`;
+              td.title = `${matrixCounts[a][b]} of ${completed.length} participants`;
             }
             tr.appendChild(td);
           });
@@ -960,10 +1083,10 @@ document.addEventListener('DOMContentLoaded', function() {
         matrixTableWrap.appendChild(table);
 
         const mm=document.createElement('p');
-        mm.textContent=`Percentages are of completed participants (n=${completedCount}).`;
+        mm.textContent=`Percentages are of completed participants (n=${completed.length}).`;
         matrixMeta.appendChild(mm);
 
-        lastResultsCache = { arr, completed, completedCount, study, uid, studyId, cards, matrixCounts };
+        lastResultsCache = { arr, completed, completedCount: completed.length, study, uid, studyId, cards, matrixCounts };
         downloadCsvBtn.disabled = false;
         downloadMatrixBtn.disabled = false;
 
@@ -1014,6 +1137,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     downloadCSV(`${studyName}_similarity_matrix.csv`, lines.join('\n'));
   };
+
+  // Initial route
+  updateHeaderModeButtons();
+  route();
 
   // Expose for dashboard buttons
   window.viewResults = viewResults;
