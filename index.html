@@ -13,6 +13,8 @@
       --dark:#343a40;
       --success:#28a745;
       --border:#dee2e6;
+      --gray-light:#f1f3f5;
+      --gray-dark:#6c757d;
     }
 
     * { box-sizing:border-box; margin:0; padding:0; font-family:'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif }
@@ -60,19 +62,20 @@
     .muted { color:#6c757d }
     .badge { display:inline-block; padding:.1rem .4rem; border-radius:.25rem; font-size:.8rem; background:#edf2ff; color:#2f4e8b; border:1px solid #dbe4ff }
 
-    /* Participant workspace layout (cards left, canvas right) */
-    .workspace { display:grid; grid-template-columns: 340px 1fr; gap:18px; align-items:start; }
-    .left-panel {
-      background:#d1d1cf; border:1px solid #c5c5c3; border-radius:10px; padding:12px;
-      position:sticky; top:12px; max-height:calc(100vh - 180px); overflow:auto;
-    }
-    .left-panel h3 { margin:.25rem 0 .5rem; }
-    .cards-list { display:flex; flex-direction:column; gap:.5rem; }
-
+    /* Mobile-responsive workspace */
+    .workspace { display:grid; grid-template-columns: 1fr; gap:18px; align-items:start; }
+    .left-panel, .right-panel { background:#d1d1cf; border:1px solid #c5c5c3; border-radius:10px; padding:12px; }
+    .left-panel { position:sticky; top:12px; max-height:calc(100vh - 180px); }
     .right-panel { min-height:60vh; }
-    .toolbar { margin-bottom:.5rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap }
 
-    /* Step boxes on the canvas before categories appear */
+    @media (min-width: 768px) {
+      .workspace { grid-template-columns: 340px 1fr; }
+    }
+
+    .toolbar { margin-bottom:.5rem; display:flex; gap:.5rem; flex-wrap:wrap; flex-direction:column; }
+    .toolbar-row { display:flex; gap:.5rem; flex-wrap:wrap; }
+
+    /* Steps */
     .steps { display:flex; flex-direction:column; gap:18px; margin-bottom:18px; }
     .stepbox {
       border:2px dashed #ddd; border-radius:14px; padding:18px; background:#fff;
@@ -87,11 +90,11 @@
 
     /* Categories canvas */
     .categories-wrap {
-      display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
       gap:16px;
     }
 
-    /* Category card with dark header */
+    /* Category card */
     .category {
       background:#fff; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,.06); border:1px solid var(--border); overflow:hidden;
     }
@@ -109,14 +112,14 @@
     }
     .cat-footer { text-align:center; font-size:.75rem; color:#6b6b6b; padding:.25rem .5rem .6rem; text-transform:uppercase; letter-spacing:.02em }
 
-    /* Modal (participant info + instructions) */
+    /* Modal */
     .modal-backdrop {
       position:fixed; inset:0; background:rgba(0,0,0,.5);
       display:flex; align-items:center; justify-content:center;
       z-index:9999; padding:1rem;
     }
     .modal {
-      background:#fff; border-radius:10px; width:min(640px, 100%); padding:1.25rem 1.25rem 1rem;
+      background:#fff; border-radius:10px; width:min(90%, 640px); padding:1.25rem 1.25rem 1rem;
       box-shadow:0 10px 30px rgba(0,0,0,.25);
     }
     .modal h3 { margin-bottom:.5rem }
@@ -130,23 +133,34 @@
     .modal ol li { margin: .25rem 0; }
     .modal strong { font-weight:700; }
 
-    /* Tabs (results) */
+    /* Tabs */
     .tabs { display:flex; gap:.5rem; margin: .5rem 0 1rem; border-bottom:1px solid var(--border) }
     .tab-btn { background:transparent; color:var(--dark); border:none; padding:.5rem .75rem; cursor:pointer; border-bottom:3px solid transparent }
     .tab-btn.active { border-bottom-color:var(--primary); color:var(--primary); font-weight:600 }
     .tab-pane { display:none }
     .tab-pane.active { display:block }
 
-    /* Simple bar chart */
+    /* Chart */
     .chart-wrap { margin-top:.5rem }
     .chart { display:flex; align-items:flex-end; gap:8px; height:220px; padding:8px; border-left:1px solid var(--border); border-bottom:1px solid var(--border) }
     .bar { background:linear-gradient(180deg, var(--secondary), var(--primary)); flex:1; min-width:24px; border-radius:4px 4px 0 0; position:relative }
     .bar span { position:absolute; bottom:100%; transform:translateY(-4px); font-size:.8rem; color:var(--dark) }
     .xlabels { display:flex; gap:8px; margin-top:4px }
     .xlabel { flex:1; min-width:24px; text-align:center; font-size:.8rem; color:var(--dark) }
+
+    /* Category frequency chart */
+    .cat-frequency-chart { display:flex; flex-direction:column; gap:8px; margin-top:1rem; }
+    .cat-frequency-bar { background:linear-gradient(180deg, var(--accent), #ff8e8e); padding:4px 8px; border-radius:4px; color:white; }
+
+    /* Results section */
+    #resultsView .card-header { background:#f8f9fa; padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    #resultsView .card-body { padding:1rem; }
+
+    /* Accessibility focus */
+    :focus { outline:3px solid var(--primary); outline-offset:2px; }
   </style>
 
-  <!-- Firebase SDK (Compat) -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -164,10 +178,8 @@
       <form id="authForm" novalidate>
         <label for="email">Email</label>
         <input type="email" id="email" placeholder="name@example.com" autocomplete="username" inputmode="email" required>
-
         <label for="password">Password</label>
         <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
-
         <div>
           <button id="loginBtn" type="submit" class="btn">Login</button>
           <button id="signupBtn" type="button" class="btn btn-accent">Sign Up</button>
@@ -192,13 +204,10 @@
       <h2>Create a New Study</h2>
       <label for="studyName">Study name</label>
       <input type="text" id="studyName" placeholder="e.g., Information Architecture Test" required>
-
       <label for="cardsInput">Cards (one per line)</label>
       <textarea id="cardsInput" rows="8" placeholder="Card 1&#10;Card 2&#10;Card 3" required></textarea>
-
       <label for="instructionsInput">Instructions (optional)</label>
       <textarea id="instructionsInput" rows="4" placeholder="Describe what participants should do..."></textarea>
-
       <div>
         <button id="saveStudyBtn" class="btn btn-success">Save Study</button>
         <button id="cancelCreateBtn" class="btn">Cancel</button>
@@ -230,7 +239,6 @@
         </aside>
 
         <section class="right-panel">
-          <!-- Helper steps shown until at least one category exists -->
           <div id="stepsWrap" class="steps">
             <div class="stepbox">
               <h3>Step 1</h3>
@@ -248,8 +256,11 @@
           </div>
 
           <div class="toolbar">
-            <button id="addCategoryBtn" class="btn">Add Category</button>
-            <button id="submitSortingBtn" class="btn btn-success">Finish</button>
+            <div class="toolbar-row">
+              <button id="addCategoryBtn" class="btn">Add Category</button>
+              <button id="submitSortingBtn" class="btn btn-success">Finish</button>
+            </div>
+            <button id="exportMatrixBtn" class="btn btn-accent" style="display: none;">Export Similarity Matrix</button>
           </div>
 
           <div id="sortingArea" class="categories-wrap"></div>
@@ -259,28 +270,21 @@
 
     <!-- Participant Info Modal -->
     <div id="participantModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="participantModalTitle">
-      <div class="modal">
+      <div class="modal" tabindex="-1">
         <h3 id="participantModalTitle">Before you begin</h3>
         <p>Please enter your details to proceed.</p>
-
         <label for="pName">Full name</label>
         <input id="pName" type="text" placeholder="Your name" required>
-
         <label for="pId">ID number</label>
         <input id="pId" type="text" placeholder="Your ID number" required>
-
         <label for="pAddress">Address</label>
         <textarea id="pAddress" rows="3" placeholder="Your address" required></textarea>
-
         <label for="pCourse">Course</label>
         <input id="pCourse" type="text" placeholder="Your course" required>
-
         <label for="pNationality">Nationality</label>
         <input id="pNationality" type="text" placeholder="Your nationality" required>
-
         <label for="pEthnicity">Ethnicity</label>
         <input id="pEthnicity" type="text" placeholder="Your ethnicity" required>
-
         <fieldset>
           <legend>Is your family home outside of Suva/Nausori? (Yes/No)</legend>
           <div class="radio-row">
@@ -288,16 +292,15 @@
             <label><input type="radio" name="pOutsideHome" value="No" required> No</label>
           </div>
         </fieldset>
-
         <div class="actions">
           <button id="startSortingBtn" class="btn btn-success">Continue</button>
         </div>
       </div>
     </div>
 
-    <!-- Instructions Modal (after details) -->
+    <!-- Instructions Modal -->
     <div id="instructionsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="instructionsModalTitle">
-      <div class="modal">
+      <div class="modal" tabindex="-1">
         <h3 id="instructionsModalTitle">Instructions</h3>
         <p><strong>Here's how it works:</strong></p>
         <ol>
@@ -322,25 +325,24 @@
         <button class="tab-btn" data-tab="matrix">Similarity Matrix</button>
       </div>
 
-      <!-- Participants Tab -->
       <div id="tabParticipants" class="tab-pane active">
         <div id="participantsSummary"></div>
         <div id="participantsDetails"></div>
       </div>
 
-      <!-- Categories Tab -->
       <div id="tabCategories" class="tab-pane">
         <div id="categoriesSummary"></div>
-        <div class="chart-wrap">
-          <div class="chart" id="categoriesChart"></div>
-          <div class="xlabels" id="categoriesLabels"></div>
+        <div id="categoriesChart" class="chart-wrap"></div>
+        <div id="categoryFrequencySection">
+          <h3>Top Category Names</h3>
+          <div id="categoryFrequencyChart" class="cat-frequency-chart"></div>
         </div>
       </div>
 
-      <!-- Matrix Tab -->
       <div id="tabMatrix" class="tab-pane">
         <div id="matrixMeta"></div>
         <div id="matrixTableWrap" class="table-wrap"></div>
+        <button id="exportMatrixCsvBtn" class="btn" style="margin-top:1rem;">Export Matrix as CSV</button>
       </div>
 
       <div style="margin-top: 1rem">
@@ -405,8 +407,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const categoriesChart = document.getElementById('categoriesChart');
   const categoriesLabels = document.getElementById('categoriesLabels');
 
+  const categoryFrequencyChart = document.getElementById('categoryFrequencyChart');
+  
   const matrixMeta = document.getElementById('matrixMeta');
   const matrixTableWrap = document.getElementById('matrixTableWrap');
+  const exportMatrixBtn = document.getElementById('exportMatrixBtn');
+  const exportMatrixCsvBtn = document.getElementById('exportMatrixCsvBtn');
 
   const authForm = document.getElementById('authForm');
   const emailInput = document.getElementById('email');
@@ -436,23 +442,34 @@ document.addEventListener('DOMContentLoaded', function() {
   // In-memory caches
   let participantMeta = null;
   let lastResultsCache = null;
+  let categoryFrequency = {};
 
-  // Helpers
+  // ===== SANITIZATION =====
+  function sanitize(input) {
+    const temp = document.createElement('div');
+    temp.textContent = input || '';
+    return temp.innerHTML;
+  }
+
+  // ===== UTILITIES =====
   function show(view) {
     [authView, dashboardView, setupView, studyCreatedView, participantView, resultsView].forEach(v => v.classList.remove('active'));
     view.classList.add('active');
   }
+
   function activateTab(name) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
     tabParticipants.classList.toggle('active', name === 'participants');
     tabCategories.classList.toggle('active', name === 'categories');
     tabMatrix.classList.toggle('active', name === 'matrix');
   }
+
   function makeShareLink(uid, studyId) {
     const base = new URL(window.location.href);
     base.search = ''; base.hash = '';
-    return `${base.toString()}?uid=${uid}&study=${studyId}`;
+    return `${base.toString()}?uid=${encodeURIComponent(uid)}&study=${encodeURIComponent(studyId)}`;
   }
+
   function formatDuration(ms) {
     if (typeof ms !== 'number' || !isFinite(ms) || ms < 0) return '';
     let s = Math.floor(ms / 1000);
@@ -465,20 +482,45 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // CSV helpers
-  function csvEscape(v) { const s = (v == null ? '' : String(v)); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  function csvEscape(v) { 
+    const s = (v == null ? '' : String(v)); 
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; 
+  }
+
   function downloadCSV(filename, text) {
     const blob = new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8;" });
-    if (navigator.msSaveBlob) { navigator.msSaveBlob(blob, filename); }
-    else { const link = document.createElement('a'); const url = URL.createObjectURL(blob);
-      link.href = url; link.download = filename; link.style.visibility = 'hidden';
-      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    if (navigator.msSaveBlob) { 
+      navigator.msSaveBlob(blob, filename); 
+    } else { 
+      const link = document.createElement('a'); 
+      const url = URL.createObjectURL(blob);
+      link.href = url; 
+      link.download = filename; 
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link); 
+      link.click(); 
+      document.body.removeChild(link);
       setTimeout(() => URL.revokeObjectURL(url), 0);
     }
   }
 
   // Auth actions
-  async function doLogin(){ try{ await auth.signInWithEmailAndPassword(emailInput.value.trim(), passwordInput.value); }catch(e){ alert(e.message); } }
-  async function doSignup(){ try{ await auth.createUserWithEmailAndPassword(emailInput.value.trim(), passwordInput.value); }catch(e){ alert(e.message); } }
+  async function doLogin(){
+    try {
+      await auth.signInWithEmailAndPassword(emailInput.value.trim(), passwordInput.value);
+    } catch(e) {
+      alert(e.message);
+    }
+  }
+
+  async function doSignup(){
+    try {
+      await auth.createUserWithEmailAndPassword(emailInput.value.trim(), passwordInput.value);
+    } catch(e) {
+      alert(e.message);
+    }
+  }
+
   authForm.addEventListener('submit', e => { e.preventDefault(); doLogin(); });
   document.getElementById('loginBtn').onclick = doLogin;
   document.getElementById('signupBtn').onclick = doSignup;
@@ -487,128 +529,229 @@ document.addEventListener('DOMContentLoaded', function() {
   // Create study flow
   document.getElementById('createStudyBtn').onclick = () => { show(setupView); setTimeout(()=>studyNameInput.focus(),0); };
   document.getElementById('cancelCreateBtn').onclick = () => { show(dashboardView); document.getElementById('createStudyBtn').focus(); };
+  
   document.getElementById('saveStudyBtn').onclick = () => {
-    const user = auth.currentUser; if(!user){ alert('You must be logged in to save a study.'); return; }
+    const user = auth.currentUser;
+    if(!user){ alert('You must be logged in to save a study.'); return; }
     const name = studyNameInput.value.trim();
-    const cards = cardsInput.value.split('\n').map(l=>l.trim()).filter(Boolean);
+    const cards = cardsInput.value.split('\n').map(l=>l.trim()).filter(Boolean).map(sanitize);
     if(!name || cards.length===0){ alert('Enter name and at least one card'); return; }
     const studyId = 'study_'+Date.now();
-    const study = { id:studyId, name, cards, instructions:instructionsInput.value.trim(), createdAt:new Date().toISOString(), ownerUid:user.uid, isPublic:true };
+    const study = { 
+      id:studyId, 
+      name: sanitize(name), 
+      cards: cards, 
+      instructions: sanitize(instructionsInput.value.trim()), 
+      createdAt:new Date().toISOString(), 
+      ownerUid:user.uid, 
+      isPublic:true 
+    };
     db.ref(`users/${user.uid}/studies/${studyId}`).set(study).then(()=>{
-      const base = new URL(window.location.href); base.search=''; base.hash='';
-      studyLinkInput.value = `${base.toString()}?uid=${user.uid}&study=${studyId}`;
+      const link = makeShareLink(user.uid, studyId);
+      studyLinkInput.value = link;
       show(studyCreatedView);
       document.getElementById('copyLinkBtn').focus();
     }).catch(err=>alert(err.message));
   };
+
   document.getElementById('backToDashboardBtn').onclick = () => show(dashboardView);
+  
   document.getElementById('copyLinkBtn').onclick = async () => {
-    try{ await navigator.clipboard.writeText(studyLinkInput.value); alert('Link copied!'); }
-    catch{ studyLinkInput.select(); document.execCommand('copy'); alert('Link copied!'); }
+    try {
+      await navigator.clipboard.writeText(studyLinkInput.value);
+      alert('Link copied!');
+    } catch {
+      studyLinkInput.select();
+      document.execCommand('copy');
+      alert('Link copied!');
+    }
   };
+
   document.getElementById('backToDashboardFromResultsBtn').onclick = () => show(dashboardView);
 
   // Migration
   async function migrateOldStudiesToUser(uid){
     try{
       const snap = await db.ref('studies').orderByChild('ownerUid').equalTo(uid).once('value');
-      const oldStudies = snap.val() || {}; const ids = Object.keys(oldStudies);
-      if(!ids.length){ alert('No old studies found under /studies for this account.'); return; }
-      const updates = {}; ids.forEach(studyId=>{ updates[`users/${uid}/studies/${studyId}`]=oldStudies[studyId]; });
-      await db.ref().update(updates); alert('Migration completed! Reload the dashboard to see your studies.');
-    }catch(err){ console.error('Migration error:',err); alert('Migration failed: '+err.message); }
+      const oldStudies = snap.val() || {}; 
+      const ids = Object.keys(oldStudies);
+      if(!ids.length){ 
+        alert('No old studies found under /studies for this account.'); 
+        return; 
+      }
+      const updates = {}; 
+      ids.forEach(studyId=>{ 
+        updates[`users/${uid}/studies/${studyId}`] = { ...oldStudies[studyId], isPublic: true };
+      });
+      await db.ref().update(updates);
+      alert('Migration completed! Reload the dashboard to see your studies.');
+    } catch(err) {
+      console.error('Migration error:',err);
+      alert('Migration failed: '+err.message);
+    }
   }
-  document.getElementById('migrateBtn').onclick = () => { const user=auth.currentUser; if(!user){ alert('You must be logged in as a researcher to migrate.'); return; } migrateOldStudiesToUser(user.uid); };
+  document.getElementById('migrateBtn').onclick = () => {
+    const user=auth.currentUser;
+    if(!user){ alert('You must be logged in as a researcher to migrate.'); return; }
+    migrateOldStudiesToUser(user.uid);
+  };
 
   // Auth state change
   auth.onAuthStateChanged(user=>{
-    if(hasParticipantLink){ show(participantView); return; }
-    if(user){ show(dashboardView); showDashboard(user.uid); document.getElementById('createStudyBtn').focus(); }
-    else{ show(authView); document.getElementById('email').focus(); }
+    if(hasParticipantLink){ 
+      show(participantView);
+      loadParticipantView(pUid, pStudyId);
+    } else if(user) {
+      show(dashboardView);
+      showDashboard(user.uid);
+      document.getElementById('createStudyBtn').focus();
+    } else {
+      show(authView);
+      document.getElementById('email').focus();
+    }
   });
 
   // Dashboard listing
   function showDashboard(uid){
-    studiesList.textContent=''; const seen=new Set();
+    studiesList.textContent='';
+    const seen = new Set();
     db.ref(`users/${uid}/studies`).once('value').then(snap=>{
-      const data=snap.val()||{}; Object.entries(data).forEach(([studyId,study])=>{ if(seen.has(studyId))return; addStudyToDashboard(uid,studyId,study); seen.add(studyId); });
+      const data=snap.val()||{};
+      Object.entries(data).forEach(([studyId,study])=>{
+        if(seen.has(studyId)) return;
+        addStudyToDashboard(uid, studyId, study);
+        seen.add(studyId);
+      });
     });
     db.ref('studies').orderByChild('ownerUid').equalTo(uid).once('value').then(snap=>{
-      const data=snap.val()||{}; Object.entries(data).forEach(([studyId,study])=>{ if(seen.has(studyId))return; addStudyToDashboard(uid,studyId,study); seen.add(studyId); });
+      const data=snap.val()||{};
+      Object.entries(data).forEach(([studyId,study])=>{
+        if(seen.has(studyId)) return;
+        addStudyToDashboard(uid, studyId, study);
+        seen.add(studyId);
+      });
     });
   }
+
   async function deleteStudy(uid, studyId, studyName, rowEl){
-    const confirmed = confirm(`Delete the study "${studyName||studyId}" and all of its results? This cannot be undone.`); if(!confirmed) return;
-    const buttons = rowEl ? rowEl.querySelectorAll('button') : []; buttons.forEach(b=>b.disabled=true);
+    const confirmed = confirm(`Delete "${studyName}" and all results? This cannot be undone.`);
+    if(!confirmed) return;
+    const buttons = rowEl ? rowEl.querySelectorAll('button') : [];
+    buttons.forEach(b=>b.disabled=true);
     try{
-      const updates = {}; updates[`users/${uid}/studies/${studyId}`]=null;
+      const updates = {};
+      updates[`users/${uid}/studies/${studyId}`] = null;
       const oldSnap = await db.ref(`studies/${studyId}`).once('value');
-      if(oldSnap.exists()){ const oldData=oldSnap.val(); if(!oldData.ownerUid || oldData.ownerUid===uid) updates[`studies/${studyId}`]=null; }
+      if(oldSnap.exists()) {
+        const oldData = oldSnap.val();
+        if(!oldData.ownerUid || oldData.ownerUid === uid) updates[`studies/${studyId}`] = null;
+      }
       await db.ref().update(updates);
       if(rowEl && rowEl.parentNode) rowEl.parentNode.removeChild(rowEl);
-      if(lastResultsCache && lastResultsCache.uid===uid && lastResultsCache.studyId===studyId){ lastResultsCache=null; show(dashboardView); }
+      if(lastResultsCache && lastResultsCache.uid===uid && lastResultsCache.studyId===studyId) {
+        lastResultsCache = null;
+        show(dashboardView);
+      }
       alert('Study deleted.');
-    }catch(e){ console.error('Delete failed:',e); alert('Delete failed: '+e.message); buttons.forEach(b=>b.disabled=false); }
+    } catch(e) {
+      console.error('Delete failed:',e);
+      alert('Delete failed: '+e.message);
+      buttons.forEach(b=>b.disabled=false);
+    }
   }
+
   function addStudyToDashboard(uid, studyId, study){
-    const div=document.createElement('div'); div.className='study-item';
-    const left=document.createElement('div');
-    const title=document.createElement('div'); title.textContent=study.name||'(Untitled study)';
-    const pub=document.createElement('div'); pub.className='muted'; pub.innerHTML=`<span class="badge">${study.isPublic?'Published':'Unpublished'}</span>`;
-    left.appendChild(title); left.appendChild(pub);
-    const actions=document.createElement('div'); actions.className='study-actions';
-    const shareBtn=document.createElement('button'); shareBtn.className='btn'; shareBtn.textContent='Share Link';
-    shareBtn.onclick=async()=>{ const link=makeShareLink(uid,studyId); try{ await navigator.clipboard.writeText(link); alert('Link copied to clipboard.'); }catch{ prompt('Copy this link:',link); } };
-    const publishBtn=document.createElement('button'); publishBtn.className='btn'; publishBtn.textContent=study.isPublic?'Unpublish':'Publish';
-    publishBtn.onclick=async()=>{ const newVal=!Boolean(study.isPublic); await db.ref(`users/${uid}/studies/${studyId}/isPublic`).set(newVal); study.isPublic=newVal; publishBtn.textContent=newVal?'Unpublish':'Publish'; pub.innerHTML=`<span class="badge">${newVal?'Published':'Unpublished'}</span>`; };
-    const resultsBtn=document.createElement('button'); resultsBtn.className='btn btn-success'; resultsBtn.textContent='Results'; resultsBtn.onclick=()=>viewResults(uid,studyId);
-    const deleteBtn=document.createElement('button'); deleteBtn.className='btn btn-accent'; deleteBtn.textContent='Delete'; deleteBtn.onclick=()=>deleteStudy(uid,studyId,study.name,div);
-    actions.appendChild(shareBtn); actions.appendChild(publishBtn); actions.appendChild(resultsBtn); actions.appendChild(deleteBtn);
-    div.appendChild(left); div.appendChild(actions); studiesList.appendChild(div);
+    const div = document.createElement('div');
+    div.className = 'study-item';
+    const left = document.createElement('div');
+    const title = document.createElement('div');
+    title.textContent = study.name || '(Untitled)';
+    const pub = document.createElement('div');
+    pub.className = 'muted';
+    pub.innerHTML = `<span class="badge">${study.isPublic?'Published':'Unpublished'}</span>`;
+    left.appendChild(title);
+    left.appendChild(pub);
+    const actions = document.createElement('div');
+    actions.className = 'study-actions';
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'btn';
+    shareBtn.textContent = 'Share Link';
+    shareBtn.onclick = async () => {
+      const link = makeShareLink(uid, studyId);
+      try {
+        await navigator.clipboard.writeText(link);
+        alert('Link copied to clipboard.');
+      } catch {
+        prompt('Copy this link:', link);
+      }
+    };
+    const publishBtn = document.createElement('button');
+    publishBtn.className = 'btn';
+    publishBtn.textContent = study.isPublic ? 'Unpublish' : 'Publish';
+    publishBtn.onclick = async () => {
+      const newVal = !study.isPublic;
+      await db.ref(`users/${uid}/studies/${studyId}/isPublic`).set(newVal);
+      study.isPublic = newVal;
+      publishBtn.textContent = newVal ? 'Unpublish' : 'Publish';
+      pub.innerHTML = `<span class="badge">${newVal?'Published':'Unpublished'}</span>`;
+    };
+    const resultsBtn = document.createElement('button');
+    resultsBtn.className = 'btn btn-success';
+    resultsBtn.textContent = 'Results';
+    resultsBtn.onclick = () => viewResults(uid, studyId);
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn btn-accent';
+    deleteBtn.textContent = 'Delete';
+    deleteBtn.onclick = () => deleteStudy(uid, studyId, study.name, div);
+    actions.appendChild(shareBtn);
+    actions.appendChild(publishBtn);
+    actions.appendChild(resultsBtn);
+    actions.appendChild(deleteBtn);
+    div.appendChild(left);
+    div.appendChild(actions);
+    studiesList.appendChild(div);
   }
 
-  // Participant layout
-  if(hasParticipantLink){
-    show(participantView);
-    participantStudyName.textContent='Loading study...';
-    participantStatus.textContent='Please wait while we prepare your card sort.';
-    loadParticipantView(pUid,pStudyId);
-  }
-
+  // ===== PARTICIPANT VIEW =====
   function updateStepsVisibility(){
-    const hasAny = sortingArea.querySelectorAll('.category').length > 0;
-    stepsWrap.classList.toggle('hidden', hasAny);
+    const hasCategories = sortingArea.querySelectorAll('.category').length > 0;
+    stepsWrap.classList.toggle('hidden', hasCategories);
   }
+
   function updateCategoryCount(cat){
     const count = cat.querySelectorAll('.cat-body .card').length;
-    cat.querySelector('.cat-footer').textContent = (count===1 ? '1 CARD' : `${count} CARDS`);
+    cat.querySelector('.cat-footer').textContent = count === 1 ? '1 CARD' : `${count} CARDS`;
     updateStepsVisibility();
   }
+
   function renameCategory(cat){
     const titleEl = cat.querySelector('.cat-title');
     const current = titleEl.textContent.trim();
-    const next = prompt('Enter category name', current || 'New category');
-    if(next!==null) titleEl.textContent = next.trim() || 'Unnamed';
+    const next = prompt('Category name', current || 'New category');
+    if(next !== null) titleEl.textContent = next.trim() || 'Unnamed';
   }
+
   function deleteCategory(cat){
-    // Move cards back to left panel, then remove category
     const cards = [...cat.querySelectorAll('.cat-body .card')];
     cards.forEach(c => availableCardsContainer.appendChild(c));
     cat.remove();
     updateStepsVisibility();
   }
+
   function toggleCollapse(cat){
-    const body = cat.querySelector('.cat-body'); const icon = cat.querySelector('.cat-toggle');
+    const body = cat.querySelector('.cat-body');
+    const icon = cat.querySelector('.cat-toggle');
     const isHidden = body.classList.toggle('hidden');
     icon.textContent = isHidden ? '▾' : '▴';
   }
 
   function makeCategory(name='Click to rename'){
-    const cat = document.createElement('div'); cat.className='category';
+    const cat = document.createElement('div');
+    cat.className = 'category';
     cat.innerHTML = `
       <div class="cat-header">
         <span class="cat-delete" title="Delete">🗑</span>
-        <span class="cat-title">${name}</span>
+        <span class="cat-title">${sanitize(name)}</span>
         <span class="cat-toggle" title="Collapse">▴</span>
       </div>
       <div class="cat-body"></div>
@@ -616,18 +759,16 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     sortingArea.appendChild(cat);
 
-    // Events
     cat.querySelector('.cat-delete').onclick = () => deleteCategory(cat);
     cat.querySelector('.cat-toggle').onclick = () => toggleCollapse(cat);
     cat.querySelector('.cat-header').onclick = (e) => {
-      // Avoid clicks on icons
       if (e.target.closest('.cat-delete') || e.target.closest('.cat-toggle')) return;
       renameCategory(cat);
     };
 
-    // Sortable for the category body
     new Sortable(cat.querySelector('.cat-body'), {
-      group:'cards', animation:150,
+      group: 'cards',
+      animation: 150,
       onAdd: () => updateCategoryCount(cat),
       onRemove: () => updateCategoryCount(cat)
     });
@@ -636,9 +777,131 @@ document.addEventListener('DOMContentLoaded', function() {
     return cat;
   }
 
-  function addCategory(){ makeCategory(); }
+  document.getElementById('addCategoryBtn').onclick = addCategory;
 
-  // Begin flow: details -> instructions -> mark started
+  function submitSorting() {
+    const uid = participantView.dataset.uid;
+    const studyId = participantView.dataset.studyId;
+    if(!uid || !studyId) { alert('Study not loaded yet.'); return; }
+    if(!participantMeta) { alert('Please enter your details before submitting.'); participantModal.classList.remove('hidden'); return; }
+
+    const categories = [];
+    sortingArea.querySelectorAll('.category').forEach(cat => {
+      const name = (cat.querySelector('.cat-title')?.textContent || '').trim();
+      const cards = [...cat.querySelectorAll('.cat-body .card')].map(c => c.dataset.cardText);
+      if(cards.length > 0) {
+        categories.push({ name: sanitize(name), cards: cards.map(sanitize) });
+        // Track category frequency
+        if(name) {
+          categoryFrequency[name] = (categoryFrequency[name] || 0) + 1;
+        }
+      }
+    });
+
+    if(categories.length === 0) {
+      alert('Please sort at least one card.');
+      return;
+    }
+
+    const startedAtIso = participantView.dataset.startedAt || null;
+    const now = new Date();
+    const resultData = {
+      participant: Object.fromEntries(
+        Object.entries(participantMeta).map(([k,v]) => [k, sanitize(v)])
+      ),
+      categories: categories,
+      status: 'completed',
+      completedAt: now.toISOString()
+    };
+    if(startedAtIso) {
+      const durationMs = now.getTime() - new Date(startedAtIso).getTime();
+      resultData.durationMs = durationMs;
+    }
+
+    const resultsRef = db.ref(`users/${uid}/studies/${studyId}/results`);
+    const existingKey = participantView.dataset.resultKey;
+    const promise = existingKey ? 
+      resultsRef.child(existingKey).update(resultData) : 
+      resultsRef.push(resultData);
+
+    promise.then(() => {
+      participantView.innerHTML = '<h2>Thank you!</h2><p>Your responses have been recorded.</p>';
+    }).catch(err => alert(err.message));
+  }
+
+  document.getElementById('submitSortingBtn').onclick = submitSorting;
+
+  function loadParticipantView(uid, studyId) {
+    participantStatus.textContent = 'Loading study...';
+    db.ref(`users/${uid}/studies/${studyId}`).once('value')
+      .then(async snap => {
+        const study = snap.val();
+        if(!study) {
+          participantStudyName.textContent = 'Study unavailable';
+          participantStatus.textContent = 'Study not found. Check the link.';
+          return;
+        }
+        if(study.isPublic !== true) {
+          participantStudyName.textContent = 'Study not published';
+          participantStatus.textContent = 'This study is not available to participants.';
+          return;
+        }
+
+        try {
+          participantStudyName.textContent = study.name || '';
+          if(study.instructions) {
+            participantInstructions.textContent = study.instructions;
+            participantInstructions.classList.remove('hidden');
+          } else {
+            participantInstructions.textContent = '';
+            participantInstructions.classList.add('hidden');
+          }
+
+          // Populate cards
+          availableCardsContainer.innerHTML = '';
+          (study.cards || []).forEach(card => {
+            const d = document.createElement('div');
+            d.className = 'card';
+            d.textContent = card;
+            d.dataset.cardText = card;
+            availableCardsContainer.appendChild(d);
+          });
+
+          new Sortable(availableCardsContainer, { group: 'cards', animation: 150 });
+
+          new Sortable(newCategoryDropzone, {
+            group: 'cards',
+            animation: 150,
+            onAdd: evt => {
+              const item = evt.item;
+              const cat = makeCategory();
+              cat.querySelector('.cat-body').appendChild(item);
+              updateCategoryCount(cat);
+            }
+          });
+
+          sortingArea.innerHTML = '';
+          categoryFrequency = {};
+          updateStepsVisibility();
+
+          participantView.dataset.uid = uid;
+          participantView.dataset.studyId = studyId;
+          participantStatus.textContent = '';
+          participantModal.classList.remove('hidden');
+          setTimeout(() => pName.focus(), 0);
+        } catch(err) {
+          console.error('Render error:', err);
+          participantStatus.textContent = 'Error loading study. Please refresh.';
+        }
+      })
+      .catch(err => {
+        console.error('DB read failed:', err);
+        participantStudyName.textContent = 'Unable to load study';
+        participantStatus.textContent = 'Study not accessible. Contact researcher.';
+      });
+  }
+
+  // Participant modal handlers
   startSortingBtn.onclick = () => {
     const name = pName.value.trim();
     const idNumber = pId.value.trim();
@@ -647,210 +910,342 @@ document.addEventListener('DOMContentLoaded', function() {
     const nationality = pNationality.value.trim();
     const ethnicity = pEthnicity.value.trim();
     const outsideHome = (document.querySelector('input[name="pOutsideHome"]:checked') || {}).value || '';
-    if(!name || !idNumber || !address || !course || !nationality || !ethnicity || !outsideHome){
-      alert('Please complete all fields to begin.'); return;
+    
+    if(!name || !idNumber || !address || !course || !nationality || !ethnicity || !outsideHome) {
+      alert('Please complete all fields');
+      return;
     }
-    participantMeta = { name, idNumber, address, course, nationality, ethnicity, outsideHome };
+    
+    participantMeta = { 
+      name, idNumber, address, course, nationality, ethnicity, outsideHome 
+    };
     participantModal.classList.add('hidden');
     instructionsModal.classList.remove('hidden');
-    setTimeout(()=>document.getElementById('beginSortingBtn').focus(),0);
+    setTimeout(() => beginSortingBtn.focus(), 0);
   };
+
   beginSortingBtn.onclick = async () => {
-    const uid = participantView.dataset.uid, studyId = participantView.dataset.studyId;
-    if(!uid||!studyId){ alert('Study not loaded yet.'); return; }
+    const uid = participantView.dataset.uid;
+    const studyId = participantView.dataset.studyId;
+    if(!uid || !studyId) { alert('Study not loaded'); return; }
     const startedAt = new Date().toISOString();
     participantView.dataset.startedAt = startedAt;
-    try{
+    try {
       const ref = db.ref(`users/${uid}/studies/${studyId}/results`).push();
-      await ref.set({ timestamp: startedAt, participant: participantMeta, status:'started' });
+      await ref.set({ timestamp: startedAt, participant: participantMeta, status: 'started' });
       participantView.dataset.resultKey = ref.key;
-    }catch(e){ console.warn('Could not create started result entry:', e); }
+    } catch(e) {
+      console.warn('Could not create started entry:', e);
+    }
     instructionsModal.classList.add('hidden');
   };
 
-  // Load participant study and initialize Sortables
-  async function loadParticipantView(uid, studyId){
-    participantStatus.textContent='Loading study...';
-    db.ref(`users/${uid}/studies/${studyId}`).once('value')
-      .then(async snap=>{
-        const study=snap.val();
-        if(!study){ participantStudyName.textContent='Study unavailable'; participantStatus.textContent='This study could not be found. Please check the link with the researcher.'; return; }
-        if(study.isPublic!==true){ participantStudyName.textContent='Study not published'; participantStatus.textContent='This study is currently not available to participants. Please contact the researcher.'; return; }
-
-        try{
-          participantStudyName.textContent=study.name||'';
-          if(study.instructions){ participantInstructions.textContent=study.instructions; participantInstructions.classList.remove('hidden'); }
-          else { participantInstructions.textContent=''; participantInstructions.classList.add('hidden'); }
-
-          // Populate cards list
-          availableCardsContainer.innerHTML='';
-          (study.cards||[]).forEach(card=>{
-            const d=document.createElement('div');
-            d.className='card'; d.textContent=card; d.dataset.cardText=card;
-            availableCardsContainer.appendChild(d);
-          });
-
-          // Initialize left panel sortable
-          new Sortable(availableCardsContainer, { group:'cards', animation:150 });
-
-          // Dropzone to create a new category by dropping a card here
-          new Sortable(newCategoryDropzone, {
-            group:'cards', animation:150,
-            onAdd: evt => {
-              const item = evt.item; // the dragged card element
-              const cat = makeCategory();
-              cat.querySelector('.cat-body').appendChild(item);
-              updateCategoryCount(cat);
-            }
-          });
-
-          sortingArea.innerHTML=''; // categories container (grid) starts empty
-          updateStepsVisibility();
-
-          participantView.dataset.uid = uid;
-          participantView.dataset.studyId = studyId;
-
-          participantStatus.textContent='';
-          participantMeta = null;
-          participantModal.classList.remove('hidden');
-          setTimeout(()=>pName.focus(),0);
-        }catch(err){ console.error('Render error:',err); participantStatus.textContent='Something went wrong while rendering the study. Please refresh the page.'; }
-      })
-      .catch(err=>{ console.error('DB read failed:',err); participantStudyName.textContent='Unable to load study'; participantStatus.textContent='This study is not publicly accessible. Ask the researcher to publish it.'; });
-  }
-
-  // Submit sorting
-  function submitSorting(){
-    const uid = participantView.dataset.uid, studyId = participantView.dataset.studyId;
-    if(!uid||!studyId){ alert('Study not loaded yet.'); return; }
-    if(!participantMeta){ alert('Please enter your details before submitting.'); participantModal.classList.remove('hidden'); return; }
-
-    const cats = [];
-    sortingArea.querySelectorAll('.category').forEach(cat=>{
-      const name = (cat.querySelector('.cat-title')?.textContent || '').trim() || 'Unnamed';
-      const cards = [...cat.querySelectorAll('.cat-body .card')].map(c=>c.dataset.cardText);
-      if(cards.length>0) cats.push({ name, cards });
-    });
-    if(cats.length===0){ alert('Please sort at least one card.'); return; }
-
-    const startedAtIso = participantView.dataset.startedAt || null;
-    const now = new Date();
-    const resultData = { participant: participantMeta, categories: cats, status:'completed', completedAt: now.toISOString() };
-    if(startedAtIso){ const durationMs = now.getTime()-new Date(startedAtIso).getTime(); resultData.durationMs = durationMs; }
-
-    const resultsRef = db.ref(`users/${uid}/studies/${studyId}/results`);
-    const existingKey = participantView.dataset.resultKey;
-    const promise = existingKey ? resultsRef.child(existingKey).update(resultData) : resultsRef.push({ timestamp: now.toISOString(), ...resultData });
-
-    promise.then(()=>{ participantView.innerHTML='<h2>Thank you!</h2><p>Your responses have been recorded.</p>'; }).catch(err=>alert(err.message));
-  }
-  document.getElementById('addCategoryBtn').onclick = addCategory;
-  document.getElementById('submitSortingBtn').onclick = submitSorting;
-
-  // Tabs
-  tabButtons.forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
-
-  // Results view
-  function viewResults(uid, studyId){
-    db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap=>{
-      const study=snap.val(); resultsStudyName.textContent=study?.name||'';
-      db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2=>{
-        const results=snap2.val()||{}; lastResultsCache=null; downloadCsvBtn.disabled=true;
-        let arr=Object.values(results);
-        if(arr.length===0){
-          participantsSummary.textContent='No results yet.';
-          participantsDetails.innerHTML=''; categoriesSummary.textContent='';
-          categoriesChart.innerHTML=''; categoriesLabels.innerHTML='';
-          matrixMeta.textContent=''; matrixTableWrap.innerHTML='';
-          show(resultsView); activateTab('participants'); return;
+  // ===== RESULTS VIEW =====
+  function viewResults(uid, studyId) {
+    db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => {
+      const study = snap.val();
+      resultsStudyName.textContent = study?.name || '';
+      db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => {
+        const results = snap2.val() || {};
+        lastResultsCache = null;
+        downloadCsvBtn.disabled = true;
+        exportMatrixCsvBtn.style.display = 'none';
+        let arr = Object.values(results);
+        
+        if(arr.length === 0) {
+          participantsSummary.textContent = 'No results yet.';
+          participantsDetails.innerHTML = '';
+          categoriesSummary.textContent = '';
+          categoriesChart.innerHTML = '';
+          matrixMeta.textContent = '';
+          matrixTableWrap.innerHTML = '';
+          categoryFrequencyChart.innerHTML = '';
+          show(resultsView);
+          activateTab('participants');
+          return;
         }
-        arr = arr.sort((a,b)=>new Date(a.timestamp||0)-new Date(b.timestamp||0));
-        const completed = arr.filter(r=>r.status==='completed' || Array.isArray(r.categories));
-        const startedCount = arr.length, completedCount = completed.length;
-        const durations = completed.map(r=>r.durationMs).filter(v=>typeof v==='number'&&isFinite(v)&&v>=0);
-        const avgDurationMs = durations.length ? Math.round(durations.reduce((a,b)=>a+b,0)/durations.length) : null;
 
-        participantsSummary.textContent = `Started: ${startedCount} | Completed: ${completedCount} | Avg sorting time: ${avgDurationMs!=null?formatDuration(avgDurationMs)+` (n=${durations.length})`:'N/A'}`;
-        participantsDetails.innerHTML='';
-        completed.forEach((res,i)=>{
-          const w=document.createElement('div');
-          const h4=document.createElement('h4'); const pinfo=res.participant||{}; const dn=pinfo.name?` — ${pinfo.name}`:'';
-          h4.textContent=`Participant ${i+1}${dn}`; w.appendChild(h4);
-          const meta=document.createElement('div'); meta.className='muted';
-          meta.textContent=[
-            pinfo.idNumber?`ID: ${pinfo.idNumber}`:'', pinfo.course?`Course: ${pinfo.course}`:'',
-            pinfo.nationality?`Nationality: ${pinfo.nationality}`:'', pinfo.ethnicity?`Ethnicity: ${pinfo.ethnicity}`:'',
-            pinfo.outsideHome?`Home outside Suva/Nausori: ${pinfo.outsideHome}`:'',
-            res.completedAt?`Completed: ${new Date(res.completedAt).toLocaleString()}`:(res.timestamp?`Time: ${new Date(res.timestamp).toLocaleString()}`:''),
-            typeof res.durationMs==='number'?`Duration: ${formatDuration(res.durationMs)}`:''
+        arr = arr.sort((a,b) => new Date(a.timestamp||0) - new Date(b.timestamp||0));
+        const completed = arr.filter(r => r.status === 'completed');
+        const startedCount = arr.length;
+        const completedCount = completed.length;
+        
+        // Participants Tab
+        const durations = completed.map(r => r.durationMs).filter(v => typeof v === 'number' && isFinite(v) && v >= 0);
+        const avgDurationMs = durations.length ? Math.round(durations.reduce((a,b) => a+b, 0) / durations.length) : null;
+        participantsSummary.textContent = `Started: ${startedCount} | Completed: ${completedCount} | Avg time: ${avgDurationMs ? formatDuration(avgDurationMs) + ` (n=${durations.length})` : 'N/A'}`;
+        
+        participantsDetails.innerHTML = '';
+        completed.forEach((res, i) => {
+          const w = document.createElement('div');
+          const h4 = document.createElement('h4');
+          const pinfo = res.participant || {};
+          h4.textContent = `Participant ${i+1} — ${pinfo.name || 'Unnamed'}`;
+          w.appendChild(h4);
+          
+          const meta = document.createElement('div');
+          meta.className = 'muted';
+          meta.textContent = [
+            pinfo.idNumber ? `ID: ${pinfo.idNumber}` : '',
+            pinfo.course ? `Course: ${pinfo.course}` : '',
+            pinfo.nationality ? `Nationality: ${pinfo.nationality}` : '',
+            pinfo.ethnicity ? `Ethnicity: ${pinfo.ethnicity}` : '',
+            pinfo.outsideHome ? `Home outside Suva/Nausori: ${pinfo.outsideHome}` : '',
+            res.completedAt ? `Completed: ${new Date(res.completedAt).toLocaleString()}` : (res.timestamp ? `Started: ${new Date(res.timestamp).toLocaleString()}` : ''),
+            typeof res.durationMs === 'number' ? `Duration: ${formatDuration(res.durationMs)}` : ''
           ].filter(Boolean).join(' | ');
           if(meta.textContent) w.appendChild(meta);
-          (res.categories||[]).forEach(cat=>{
-            const p=document.createElement('p'); const strong=document.createElement('strong');
-            strong.textContent=cat.name||'Unnamed'; p.appendChild(strong); p.append(' ');
-            (cat.cards||[]).forEach(c=>{ const chip=document.createElement('span'); chip.className='category-card'; chip.textContent=c; p.appendChild(chip); p.append(' '); });
+          
+          res.categories.forEach(cat => {
+            const p = document.createElement('p');
+            const strong = document.createElement('strong');
+            strong.textContent = cat.name || 'Unnamed';
+            p.appendChild(strong);
+            cat.cards.forEach(card => {
+              const chip = document.createElement('span');
+              chip.className = 'category-card';
+              chip.textContent = card;
+              p.appendChild(chip);
+            });
             w.appendChild(p);
           });
           participantsDetails.appendChild(w);
         });
 
-        // Categories tab
-        const catsPer = completed.map(r=>(r.categories||[]).length);
-        const avgCats = catsPer.length ? (catsPer.reduce((a,b)=>a+b,0)/catsPer.length) : 0;
-        categoriesSummary.textContent=`Average number of categories: ${avgCats.toFixed(2)} (n=${completedCount})`;
-        const dist = new Map(); catsPer.forEach(n=>dist.set(n,(dist.get(n)||0)+1));
-        const maxBuckets = dist.size ? Math.max(...dist.keys()) : 0;
-        categoriesChart.innerHTML=''; categoriesLabels.innerHTML='';
-        if(maxBuckets>0){
-          const counts=[]; for(let i=1;i<=maxBuckets;i++) counts.push(dist.get(i)||0);
-          const peak=Math.max(...counts,1);
-          counts.forEach((count,idx)=>{
-            const bar=document.createElement('div'); bar.className='bar'; bar.style.height=Math.round((count/peak)*100)+'%';
-            const val=document.createElement('span'); val.textContent=count; bar.appendChild(val); categoriesChart.appendChild(bar);
-            const xl=document.createElement('div'); xl.className='xlabel'; xl.textContent=String(idx+1); categoriesLabels.appendChild(xl);
+        // Categories Tab
+        const catCounts = completed.map(r => (r.categories || []).length);
+        const avgCats = catCounts.length ? (catCounts.reduce((a,b) => a+b, 0) / catCounts.length).toFixed(2) : 0;
+        categoriesSummary.textContent = `Average categories per participant: ${avgCats} (n=${completedCount})`;
+        
+        // Category distribution chart
+        categoriesChart.innerHTML = '';
+        categoriesLabels.innerHTML = '';
+        if(catCounts.length > 0) {
+          const maxBuckets = Math.max(...catCounts, 1);
+          catCounts.forEach((count, idx) => {
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            bar.style.height = Math.round((count / maxBuckets) * 100) + '%';
+            const val = document.createElement('span');
+            val.textContent = count;
+            bar.appendChild(val);
+            categoriesChart.appendChild(bar);
+            const xl = document.createElement('div');
+            xl.className = 'xlabel';
+            xl.textContent = `${idx+1}`;
+            categoriesLabels.appendChild(xl);
           });
-        }else{ const p=document.createElement('p'); p.textContent='No completed participants yet.'; categoriesChart.appendChild(p); }
+        } else {
+          const p = document.createElement('p');
+          p.textContent = 'No data available';
+          categoriesChart.appendChild(p);
+        }
+        
+        // Category Frequency Analysis
+        categoryFrequencyChart.innerHTML = '';
+        const sortedCats = Object.entries(categoryFrequency)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10);
+        
+        if(sortedCats.length > 0) {
+          sortedCats.forEach(([name, count]) => {
+            const bar = document.createElement('div');
+            bar.className = 'cat-frequency-bar';
+            bar.style.width = `${Math.min(100, (count / completedCount) * 100)}%`;
+            bar.textContent = `${name} — ${count} participants`;
+            categoryFrequencyChart.appendChild(bar);
+          });
+        } else {
+          categoryFrequencyChart.innerHTML = '<p>No categories created yet</p>';
+        }
 
-        // Matrix tab
-        matrixMeta.innerHTML=''; matrixTableWrap.innerHTML='';
-        const cards = study?.cards || []; const matrix={}; cards.forEach(a=>{ matrix[a]={}; cards.forEach(b=>matrix[a][b]=0); });
-        let totalCats=0; completed.forEach(r=>{ const catsR=r.categories||[]; totalCats+=catsR.length; catsR.forEach(cat=>{ const cs=cat.cards||[]; cs.forEach(a=>cs.forEach(b=>{ if(a!==b) matrix[a][b]+=1; })); }); });
-        const mm=document.createElement('p'); mm.textContent=`Started: ${startedCount} | Completed: ${completedCount} | Avg categories: ${completedCount?(totalCats/completedCount).toFixed(2):'0.00'}`; matrixMeta.appendChild(mm);
-        const table=document.createElement('table'); const thead=document.createElement('thead'); const hr=document.createElement('tr'); hr.appendChild(document.createElement('th'));
-        cards.forEach(c=>{ const th=document.createElement('th'); th.textContent=c; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
-        const tbody=document.createElement('tbody'); cards.forEach(a=>{ const tr=document.createElement('tr'); const rh=document.createElement('th'); rh.textContent=a; tr.appendChild(rh);
-          cards.forEach(b=>{ const td=document.createElement('td'); td.textContent=(a===b)?'-':matrix[a][b]; tr.appendChild(td); }); tbody.appendChild(tr);
-        }); table.appendChild(tbody); matrixTableWrap.appendChild(table);
-
-        lastResultsCache = { arr, study, uid, studyId }; downloadCsvBtn.disabled=false;
-        show(resultsView); activateTab('participants');
+        // Similarity Matrix Tab
+        const cards = study?.cards || [];
+        const matrix = {};
+        cards.forEach(a => {
+          matrix[a] = {};
+          cards.forEach(b => matrix[a][b] = 0);
+        });
+        
+        let totalCats = 0;
+        completed.forEach(r => {
+          const catsR = r.categories || [];
+          totalCats += catsR.length;
+          catsR.forEach(cat => {
+            const cs = cat.cards || [];
+            cs.forEach(a => cs.forEach(b => {
+              if(a !== b) matrix[a][b]++;
+            }));
+          });
+        });
+        
+        matrixMeta.innerHTML = '';
+        const totalCompleted = completed.length;
+        const avgCatsPerParticipant = totalCompleted ? (totalCats / totalCompleted).toFixed(2) : 0;
+        matrixMeta.textContent = `Completed: ${totalCompleted} participants | Avg categories: ${avgCatsPerParticipant}`;
+        
+        // Build matrix table with percentages
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const trHead = document.createElement('tr');
+        trHead.appendChild(document.createElement('th')); // Top-left empty
+        cards.forEach(card => {
+          const th = document.createElement('th');
+          th.textContent = card;
+          trHead.appendChild(th);
+        });
+        thead.appendChild(trHead);
+        table.appendChild(thead);
+        
+        const tbody = document.createElement('tbody');
+        cards.forEach(a => {
+          const tr = document.createElement('tr');
+          const th = document.createElement('th');
+          th.textContent = a;
+          tr.appendChild(th);
+          
+          cards.forEach(b => {
+            const td = document.createElement('td');
+            if(a === b) {
+              td.textContent = '-';
+            } else {
+              const count = matrix[a][b];
+              const percent = totalCompleted > 0 ? Math.round((count / totalCompleted) * 100) : 0;
+              td.textContent = `${count} (${percent}%)`;
+            }
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        matrixTableWrap.innerHTML = '';
+        matrixTableWrap.appendChild(table);
+        exportMatrixCsvBtn.style.display = 'inline-block';
+        
+        lastResultsCache = { arr, study, uid, studyId };
+        downloadCsvBtn.disabled = false;
+        show(resultsView);
+        activateTab('participants');
       });
     });
   }
 
-  // CSV export
-  document.getElementById('downloadCsvBtn').onclick = () => {
-    if(!lastResultsCache){ alert('No results to export.'); return; }
+  // Matrix CSV Export
+  exportMatrixCsvBtn.onclick = () => {
+    if(!lastResultsCache) return;
+    const { study, arr } = lastResultsCache;
+    const cards = study.cards || [];
+    const completed = arr.filter(r => r.status === 'completed');
+    const matrix = {};
+    cards.forEach(a => {
+      matrix[a] = {};
+      cards.forEach(b => matrix[a][b] = 0);
+    });
+    
+    completed.forEach(r => {
+      (r.categories || []).forEach(cat => {
+        const cs = cat.cards || [];
+        cs.forEach(a => cs.forEach(b => {
+          if(a !== b) matrix[a][b]++;
+        }));
+      });
+    });
+    
+    const total = completed.length;
+    const lines = [['', ...cards].join(',')];
+    cards.forEach(a => {
+      const row = [a];
+      cards.forEach(b => {
+        if(a === b) {
+          row.push('-');
+        } else {
+          const count = matrix[a][b];
+          const percent = total > 0 ? `${Math.round((count / total) * 100)}%` : '0%';
+          row.push(`${count} (${percent})`);
+        }
+      });
+      lines.push(row.join(','));
+    });
+    
+    downloadCSV(`${study.name || 'study'}_similarity_matrix.csv`, lines.join('\n'));
+  };
+
+  // General CSV Export
+  downloadCsvBtn.onclick = () => {
+    if(!lastResultsCache) return;
     const { arr, study } = lastResultsCache;
-    const studyName = (study?.name||'study').replace(/[^\w\-]+/g,'_');
-    const headers = ['Participant #','Timestamp','Name','ID Number','Address','Course','Nationality','Ethnicity','HomeOutsideSuvaNausori','Category','Card'];
-    const lines=[headers.join(',')];
-    let idx=0;
-    arr.forEach(res=>{
-      if(!(res.status==='completed'||Array.isArray(res.categories))) return;
-      idx+=1; const p=res.participant||{}; const ts=res.timestamp||res.completedAt||'';
-      (res.categories||[]).forEach(cat=>{
-        const catName=cat.name||'Unnamed';
-        (cat.cards||[]).forEach(card=>{
-          lines.push([csvEscape(idx),csvEscape(ts),csvEscape(p.name||''),csvEscape(p.idNumber||''),csvEscape(p.address||''),csvEscape(p.course||''),csvEscape(p.nationality||''),csvEscape(p.ethnicity||''),csvEscape(p.outsideHome||''),csvEscape(catName),csvEscape(card)].join(','));
+    const studyName = (study.name || 'study').replace(/[^\w\-]/g, '_');
+    const headers = ['Participant #','Timestamp','Name','ID','Address','Course','Nationality','Ethnicity','HomeOutside','Category','Card'];
+    const lines = [headers.join(',')];
+    let idx = 0;
+    
+    arr.forEach(res => {
+      if(res.status !== 'completed') return;
+      idx++;
+      const p = res.participant || {};
+      const ts = res.timestamp || res.completedAt || '';
+      
+      (res.categories || []).forEach(cat => {
+        (cat.cards || []).forEach(card => {
+          lines.push([
+            csvEscape(idx),
+            csvEscape(ts),
+            csvEscape(p.name || ''),
+            csvEscape(p.idNumber || ''),
+            csvEscape(p.address || ''),
+            csvEscape(p.course || ''),
+            csvEscape(p.nationality || ''),
+            csvEscape(p.ethnicity || ''),
+            csvEscape(p.outsideHome || ''),
+            csvEscape(cat.name || 'Unnamed'),
+            csvEscape(card)
+          ].join(','));
         });
       });
     });
+    
     downloadCSV(`${studyName}_results.csv`, lines.join('\n'));
   };
 
-  // Expose for dashboard buttons
-  window.viewResults = viewResults;
+  // ===== ACCESSIBILITY & MODAL HANDLING =====
+  // Close modals with ESC
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape') {
+      if(!participantModal.classList.contains('hidden')) {
+        participantModal.classList.add('hidden');
+      }
+      if(!instructionsModal.classList.contains('hidden')) {
+        instructionsModal.classList.add('hidden');
+      }
+    }
+  });
+
+  // Trap focus inside modals
+  const modals = [participantModal, instructionsModal];
+  modals.forEach(modal => {
+    modal.addEventListener('keydown', (e) => {
+      const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      
+      if(e.key === 'Tab') {
+        if(e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if(!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    });
+  });
+
+  // Initialize accessibility attributes
+  document.querySelectorAll('.modal').forEach(modal => {
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('role', 'dialog');
+    modal.querySelector('button').setAttribute('aria-label', 'Close');
+  });
 });
 </script>
 </body>
