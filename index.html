@@ -114,15 +114,18 @@
       background:#fff; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,.06); border:1px solid var(--border); overflow:hidden;
     }
     .cat-header {
-      background:#3d4038; color:#fff; padding:.5rem .75rem; font-weight:600; text-align:center; position:relative;
+      background:#3d4038; color:#fff; padding:.5rem .75rem; font-weight:600; text-align:center; position:relative; display:flex; align-items:center; justify-content:center; gap:.5rem
     }
     .cat-header:focus { outline:3px solid #9ec5fe; outline-offset:2px }
-    .cat-title { cursor:text }
-    .cat-delete, .cat-toggle {
-      position:absolute; top:6px; color:#fff; cursor:pointer; opacity:.9; user-select:none
+    .cat-title-input {
+      background:transparent; border:none; color:#fff; font-weight:600; text-align:center; width:70%; outline:none; padding:.15rem .25rem; border-bottom:1px dashed rgba(255,255,255,.35)
     }
-    .cat-delete { left:8px }
-    .cat-toggle { right:8px }
+    .cat-title-input::placeholder { color:#e7e7e7; opacity:.85 }
+    .cat-icon-btn {
+      background:transparent; border:none; color:#fff; cursor:pointer; padding:0 .25rem; font-size:1rem
+    }
+    .cat-icon-btn:focus { outline:2px solid #9ec5fe; border-radius:4px }
+
     .cat-body {
       padding:.5rem; background:#fff; margin:.5rem; border:1px solid var(--border); border-radius:8px; min-height:80px;
     }
@@ -143,6 +146,7 @@
     .modal {
       background:#fff; border-radius:10px; width:min(640px, 100%); padding:1.25rem 1.25rem 1rem;
       box-shadow:0 10px 30px rgba(0,0,0,.25);
+      max-height:90vh; overflow:auto; overscroll-behavior:contain;
     }
     .modal h3 { margin-bottom:.5rem }
     .modal p { margin:.25rem 0 1rem }
@@ -512,11 +516,11 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   function sanitizeText(v) {
     return String(v ?? '')
-      .replace(/<[^>]*>/g, '')           // strip tags
-      .replace(/[\u0000-\u001F\u007F]/g,'') // control chars
+      .replace(/<[^>]*>/g, '')
+      .replace(/[\u0000-\u001F\u007F]/g,'')
       .replace(/\s+/g,' ')
       .trim()
-      .slice(0, 500); // limit length
+      .slice(0, 200);
   }
 
   // CSV helpers
@@ -563,20 +567,12 @@ document.addEventListener('DOMContentLoaded', function() {
   };
   document.getElementById('backToDashboardFromResultsBtn').onclick = () => show(dashboardView);
 
-  // Auth state change
-  auth.onAuthStateChanged(user=>{
-    if(hasParticipantLink){ show(participantView); return; }
-    if(user){ show(dashboardView); showDashboard(user.uid); document.getElementById('createStudyBtn').focus(); }
-    else{ show(authView); document.getElementById('email').focus(); }
-  });
-
   // Dashboard listing
   function showDashboard(uid){
     studiesList.textContent=''; const seen=new Set();
     db.ref(`users/${uid}/studies`).once('value').then(snap=>{
       const data=snap.val()||{}; Object.entries(data).forEach(([studyId,study])=>{ if(seen.has(studyId))return; addStudyToDashboard(uid,studyId,study); seen.add(studyId); });
     });
-    // no "migrate old studies" feature anymore
   }
   async function deleteStudy(uid, studyId, studyName, rowEl){
     const confirmed = confirm(`Delete the study "${studyName||studyId}" and all of its results? This cannot be undone.`); if(!confirmed) return;
@@ -623,12 +619,6 @@ document.addEventListener('DOMContentLoaded', function() {
     cat.querySelector('.cat-footer').textContent = (count===1 ? '1 CARD' : `${count} CARDS`);
     updateStepsVisibility();
   }
-  function renameCategory(cat){
-    const titleEl = cat.querySelector('.cat-title');
-    const current = titleEl.textContent.trim();
-    const next = prompt('Enter category name', current || 'New category');
-    if(next!==null) titleEl.textContent = sanitizeText(next) || 'Unnamed';
-  }
   function deleteCategory(cat){
     const cards = [...cat.querySelectorAll('.cat-body .card')];
     cards.forEach(c => availableCardsContainer.appendChild(c));
@@ -642,13 +632,13 @@ document.addEventListener('DOMContentLoaded', function() {
     cat.querySelector('.cat-header').setAttribute('aria-expanded', String(!isHidden));
   }
 
-  function makeCategory(name='Click to rename'){
+  function makeCategory(name=''){
     const cat = document.createElement('div'); cat.className='category';
     cat.innerHTML = `
-      <div class="cat-header" tabindex="0" role="button" aria-expanded="true" aria-label="Category header. Press Enter to rename, Delete to remove, C to collapse">
-        <span class="cat-delete" title="Delete">🗑</span>
-        <span class="cat-title">${name}</span>
-        <span class="cat-toggle" title="Collapse">▴</span>
+      <div class="cat-header" tabindex="0" role="button" aria-expanded="true" aria-label="Category header. Press Enter to edit name, Delete to remove, C to collapse">
+        <button class="cat-icon-btn cat-delete" title="Delete" aria-label="Delete category">🗑</button>
+        <input class="cat-title-input" type="text" placeholder="Click to rename" value="${name ? sanitizeText(name) : ''}" maxlength="80" aria-label="Category name">
+        <button class="cat-icon-btn cat-toggle" title="Collapse" aria-label="Collapse">▴</button>
       </div>
       <div class="cat-body"></div>
       <div class="cat-footer">0 CARDS</div>
@@ -657,18 +647,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Events
     const header = cat.querySelector('.cat-header');
-    header.addEventListener('focus', () => { currentDropTargetCat = cat; });
+    const titleInput = cat.querySelector('.cat-title-input');
+    const delBtn = cat.querySelector('.cat-delete');
+    const togBtn = cat.querySelector('.cat-toggle');
+
+    function focusAsDropTarget() { currentDropTargetCat = cat; }
+    header.addEventListener('focus', focusAsDropTarget);
+    titleInput.addEventListener('focus', focusAsDropTarget);
+
+    // Sanitize as they type
+    titleInput.addEventListener('input', () => {
+      titleInput.value = sanitizeText(titleInput.value).slice(0, 80);
+    });
+
     header.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); renameCategory(cat); }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); titleInput.focus(); }
       else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteCategory(cat); }
       else if (e.key.toLowerCase() === 'c') { e.preventDefault(); toggleCollapse(cat); }
     });
-    cat.querySelector('.cat-delete').onclick = () => deleteCategory(cat);
-    cat.querySelector('.cat-toggle').onclick = () => toggleCollapse(cat);
-    header.onclick = (e) => {
-      if (e.target.closest('.cat-delete') || e.target.closest('.cat-toggle')) return;
-      renameCategory(cat);
-    };
+
+    delBtn.addEventListener('click', () => deleteCategory(cat));
+    delBtn.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' ') { e.preventDefault(); deleteCategory(cat); }});
+    togBtn.addEventListener('click', () => toggleCollapse(cat));
+    togBtn.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' ') { e.preventDefault(); toggleCollapse(cat); }});
+
+    // Clicking empty space in header focuses the input (not icons)
+    header.addEventListener('click', (e) => {
+      if (e.target === header) titleInput.focus();
+    });
 
     // Sortable for the category body
     new Sortable(cat.querySelector('.cat-body'), {
@@ -796,15 +802,22 @@ document.addEventListener('DOMContentLoaded', function() {
       .catch(err=>{ console.error('DB read failed:',err); participantStudyName.textContent='Unable to load study'; participantStatus.textContent='This study is not publicly accessible. Ask the researcher to publish it.'; });
   }
 
-  // Submit sorting
+  // Submit sorting (must sort ALL cards)
   function submitSorting(){
     const uid = participantView.dataset.uid, studyId = participantView.dataset.studyId;
     if(!uid||!studyId){ alert('Study not loaded yet.'); return; }
     if(!participantMeta){ alert('Please enter your details before submitting.'); participantModal.classList.remove('hidden'); return; }
 
+    const unsortedCount = availableCardsContainer.querySelectorAll('.card').length;
+    if (unsortedCount > 0) {
+      alert(`Please sort all cards before finishing. You still have ${unsortedCount} card(s) left.`);
+      availableCardsContainer.scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
+
     const cats = [];
     sortingArea.querySelectorAll('.category').forEach(cat=>{
-      const name = sanitizeText(cat.querySelector('.cat-title')?.textContent || 'Unnamed') || 'Unnamed';
+      const name = sanitizeText(cat.querySelector('.cat-title-input')?.value || 'Unnamed') || 'Unnamed';
       const cards = [...cat.querySelectorAll('.cat-body .card')].map(c=>c.dataset.cardText);
       if(cards.length>0) cats.push({ name, cards });
     });
@@ -826,7 +839,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Tabs
   tabButtons.forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
 
-  // Results
+  // Results (same as previous version with matrix percentages and CSVs)
   function viewResults(uid, studyId){
     db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap=>{
       const study=snap.val();
@@ -844,17 +857,14 @@ document.addEventListener('DOMContentLoaded', function() {
           show(resultsView); activateTab('participants'); return;
         }
 
-        // Sort by timestamp ascending if available
         arr = arr.sort((a,b)=>new Date(a.timestamp||0)-new Date(b.timestamp||0));
         const completed = arr.filter(r=>r.status==='completed' || Array.isArray(r.categories));
         const startedCount = arr.length, completedCount = completed.length;
 
-        // Participants summary
         const durations = completed.map(r=>r.durationMs).filter(v=>typeof v==='number'&&isFinite(v)&&v>=0);
         const avgDurationMs = durations.length ? Math.round(durations.reduce((a,b)=>a+b,0)/durations.length) : null;
         participantsSummary.textContent = `Started: ${startedCount} | Completed: ${completedCount} | Avg sorting time: ${avgDurationMs!=null?formatDuration(avgDurationMs)+` (n=${durations.length})`:'N/A'}`;
 
-        // Participants details
         participantsDetails.innerHTML='';
         completed.forEach((res,i)=>{
           const w=document.createElement('div');
@@ -878,11 +888,9 @@ document.addEventListener('DOMContentLoaded', function() {
           participantsDetails.appendChild(w);
         });
 
-        // Categories tab: distribution and frequency of names
         const catsPer = completed.map(r=>(r.categories||[]).length);
         const avgCats = catsPer.length ? (catsPer.reduce((a,b)=>a+b,0)/catsPer.length) : 0;
         categoriesSummary.textContent=`Average number of categories: ${avgCats.toFixed(2)} (n=${completedCount})`;
-
         const dist = new Map(); catsPer.forEach(n=>dist.set(n,(dist.get(n)||0)+1));
         const maxBuckets = dist.size ? Math.max(...dist.keys()) : 0;
         categoriesChart.innerHTML=''; categoriesLabels.innerHTML='';
@@ -896,8 +904,7 @@ document.addEventListener('DOMContentLoaded', function() {
           });
         }else{ const p=document.createElement('p'); p.textContent='No completed participants yet.'; categoriesChart.appendChild(p); }
 
-        // Category name frequency (case-insensitive)
-        const freqMap = new Map(); // key: normalized, value: {count, sample}
+        const freqMap = new Map();
         completed.forEach(r=>{
           (r.categories||[]).forEach(cat=>{
             const raw = String(cat.name||'Unnamed');
@@ -918,7 +925,6 @@ document.addEventListener('DOMContentLoaded', function() {
           const li = document.createElement('li'); li.textContent = 'No categories yet.'; categoryFreqList.appendChild(li);
         }
 
-        // Matrix tab (percentages)
         matrixMeta.innerHTML=''; matrixTableWrap.innerHTML='';
         const cards = study?.cards || [];
         const matrixCounts={}; cards.forEach(a=>{ matrixCounts[a]={}; cards.forEach(b=>matrixCounts[a][b]=0); });
@@ -933,7 +939,6 @@ document.addEventListener('DOMContentLoaded', function() {
           });
         });
 
-        // Render table with percentages
         const table=document.createElement('table'); const thead=document.createElement('thead'); const hr=document.createElement('tr'); hr.appendChild(document.createElement('th'));
         cards.forEach(c=>{ const th=document.createElement('th'); th.textContent=c; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
         const tbody=document.createElement('tbody');
@@ -958,7 +963,6 @@ document.addEventListener('DOMContentLoaded', function() {
         mm.textContent=`Percentages are of completed participants (n=${completedCount}).`;
         matrixMeta.appendChild(mm);
 
-        // Cache for CSV export
         lastResultsCache = { arr, completed, completedCount, study, uid, studyId, cards, matrixCounts };
         downloadCsvBtn.disabled = false;
         downloadMatrixBtn.disabled = false;
