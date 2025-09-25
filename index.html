@@ -69,10 +69,10 @@
     .left-panel h3 { margin:.25rem 0 .5rem; }
     .cards-list { display:flex; flex-direction:column; gap:.5rem; }
 
-    .right-panel { min-height:60vh; }
-    .toolbar { margin-bottom:.5rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap }
+    .right-panel { min-height:60vh; position:relative; }
+    .toolbar { margin-bottom:.5rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; justify-content:flex-end }
 
-    /* Step boxes on the canvas before categories appear */
+    /* Steps shown until a category exists */
     .steps { display:flex; flex-direction:column; gap:18px; margin-bottom:18px; }
     .stepbox {
       border:2px dashed #ddd; border-radius:14px; padding:18px; background:#fff;
@@ -81,8 +81,11 @@
     .stepbox h3 { font-size:1.35rem; margin-bottom:.5rem }
     .stepbox ol { margin-left:1.25rem }
     .stepbox li { margin:.25rem 0 }
+
+    /* Big dropzone for creating a new category (visible when no categories) */
     .new-cat-dropzone {
-      border:2px dashed #cfcfcf; border-radius:10px; min-height:90px; padding:12px; background:#fafafa; margin-top:.5rem;
+      border:2px dashed #cfcfcf; border-radius:10px; min-height:110px; padding:14px; background:#fafafa; margin-top:.5rem;
+      display:flex; align-items:center; justify-content:center; color:#666; font-weight:600;
     }
 
     /* Categories canvas */
@@ -108,6 +111,12 @@
       padding:.5rem; background:#fff; margin:.5rem; border:1px solid var(--border); border-radius:8px; min-height:80px;
     }
     .cat-footer { text-align:center; font-size:.75rem; color:#6b6b6b; padding:.25rem .5rem .6rem; text-transform:uppercase; letter-spacing:.02em }
+
+    /* Small drop tile to create new category (visible when categories exist) */
+    .new-cat-tile {
+      border:2px dashed #cfcfcf; border-radius:10px; min-height:90px; display:flex; align-items:center; justify-content:center;
+      background:#fafafa; color:#666; font-weight:600;
+    }
 
     /* Modal (participant info + instructions) */
     .modal-backdrop {
@@ -235,24 +244,25 @@
             <div class="stepbox">
               <h3>Step 1</h3>
               <ol>
-                <li>Review the list of cards on the left.</li>
-                <li>Split the cards into categories that feel right to you.</li>
-                <li>There’s no right or wrong way. Sort by your intuition.</li>
+                <li>Take note of the list of cards on the left.</li>
+                <li>Please, split these cards into categories that feel “right” to you.</li>
+                <li><strong>There’s no actual right or wrong way</strong> to do it. Simply sort them by intuition.</li>
               </ol>
             </div>
             <div class="stepbox">
               <h3>Step 2</h3>
               <p>Drag a card from the left and drop it here. This will create a new category.</p>
-              <div id="newCategoryDropzone" class="new-cat-dropzone"></div>
+              <div id="newCategoryDropzone" class="new-cat-dropzone">Drop here to create a new category</div>
             </div>
           </div>
 
           <div class="toolbar">
-            <button id="addCategoryBtn" class="btn">Add Category</button>
             <button id="submitSortingBtn" class="btn btn-success">Finish</button>
           </div>
 
           <div id="sortingArea" class="categories-wrap"></div>
+          <!-- When categories exist, show this tile to make new categories by dropping -->
+          <div id="newCategoryTile" class="new-cat-tile hidden">Drop here to create a new category</div>
         </section>
       </div>
     </div>
@@ -389,6 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const participantStatus = document.getElementById('participantStatus');
   const stepsWrap = document.getElementById('stepsWrap');
   const newCategoryDropzone = document.getElementById('newCategoryDropzone');
+  const newCategoryTile = document.getElementById('newCategoryTile');
 
   const resultsStudyName = document.getElementById('resultsStudyName');
 
@@ -578,6 +589,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function updateStepsVisibility(){
     const hasAny = sortingArea.querySelectorAll('.category').length > 0;
     stepsWrap.classList.toggle('hidden', hasAny);
+    newCategoryTile.classList.toggle('hidden', !hasAny);
   }
   function updateCategoryCount(cat){
     const count = cat.querySelectorAll('.cat-body .card').length;
@@ -591,7 +603,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if(next!==null) titleEl.textContent = next.trim() || 'Unnamed';
   }
   function deleteCategory(cat){
-    // Move cards back to left panel, then remove category
     const cards = [...cat.querySelectorAll('.cat-body .card')];
     cards.forEach(c => availableCardsContainer.appendChild(c));
     cat.remove();
@@ -620,7 +631,6 @@ document.addEventListener('DOMContentLoaded', function() {
     cat.querySelector('.cat-delete').onclick = () => deleteCategory(cat);
     cat.querySelector('.cat-toggle').onclick = () => toggleCollapse(cat);
     cat.querySelector('.cat-header').onclick = (e) => {
-      // Avoid clicks on icons
       if (e.target.closest('.cat-delete') || e.target.closest('.cat-toggle')) return;
       renameCategory(cat);
     };
@@ -635,8 +645,6 @@ document.addEventListener('DOMContentLoaded', function() {
     updateStepsVisibility();
     return cat;
   }
-
-  function addCategory(){ makeCategory(); }
 
   // Begin flow: details -> instructions -> mark started
   startSortingBtn.onclick = () => {
@@ -693,18 +701,29 @@ document.addEventListener('DOMContentLoaded', function() {
           // Initialize left panel sortable
           new Sortable(availableCardsContainer, { group:'cards', animation:150 });
 
-          // Dropzone to create a new category by dropping a card here
+          // Big "create new category" zone (visible when no categories yet)
           new Sortable(newCategoryDropzone, {
             group:'cards', animation:150,
             onAdd: evt => {
-              const item = evt.item; // the dragged card element
+              const item = evt.item;
               const cat = makeCategory();
               cat.querySelector('.cat-body').appendChild(item);
               updateCategoryCount(cat);
             }
           });
 
-          sortingArea.innerHTML=''; // categories container (grid) starts empty
+          // Tile to create new category when categories already exist
+          new Sortable(newCategoryTile, {
+            group:'cards', animation:150,
+            onAdd: evt => {
+              const item = evt.item;
+              const cat = makeCategory();
+              cat.querySelector('.cat-body').appendChild(item);
+              updateCategoryCount(cat);
+            }
+          });
+
+          sortingArea.innerHTML=''; // starts empty
           updateStepsVisibility();
 
           participantView.dataset.uid = uid;
@@ -744,7 +763,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     promise.then(()=>{ participantView.innerHTML='<h2>Thank you!</h2><p>Your responses have been recorded.</p>'; }).catch(err=>alert(err.message));
   }
-  document.getElementById('addCategoryBtn').onclick = addCategory;
   document.getElementById('submitSortingBtn').onclick = submitSorting;
 
   // Tabs
