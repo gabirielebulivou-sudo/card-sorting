@@ -206,6 +206,7 @@
       <h1>Open Card Sorting Tool</h1>
       <div id="welcomeBanner" class="muted" aria-live="polite"></div>
       <div id="headActions">
+        <!-- Researcher Login button removed on participant view (always hidden now) -->
         <button id="gotoResearcherBtn" class="btn btn-accent hidden" type="button">Researcher Login</button>
         <button id="gotoParticipantBtn" class="btn hidden" type="button">Back to Participant View</button>
       </div>
@@ -379,6 +380,21 @@
         <button class="tab-btn" data-tab="matrix">Similarity Matrix</button>
       </div>
 
+      <!-- Share results controls (researcher view) -->
+      <div id="shareSection" class="instructions hidden">
+        <strong>Share results</strong>
+        <div style="margin-top:.5rem">
+          <label style="display:inline-flex; align-items:center; gap:.5rem">
+            <input type="checkbox" id="toggleResultsPublic"> Enable public results link
+          </label>
+        </div>
+        <div id="publicResultsLinkRow" class="hidden" style="display:flex; gap:.5rem; margin-top:.5rem; align-items:center;">
+          <input type="text" id="publicResultsLink" readonly style="flex:1">
+          <button id="copyPublicResultsBtn" class="btn">Copy Public Link</button>
+        </div>
+        <div class="muted" style="margin-top:.25rem">Anyone with the link can view the results without logging in.</div>
+      </div>
+
       <!-- Participants Tab -->
       <div id="tabParticipants" class="tab-pane active">
         <div id="participantsSummary"></div>
@@ -494,15 +510,23 @@ document.addEventListener('DOMContentLoaded', function() {
   const startSortingBtn = document.getElementById('startSortingBtn');
   const beginSortingBtn = document.getElementById('beginSortingBtn');
 
-  // Results export
+  // Results export + share controls
   const downloadCsvBtn = document.getElementById('downloadCsvBtn');
   const downloadMatrixBtn = document.getElementById('downloadMatrixBtn');
+  const backToDashboardFromResultsBtn = document.getElementById('backToDashboardFromResultsBtn');
+  const shareSection = document.getElementById('shareSection');
+  const toggleResultsPublic = document.getElementById('toggleResultsPublic');
+  const publicResultsLinkRow = document.getElementById('publicResultsLinkRow');
+  const publicResultsLink = document.getElementById('publicResultsLink');
+  const copyPublicResultsBtn = document.getElementById('copyPublicResultsBtn');
 
-  // Participant link handling and mode switching
+  // Participant/public link handling and mode switching
   const params = new URLSearchParams(location.search);
   const pUid = params.get('uid');
   const pStudyId = params.get('study');
+  const viewMode = params.get('view');
   const hasParticipantLink = Boolean(pUid && pStudyId);
+  const isPublicResultsLink = Boolean(pUid && pStudyId && viewMode === 'results');
   let participantLoaded = false;
 
   const storedMode = sessionStorage.getItem('mode');
@@ -516,15 +540,15 @@ document.addEventListener('DOMContentLoaded', function() {
     route();
   }
   function updateHeaderModeButtons(){
+    // Always hide the Researcher Login button on the participant page/link
+    gotoResearcherBtn.classList.add('hidden');
+    // Optionally show "Back to Participant View" if someone is in researcher mode while a participant link exists
     if(hasParticipantLink){
-      gotoResearcherBtn.classList.toggle('hidden', appMode !== 'participant');
       gotoParticipantBtn.classList.toggle('hidden', appMode !== 'researcher');
     } else {
-      gotoResearcherBtn.classList.add('hidden');
       gotoParticipantBtn.classList.add('hidden');
     }
   }
-  gotoResearcherBtn.addEventListener('click', () => setMode('researcher'));
   gotoParticipantBtn.addEventListener('click', () => setMode('participant'));
 
   // In-memory caches
@@ -547,6 +571,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const base = new URL(window.location.href);
     base.search = ''; base.hash = '';
     return `${base.toString()}?uid=${uid}&study=${studyId}`;
+  }
+  function makePublicResultsLink(uid, studyId) {
+    const base = new URL(window.location.href);
+    base.search = ''; base.hash = '';
+    return `${base.toString()}?uid=${uid}&study=${studyId}&view=results`;
   }
   function formatDuration(ms) {
     if (typeof ms !== 'number' || !isFinite(ms) || ms < 0) return '';
@@ -629,8 +658,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Router based on mode + auth
+  // Router based on mode + auth + public results
   function route(){
+    // Public results viewer route (no auth required)
+    if (isPublicResultsLink) {
+      show(resultsView);
+      loadPublicResults(pUid, pStudyId);
+      return;
+    }
+
     const user = auth.currentUser;
     updateWelcome(user);
     updateHeaderModeButtons();
@@ -668,7 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const cards = cardsInput.value.split('\n').map(l=>sanitizeText(l)).filter(Boolean);
     if(!name || cards.length===0){ alert('Enter name and at least one card'); return; }
     const studyId = 'study_'+Date.now();
-    const study = { id:studyId, name, cards, instructions:sanitizeText(instructionsInput.value), createdAt:new Date().toISOString(), ownerUid:user.uid, isPublic:true };
+    const study = { id:studyId, name, cards, instructions:sanitizeText(instructionsInput.value), createdAt:new Date().toISOString(), ownerUid:user.uid, isPublic:true, resultsPublic:false };
     db.ref(`users/${user.uid}/studies/${studyId}`).set(study).then(()=>{
       const base = new URL(window.location.href); base.search=''; base.hash='';
       studyLinkInput.value = `${base.toString()}?uid=${user.uid}&study=${studyId}`;
@@ -689,7 +725,6 @@ document.addEventListener('DOMContentLoaded', function() {
     db.ref(`users/${uid}/studies`).once('value').then(snap=>{
       const data=snap.val()||{}; Object.entries(data).forEach(([studyId,study])=>{ if(seen.has(studyId))return; addStudyToDashboard(uid,studyId,study); seen.add(studyId); });
     });
-    // "Migrate old studies" removed
   }
   async function deleteStudy(uid, studyId, studyName, rowEl){
     const confirmed = confirm(`Delete the study "${studyName||studyId}" and all of its results? This cannot be undone.`); if(!confirmed) return;
@@ -962,137 +997,205 @@ document.addEventListener('DOMContentLoaded', function() {
   // Tabs
   tabButtons.forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
 
-  // Results
+  // Share controls (researcher)
+  function setupShareControls(uid, studyId, study){
+    shareSection.classList.remove('hidden');
+    toggleResultsPublic.checked = Boolean(study.resultsPublic);
+    publicResultsLink.value = makePublicResultsLink(uid, studyId);
+    publicResultsLinkRow.classList.toggle('hidden', !toggleResultsPublic.checked);
+
+    toggleResultsPublic.onchange = async () => {
+      const val = toggleResultsPublic.checked;
+      publicResultsLinkRow.classList.toggle('hidden', !val);
+      try { await db.ref(`users/${uid}/studies/${studyId}/resultsPublic`).set(val); }
+      catch(e){ alert('Failed to update sharing setting: ' + e.message); }
+    };
+    copyPublicResultsBtn.onclick = async () => {
+      try{ await navigator.clipboard.writeText(publicResultsLink.value); alert('Public results link copied!'); }
+      catch{ publicResultsLink.select(); document.execCommand('copy'); alert('Link copied!'); }
+    };
+  }
+
+  // Results UI builder (used by both researcher and public viewer)
+  function buildResultsUI(study, results){
+    let arr = Object.values(results || {});
+    lastResultsCache=null; downloadCsvBtn.disabled=true; downloadMatrixBtn.disabled=true;
+
+    if(arr.length===0){
+      participantsSummary.textContent='No results yet.';
+      participantsDetails.innerHTML=''; categoriesSummary.textContent='';
+      categoriesChart.innerHTML=''; categoriesLabels.innerHTML=''; categoryFreqList.innerHTML='';
+      matrixMeta.textContent=''; matrixTableWrap.innerHTML='';
+      show(resultsView); activateTab('participants'); return;
+    }
+
+    arr = arr.sort((a,b)=>new Date(a.timestamp||0)-new Date(b.timestamp||0));
+    const completed = arr.filter(r=>r.status==='completed' || Array.isArray(r.categories));
+    const startedCount = arr.length, completedCount = completed.length;
+
+    const durations = completed.map(r=>r.durationMs).filter(v=>typeof v==='number'&&isFinite(v)&&v>=0);
+    const avgDurationMs = durations.length ? Math.round(durations.reduce((a,b)=>a+b,0)/durations.length) : null;
+    participantsSummary.textContent = `Started: ${startedCount} | Completed: ${completedCount} | Avg sorting time: ${avgDurationMs!=null?formatDuration(avgDurationMs)+` (n=${durations.length})`:'N/A'}`;
+
+    participantsDetails.innerHTML='';
+    completed.forEach((res,i)=>{
+      const w=document.createElement('div');
+      const h4=document.createElement('h4'); const pinfo=res.participant||{}; const dn=pinfo.name?` — ${pinfo.name}`:'';
+      h4.textContent=`Participant ${i+1}${dn}`; w.appendChild(h4);
+      const meta=document.createElement('div'); meta.className='muted';
+      meta.textContent=[
+        pinfo.idNumber?`ID: ${pinfo.idNumber}`:'', pinfo.course?`Course: ${pinfo.course}`:'',
+        pinfo.nationality?`Nationality: ${pinfo.nationality}`:'', pinfo.ethnicity?`Ethnicity: ${pinfo.ethnicity}`:'',
+        pinfo.outsideHome?`Home outside Suva/Nausori: ${pinfo.outsideHome}`:'',
+        res.completedAt?`Completed: ${new Date(res.completedAt).toLocaleString()}`:(res.timestamp?`Time: ${new Date(res.timestamp).toLocaleString()}`:''),
+        typeof res.durationMs==='number'?`Duration: ${formatDuration(res.durationMs)}`:''
+      ].filter(Boolean).join(' | ');
+      if(meta.textContent) w.appendChild(meta);
+      (res.categories||[]).forEach(cat=>{
+        const p=document.createElement('p'); const strong=document.createElement('strong');
+        strong.textContent=cat.name||'Unnamed'; p.appendChild(strong); p.append(' ');
+        (cat.cards||[]).forEach(c=>{ const chip=document.createElement('span'); chip.className='category-card'; chip.textContent=c; p.appendChild(chip); p.append(' '); });
+        w.appendChild(p);
+      });
+      participantsDetails.appendChild(w);
+    });
+
+    // Categories tab: distribution and frequency of names
+    const catsPer = completed.map(r=>(r.categories||[]).length);
+    const avgCats = catsPer.length ? (catsPer.reduce((a,b)=>a+b,0)/catsPer.length) : 0;
+    categoriesSummary.textContent=`Average number of categories: ${avgCats.toFixed(2)} (n=${completedCount})`;
+
+    const dist = new Map(); catsPer.forEach(n=>dist.set(n,(dist.get(n)||0)+1));
+    const maxBuckets = dist.size ? Math.max(...dist.keys()) : 0;
+    categoriesChart.innerHTML=''; categoriesLabels.innerHTML='';
+    if(maxBuckets>0){
+      const counts=[]; for(let i=1;i<=maxBuckets;i++) counts.push(dist.get(i)||0);
+      const peak=Math.max(...counts,1);
+      counts.forEach((count,idx)=>{
+        const bar=document.createElement('div'); bar.className='bar'; bar.style.height=Math.round((count/peak)*100)+'%';
+        const val=document.createElement('span'); val.textContent=count; bar.appendChild(val); categoriesChart.appendChild(bar);
+        const xl=document.createElement('div'); xl.className='xlabel'; xl.textContent=String(idx+1); categoriesLabels.appendChild(xl);
+      });
+    }else{ const p=document.createElement('p'); p.textContent='No completed participants yet.'; categoriesChart.appendChild(p); }
+
+    // Category name frequency (case-insensitive)
+    const categoryFreqList = document.getElementById('categoryFreqList');
+    const freqMap = new Map();
+    completed.forEach(r=>{
+      (r.categories||[]).forEach(cat=>{
+        const raw = String(cat.name||'Unnamed');
+        const norm = sanitizeText(raw).toLowerCase() || 'unnamed';
+        if(!freqMap.has(norm)) freqMap.set(norm, {count:0, sample: raw.trim() || 'Unnamed'});
+        freqMap.get(norm).count++;
+      });
+    });
+    const freqArr = [...freqMap.entries()].sort((a,b)=>b[1].count - a[1].count).slice(0, 10);
+    categoryFreqList.innerHTML = '';
+    if(freqArr.length){
+      freqArr.forEach(([norm, info])=>{
+        const li = document.createElement('li');
+        li.textContent = `${info.sample} — ${info.count}`;
+        categoryFreqList.appendChild(li);
+      });
+    } else {
+      const li = document.createElement('li'); li.textContent = 'No categories yet.'; categoryFreqList.appendChild(li);
+    }
+
+    // Matrix tab (percentages)
+    matrixMeta.innerHTML=''; matrixTableWrap.innerHTML='';
+    const cards = study?.cards || [];
+    const matrixCounts={}; cards.forEach(a=>{ matrixCounts[a]={}; cards.forEach(b=>matrixCounts[a][b]=0); });
+
+    completed.forEach(r=>{
+      const catsR=r.categories||[];
+      catsR.forEach(cat=>{
+        const cs=cat.cards||[];
+        cs.forEach(a=>cs.forEach(b=>{
+          if(a!==b) matrixCounts[a][b]+=1;
+        }));
+      });
+    });
+
+    const table=document.createElement('table'); const thead=document.createElement('thead'); const hr=document.createElement('tr'); hr.appendChild(document.createElement('th'));
+    cards.forEach(c=>{ const th=document.createElement('th'); th.textContent=c; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
+    const tbody=document.createElement('tbody');
+    cards.forEach(a=>{
+      const tr=document.createElement('tr'); const rh=document.createElement('th'); rh.textContent=a; tr.appendChild(rh);
+      cards.forEach(b=>{
+        const td=document.createElement('td');
+        if(a===b){ td.textContent='—'; }
+        else{
+          const pct = completedCount ? (matrixCounts[a][b] / completedCount * 100) : 0;
+          td.textContent = `${pct.toFixed(0)}%`;
+          td.title = `${matrixCounts[a][b]} of ${completedCount} participants`;
+        }
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    matrixTableWrap.appendChild(table);
+
+    // Meta
+    const mm=document.createElement('p');
+    mm.textContent=`Percentages are of completed participants (n=${completedCount}).`;
+    matrixMeta.appendChild(mm);
+
+    // Cache for CSV export
+    lastResultsCache = { arr, completed, completedCount, study, cards, matrixCounts };
+    downloadCsvBtn.disabled = false;
+    downloadMatrixBtn.disabled = false;
+
+    show(resultsView); activateTab('participants');
+  }
+
   function viewResults(uid, studyId){
+    // Researcher results view + share controls
     db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap=>{
       const study=snap.val();
       resultsStudyName.textContent = study?.name || '';
-
+      setupShareControls(uid, studyId, study || {});
       db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2=>{
-        const results=snap2.val()||{}; lastResultsCache=null; downloadCsvBtn.disabled=true; downloadMatrixBtn.disabled=true;
-
-        let arr=Object.values(results);
-        if(arr.length===0){
-          participantsSummary.textContent='No results yet.';
-          participantsDetails.innerHTML=''; categoriesSummary.textContent='';
-          categoriesChart.innerHTML=''; categoriesLabels.innerHTML=''; categoryFreqList.innerHTML='';
-          matrixMeta.textContent=''; matrixTableWrap.innerHTML='';
-          show(resultsView); activateTab('participants'); return;
-        }
-
-        arr = arr.sort((a,b)=>new Date(a.timestamp||0)-new Date(b.timestamp||0));
-        const completed = arr.filter(r=>r.status==='completed' || Array.isArray(r.categories));
-        const startedCount = arr.length, completedCount = completed.length;
-
-        const durations = completed.map(r=>r.durationMs).filter(v=>typeof v==='number'&&isFinite(v)&&v>=0);
-        const avgDurationMs = durations.length ? Math.round(durations.reduce((a,b)=>a+b,0)/durations.length) : null;
-        participantsSummary.textContent = `Started: ${startedCount} | Completed: ${completedCount} | Avg sorting time: ${avgDurationMs!=null?formatDuration(avgDurationMs)+` (n=${durations.length})`:'N/A'}`;
-
-        participantsDetails.innerHTML='';
-        completed.forEach((res,i)=>{
-          const w=document.createElement('div');
-          const h4=document.createElement('h4'); const pinfo=res.participant||{}; const dn=pinfo.name?` — ${pinfo.name}`:'';
-          h4.textContent=`Participant ${i+1}${dn}`; w.appendChild(h4);
-          const meta=document.createElement('div'); meta.className='muted';
-          meta.textContent=[
-            pinfo.idNumber?`ID: ${pinfo.idNumber}`:'', pinfo.course?`Course: ${pinfo.course}`:'',
-            pinfo.nationality?`Nationality: ${pinfo.nationality}`:'', pinfo.ethnicity?`Ethnicity: ${pinfo.ethnicity}`:'',
-            pinfo.outsideHome?`Home outside Suva/Nausori: ${pinfo.outsideHome}`:'',
-            res.completedAt?`Completed: ${new Date(res.completedAt).toLocaleString()}`:(res.timestamp?`Time: ${new Date(res.timestamp).toLocaleString()}`:''),
-            typeof res.durationMs==='number'?`Duration: ${formatDuration(res.durationMs)}`:''
-          ].filter(Boolean).join(' | ');
-          if(meta.textContent) w.appendChild(meta);
-          (res.categories||[]).forEach(cat=>{
-            const p=document.createElement('p'); const strong=document.createElement('strong');
-            strong.textContent=cat.name||'Unnamed'; p.appendChild(strong); p.append(' ');
-            (cat.cards||[]).forEach(c=>{ const chip=document.createElement('span'); chip.className='category-card'; chip.textContent=c; p.appendChild(chip); p.append(' '); });
-            w.appendChild(p);
-          });
-          participantsDetails.appendChild(w);
-        });
-
-        const catsPer = completed.map(r=>(r.categories||[]).length);
-        const avgCats = catsPer.length ? (catsPer.reduce((a,b)=>a+b,0)/catsPer.length) : 0;
-        categoriesSummary.textContent=`Average number of categories: ${avgCats.toFixed(2)} (n=${completedCount})`;
-        const dist = new Map(); catsPer.forEach(n=>dist.set(n,(dist.get(n)||0)+1));
-        const maxBuckets = dist.size ? Math.max(...dist.keys()) : 0;
-        categoriesChart.innerHTML=''; categoriesLabels.innerHTML='';
-        if(maxBuckets>0){
-          const counts=[]; for(let i=1;i<=maxBuckets;i++) counts.push(dist.get(i)||0);
-          const peak=Math.max(...counts,1);
-          counts.forEach((count,idx)=>{
-            const bar=document.createElement('div'); bar.className='bar'; bar.style.height=Math.round((count/peak)*100)+'%';
-            const val=document.createElement('span'); val.textContent=count; bar.appendChild(val); categoriesChart.appendChild(bar);
-            const xl=document.createElement('div'); xl.className='xlabel'; xl.textContent=String(idx+1); categoriesLabels.appendChild(xl);
-          });
-        }else{ const p=document.createElement('p'); p.textContent='No completed participants yet.'; categoriesChart.appendChild(p); }
-
-        const freqMap = new Map();
-        completed.forEach(r=>{
-          (r.categories||[]).forEach(cat=>{
-            const raw = String(cat.name||'Unnamed');
-            const norm = sanitizeText(raw).toLowerCase() || 'unnamed';
-            if(!freqMap.has(norm)) freqMap.set(norm, {count:0, sample: raw.trim() || 'Unnamed'});
-            freqMap.get(norm).count++;
-          });
-        });
-        const freqArr = [...freqMap.entries()].sort((a,b)=>b[1].count - a[1].count).slice(0, 10);
-        categoryFreqList.innerHTML = '';
-        if(freqArr.length){
-          freqArr.forEach(([norm, info])=>{
-            const li = document.createElement('li');
-            li.textContent = `${info.sample} — ${info.count}`;
-            categoryFreqList.appendChild(li);
-          });
-        } else {
-          const li = document.createElement('li'); li.textContent = 'No categories yet.'; categoryFreqList.appendChild(li);
-        }
-
-        matrixMeta.innerHTML=''; matrixTableWrap.innerHTML='';
-        const cards = study?.cards || [];
-        const matrixCounts={}; cards.forEach(a=>{ matrixCounts[a]={}; cards.forEach(b=>matrixCounts[a][b]=0); });
-
-        completed.forEach(r=>{
-          const catsR=r.categories||[];
-          catsR.forEach(cat=>{
-            const cs=cat.cards||[];
-            cs.forEach(a=>cs.forEach(b=>{
-              if(a!==b) matrixCounts[a][b]+=1;
-            }));
-          });
-        });
-
-        const table=document.createElement('table'); const thead=document.createElement('thead'); const hr=document.createElement('tr'); hr.appendChild(document.createElement('th'));
-        cards.forEach(c=>{ const th=document.createElement('th'); th.textContent=c; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
-        const tbody=document.createElement('tbody');
-        cards.forEach(a=>{
-          const tr=document.createElement('tr'); const rh=document.createElement('th'); rh.textContent=a; tr.appendChild(rh);
-          cards.forEach(b=>{
-            const td=document.createElement('td');
-            if(a===b){ td.textContent='—'; }
-            else{
-              const pct = completed.length ? (matrixCounts[a][b] / completed.length * 100) : 0;
-              td.textContent = `${pct.toFixed(0)}%`;
-              td.title = `${matrixCounts[a][b]} of ${completed.length} participants`;
-            }
-            tr.appendChild(td);
-          });
-          tbody.appendChild(tr);
-        });
-        table.appendChild(tbody);
-        matrixTableWrap.appendChild(table);
-
-        const mm=document.createElement('p');
-        mm.textContent=`Percentages are of completed participants (n=${completed.length}).`;
-        matrixMeta.appendChild(mm);
-
-        lastResultsCache = { arr, completed, completedCount: completed.length, study, uid, studyId, cards, matrixCounts };
-        downloadCsvBtn.disabled = false;
-        downloadMatrixBtn.disabled = false;
-
-        show(resultsView); activateTab('participants');
+        buildResultsUI(study||{}, snap2.val()||{});
       });
     });
+  }
+
+  // Public results (no auth)
+  function loadPublicResults(uid, studyId){
+    // Hide researcher-only controls
+    shareSection.classList.add('hidden');
+    downloadCsvBtn.style.display = 'none';
+    downloadMatrixBtn.style.display = 'none';
+    backToDashboardFromResultsBtn.style.display = 'none';
+
+    db.ref(`users/${uid}/studies/${studyId}`).once('value')
+      .then(snap=>{
+        const study=snap.val();
+        if(!study){ resultsStudyName.textContent = 'Study unavailable'; show(resultsView); activateTab('participants'); return; }
+        resultsStudyName.textContent = study.name || '';
+        if(study.resultsPublic!==true){
+          participantsSummary.textContent = 'These results are not publicly available.';
+          participantsDetails.textContent = '';
+          categoriesSummary.textContent = '';
+          categoriesChart.innerHTML = '';
+          categoriesLabels.innerHTML = '';
+          matrixMeta.textContent = '';
+          matrixTableWrap.innerHTML = '';
+          show(resultsView); activateTab('participants'); return;
+        }
+        db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2=>{
+          buildResultsUI(study, snap2.val()||{});
+        }).catch(err=>{
+          participantsSummary.textContent = 'Unable to load results publicly.';
+          console.error(err);
+          show(resultsView); activateTab('participants');
+        });
+      }).catch(err=>{
+        console.error(err);
+        resultsStudyName.textContent = 'Unable to load study';
+        show(resultsView); activateTab('participants');
+      });
   }
 
   // CSV export: participant rows
