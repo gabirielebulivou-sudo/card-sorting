@@ -56,6 +56,8 @@
 
     .card { background:white; border:1px solid var(--border); padding:1rem; margin:.25rem; border-radius:6px; cursor:grab; user-select:none; box-shadow:0 1px 0 rgba(0,0,0,0.05) }
     .card:active { cursor:grabbing }
+    .card:focus { outline:3px solid #9ec5fe; outline-offset:2px }
+    .card[aria-selected="true"] { box-shadow:0 0 0 3px #ffae42 inset }
 
     .muted { color:#6c757d }
     .badge { display:inline-block; padding:.1rem .4rem; border-radius:.25rem; font-size:.8rem; background:#edf2ff; color:#2f4e8b; border:1px solid #dbe4ff }
@@ -71,6 +73,19 @@
 
     .right-panel { min-height:60vh; position:relative; }
     .toolbar { margin-bottom:.5rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; justify-content:flex-end }
+
+    /* Mobile responsiveness */
+    @media (max-width: 900px){
+      .workspace { grid-template-columns: 1fr; }
+      .left-panel { position:static; max-height:none; }
+      .right-panel { order:2 }
+      .left-panel { order:1 }
+      .categories-wrap { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 520px){
+      .card { padding:.8rem }
+      .cat-header { font-size:.95rem }
+    }
 
     /* Steps shown until a category exists */
     .steps { display:flex; flex-direction:column; gap:18px; margin-bottom:18px; }
@@ -101,6 +116,7 @@
     .cat-header {
       background:#3d4038; color:#fff; padding:.5rem .75rem; font-weight:600; text-align:center; position:relative;
     }
+    .cat-header:focus { outline:3px solid #9ec5fe; outline-offset:2px }
     .cat-title { cursor:text }
     .cat-delete, .cat-toggle {
       position:absolute; top:6px; color:#fff; cursor:pointer; opacity:.9; user-select:none
@@ -115,7 +131,7 @@
     /* Small drop tile to create new category (visible when categories exist) */
     .new-cat-tile {
       border:2px dashed #cfcfcf; border-radius:10px; min-height:90px; display:flex; align-items:center; justify-content:center;
-      background:#fafafa; color:#666; font-weight:600;
+      background:#fafafa; color:#666; font-weight:600; margin-top:12px;
     }
 
     /* Modal (participant info + instructions) */
@@ -139,6 +155,10 @@
     .modal ol li { margin: .25rem 0; }
     .modal strong { font-weight:700; }
 
+    /* Skip links */
+    .skip-links { position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
+    .skip-links a:focus { position:static; left:auto; width:auto; height:auto; padding:.5rem; background:#000; color:#fff; display:inline-block; z-index:10000 }
+
     /* Tabs (results) */
     .tabs { display:flex; gap:.5rem; margin: .5rem 0 1rem; border-bottom:1px solid var(--border) }
     .tab-btn { background:transparent; color:var(--dark); border:none; padding:.5rem .75rem; cursor:pointer; border-bottom:3px solid transparent }
@@ -153,6 +173,8 @@
     .bar span { position:absolute; bottom:100%; transform:translateY(-4px); font-size:.8rem; color:var(--dark) }
     .xlabels { display:flex; gap:8px; margin-top:4px }
     .xlabel { flex:1; min-width:24px; text-align:center; font-size:.8rem; color:var(--dark) }
+    .list { margin-top:.5rem }
+    .list li { margin:.15rem 0 }
   </style>
 
   <!-- Firebase SDK (Compat) -->
@@ -164,6 +186,13 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 </head>
 <body>
+  <!-- Skip links for keyboard users -->
+  <nav class="skip-links" aria-label="Skip links">
+    <a href="#availableCards">Skip to cards</a>
+    <a href="#sortingArea">Skip to categories</a>
+    <a href="#resultsView">Skip to results</a>
+  </nav>
+
   <div class="container">
     <header><h1>Open Card Sorting Tool</h1></header>
 
@@ -189,7 +218,6 @@
       <h2>Dashboard</h2>
       <div>
         <button id="createStudyBtn" class="btn">Create New Study</button>
-        <button id="migrateBtn" class="btn btn-accent">Migrate My Old Studies</button>
         <button id="logoutBtn" class="btn btn-accent">Logout</button>
       </div>
       <h3>Your Studies</h3>
@@ -226,19 +254,19 @@
     </div>
 
     <!-- Participant -->
-    <div id="participantView" class="view">
+    <div id="participantView" class="view" aria-live="polite">
       <h2 id="participantStudyName"></h2>
-      <div id="participantInstructions" class="instructions hidden" aria-live="polite"></div>
-      <div id="participantStatus" class="muted"></div>
+      <div id="participantInstructions" class="instructions hidden"></div>
+      <div id="participantStatus" class="muted" aria-live="polite"></div>
 
-      <div class="workspace">
-        <aside class="left-panel">
+      <div class="workspace" role="region" aria-label="Card sorting workspace">
+        <aside class="left-panel" role="region" aria-label="Card list">
           <h3>Cards</h3>
-          <div class="muted" style="margin-bottom:.5rem;">Drag a card to the right to create or fill categories.</div>
+          <div class="muted" style="margin-bottom:.5rem;">Drag a card to the right to create or fill categories. Tip: focus a category header, then press Enter on a card to send it there.</div>
           <div id="availableCards" class="cards-list"></div>
         </aside>
 
-        <section class="right-panel">
+        <section class="right-panel" role="region" aria-label="Categories canvas">
           <!-- Helper steps shown until at least one category exists -->
           <div id="stepsWrap" class="steps">
             <div class="stepbox">
@@ -252,7 +280,7 @@
             <div class="stepbox">
               <h3>Step 2</h3>
               <p>Drag a card from the left and drop it here. This will create a new category.</p>
-              <div id="newCategoryDropzone" class="new-cat-dropzone">Drop here to create a new category</div>
+              <div id="newCategoryDropzone" class="new-cat-dropzone" aria-label="Drop here to create a new category">Drop here to create a new category</div>
             </div>
           </div>
 
@@ -262,7 +290,7 @@
 
           <div id="sortingArea" class="categories-wrap"></div>
           <!-- When categories exist, show this tile to make new categories by dropping -->
-          <div id="newCategoryTile" class="new-cat-tile hidden">Drop here to create a new category</div>
+          <div id="newCategoryTile" class="new-cat-tile hidden" aria-label="Drop here to create a new category">Drop here to create a new category</div>
         </section>
       </div>
     </div>
@@ -345,6 +373,10 @@
           <div class="chart" id="categoriesChart"></div>
           <div class="xlabels" id="categoriesLabels"></div>
         </div>
+        <div id="categoryFreq" style="margin-top:.75rem">
+          <h3 style="margin:.75rem 0 .25rem">Most common category names</h3>
+          <ul id="categoryFreqList" class="list"></ul>
+        </div>
       </div>
 
       <!-- Matrix Tab -->
@@ -355,6 +387,7 @@
 
       <div style="margin-top: 1rem">
         <button id="downloadCsvBtn" class="btn">Download CSV</button>
+        <button id="downloadMatrixBtn" class="btn">Download Matrix CSV</button>
         <button id="backToDashboardFromResultsBtn" class="btn">Back to Dashboard</button>
       </div>
     </div>
@@ -415,6 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const categoriesSummary = document.getElementById('categoriesSummary');
   const categoriesChart = document.getElementById('categoriesChart');
   const categoriesLabels = document.getElementById('categoriesLabels');
+  const categoryFreqList = document.getElementById('categoryFreqList');
 
   const matrixMeta = document.getElementById('matrixMeta');
   const matrixTableWrap = document.getElementById('matrixTableWrap');
@@ -437,6 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Results export
   const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+  const downloadMatrixBtn = document.getElementById('downloadMatrixBtn');
 
   // Participant link handling
   const params = new URLSearchParams(location.search);
@@ -447,6 +482,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // In-memory caches
   let participantMeta = null;
   let lastResultsCache = null;
+  let currentDropTargetCat = null; // for keyboard move
 
   // Helpers
   function show(view) {
@@ -474,6 +510,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (h) return `${h}h ${m}m ${s}s`;
     return `${m}m ${s}s`;
   }
+  function sanitizeText(v) {
+    return String(v ?? '')
+      .replace(/<[^>]*>/g, '')           // strip tags
+      .replace(/[\u0000-\u001F\u007F]/g,'') // control chars
+      .replace(/\s+/g,' ')
+      .trim()
+      .slice(0, 500); // limit length
+  }
 
   // CSV helpers
   function csvEscape(v) { const s = (v == null ? '' : String(v)); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
@@ -500,11 +544,11 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('cancelCreateBtn').onclick = () => { show(dashboardView); document.getElementById('createStudyBtn').focus(); };
   document.getElementById('saveStudyBtn').onclick = () => {
     const user = auth.currentUser; if(!user){ alert('You must be logged in to save a study.'); return; }
-    const name = studyNameInput.value.trim();
-    const cards = cardsInput.value.split('\n').map(l=>l.trim()).filter(Boolean);
+    const name = sanitizeText(studyNameInput.value);
+    const cards = cardsInput.value.split('\n').map(l=>sanitizeText(l)).filter(Boolean);
     if(!name || cards.length===0){ alert('Enter name and at least one card'); return; }
     const studyId = 'study_'+Date.now();
-    const study = { id:studyId, name, cards, instructions:instructionsInput.value.trim(), createdAt:new Date().toISOString(), ownerUid:user.uid, isPublic:true };
+    const study = { id:studyId, name, cards, instructions:sanitizeText(instructionsInput.value), createdAt:new Date().toISOString(), ownerUid:user.uid, isPublic:true };
     db.ref(`users/${user.uid}/studies/${studyId}`).set(study).then(()=>{
       const base = new URL(window.location.href); base.search=''; base.hash='';
       studyLinkInput.value = `${base.toString()}?uid=${user.uid}&study=${studyId}`;
@@ -519,18 +563,6 @@ document.addEventListener('DOMContentLoaded', function() {
   };
   document.getElementById('backToDashboardFromResultsBtn').onclick = () => show(dashboardView);
 
-  // Migration
-  async function migrateOldStudiesToUser(uid){
-    try{
-      const snap = await db.ref('studies').orderByChild('ownerUid').equalTo(uid).once('value');
-      const oldStudies = snap.val() || {}; const ids = Object.keys(oldStudies);
-      if(!ids.length){ alert('No old studies found under /studies for this account.'); return; }
-      const updates = {}; ids.forEach(studyId=>{ updates[`users/${uid}/studies/${studyId}`]=oldStudies[studyId]; });
-      await db.ref().update(updates); alert('Migration completed! Reload the dashboard to see your studies.');
-    }catch(err){ console.error('Migration error:',err); alert('Migration failed: '+err.message); }
-  }
-  document.getElementById('migrateBtn').onclick = () => { const user=auth.currentUser; if(!user){ alert('You must be logged in as a researcher to migrate.'); return; } migrateOldStudiesToUser(user.uid); };
-
   // Auth state change
   auth.onAuthStateChanged(user=>{
     if(hasParticipantLink){ show(participantView); return; }
@@ -544,18 +576,13 @@ document.addEventListener('DOMContentLoaded', function() {
     db.ref(`users/${uid}/studies`).once('value').then(snap=>{
       const data=snap.val()||{}; Object.entries(data).forEach(([studyId,study])=>{ if(seen.has(studyId))return; addStudyToDashboard(uid,studyId,study); seen.add(studyId); });
     });
-    db.ref('studies').orderByChild('ownerUid').equalTo(uid).once('value').then(snap=>{
-      const data=snap.val()||{}; Object.entries(data).forEach(([studyId,study])=>{ if(seen.has(studyId))return; addStudyToDashboard(uid,studyId,study); seen.add(studyId); });
-    });
+    // no "migrate old studies" feature anymore
   }
   async function deleteStudy(uid, studyId, studyName, rowEl){
     const confirmed = confirm(`Delete the study "${studyName||studyId}" and all of its results? This cannot be undone.`); if(!confirmed) return;
     const buttons = rowEl ? rowEl.querySelectorAll('button') : []; buttons.forEach(b=>b.disabled=true);
     try{
-      const updates = {}; updates[`users/${uid}/studies/${studyId}`]=null;
-      const oldSnap = await db.ref(`studies/${studyId}`).once('value');
-      if(oldSnap.exists()){ const oldData=oldSnap.val(); if(!oldData.ownerUid || oldData.ownerUid===uid) updates[`studies/${studyId}`]=null; }
-      await db.ref().update(updates);
+      await db.ref().update({ [`users/${uid}/studies/${studyId}`]: null });
       if(rowEl && rowEl.parentNode) rowEl.parentNode.removeChild(rowEl);
       if(lastResultsCache && lastResultsCache.uid===uid && lastResultsCache.studyId===studyId){ lastResultsCache=null; show(dashboardView); }
       alert('Study deleted.');
@@ -600,7 +627,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const titleEl = cat.querySelector('.cat-title');
     const current = titleEl.textContent.trim();
     const next = prompt('Enter category name', current || 'New category');
-    if(next!==null) titleEl.textContent = next.trim() || 'Unnamed';
+    if(next!==null) titleEl.textContent = sanitizeText(next) || 'Unnamed';
   }
   function deleteCategory(cat){
     const cards = [...cat.querySelectorAll('.cat-body .card')];
@@ -612,12 +639,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const body = cat.querySelector('.cat-body'); const icon = cat.querySelector('.cat-toggle');
     const isHidden = body.classList.toggle('hidden');
     icon.textContent = isHidden ? '▾' : '▴';
+    cat.querySelector('.cat-header').setAttribute('aria-expanded', String(!isHidden));
   }
 
   function makeCategory(name='Click to rename'){
     const cat = document.createElement('div'); cat.className='category';
     cat.innerHTML = `
-      <div class="cat-header">
+      <div class="cat-header" tabindex="0" role="button" aria-expanded="true" aria-label="Category header. Press Enter to rename, Delete to remove, C to collapse">
         <span class="cat-delete" title="Delete">🗑</span>
         <span class="cat-title">${name}</span>
         <span class="cat-toggle" title="Collapse">▴</span>
@@ -628,9 +656,16 @@ document.addEventListener('DOMContentLoaded', function() {
     sortingArea.appendChild(cat);
 
     // Events
+    const header = cat.querySelector('.cat-header');
+    header.addEventListener('focus', () => { currentDropTargetCat = cat; });
+    header.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); renameCategory(cat); }
+      else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteCategory(cat); }
+      else if (e.key.toLowerCase() === 'c') { e.preventDefault(); toggleCollapse(cat); }
+    });
     cat.querySelector('.cat-delete').onclick = () => deleteCategory(cat);
     cat.querySelector('.cat-toggle').onclick = () => toggleCollapse(cat);
-    cat.querySelector('.cat-header').onclick = (e) => {
+    header.onclick = (e) => {
       if (e.target.closest('.cat-delete') || e.target.closest('.cat-toggle')) return;
       renameCategory(cat);
     };
@@ -646,15 +681,35 @@ document.addEventListener('DOMContentLoaded', function() {
     return cat;
   }
 
+  // Keyboard move support: Enter on a focused card sends it to currentDropTargetCat
+  function attachCardKeyboard(el){
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', 'Card: ' + el.textContent);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (currentDropTargetCat) {
+          const body = currentDropTargetCat.querySelector('.cat-body');
+          body.appendChild(el);
+          updateCategoryCount(currentDropTargetCat);
+          el.setAttribute('aria-selected','true');
+          setTimeout(()=>el.setAttribute('aria-selected','false'), 300);
+        }
+      }
+    });
+  }
+
   // Begin flow: details -> instructions -> mark started
   startSortingBtn.onclick = () => {
-    const name = pName.value.trim();
-    const idNumber = pId.value.trim();
-    const address = pAddress.value.trim();
-    const course = pCourse.value.trim();
-    const nationality = pNationality.value.trim();
-    const ethnicity = pEthnicity.value.trim();
-    const outsideHome = (document.querySelector('input[name="pOutsideHome"]:checked') || {}).value || '';
+    const name = sanitizeText(pName.value);
+    const idNumber = sanitizeText(pId.value);
+    const address = sanitizeText(pAddress.value);
+    const course = sanitizeText(pCourse.value);
+    const nationality = sanitizeText(pNationality.value);
+    const ethnicity = sanitizeText(pEthnicity.value);
+    const outsideHome = sanitizeText((document.querySelector('input[name="pOutsideHome"]:checked') || {}).value || '');
+
     if(!name || !idNumber || !address || !course || !nationality || !ethnicity || !outsideHome){
       alert('Please complete all fields to begin.'); return;
     }
@@ -695,6 +750,7 @@ document.addEventListener('DOMContentLoaded', function() {
           (study.cards||[]).forEach(card=>{
             const d=document.createElement('div');
             d.className='card'; d.textContent=card; d.dataset.cardText=card;
+            attachCardKeyboard(d);
             availableCardsContainer.appendChild(d);
           });
 
@@ -709,6 +765,7 @@ document.addEventListener('DOMContentLoaded', function() {
               const cat = makeCategory();
               cat.querySelector('.cat-body').appendChild(item);
               updateCategoryCount(cat);
+              cat.querySelector('.cat-header').focus();
             }
           });
 
@@ -720,6 +777,7 @@ document.addEventListener('DOMContentLoaded', function() {
               const cat = makeCategory();
               cat.querySelector('.cat-body').appendChild(item);
               updateCategoryCount(cat);
+              cat.querySelector('.cat-header').focus();
             }
           });
 
@@ -746,7 +804,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const cats = [];
     sortingArea.querySelectorAll('.category').forEach(cat=>{
-      const name = (cat.querySelector('.cat-title')?.textContent || '').trim() || 'Unnamed';
+      const name = sanitizeText(cat.querySelector('.cat-title')?.textContent || 'Unnamed') || 'Unnamed';
       const cards = [...cat.querySelectorAll('.cat-body .card')].map(c=>c.dataset.cardText);
       if(cards.length>0) cats.push({ name, cards });
     });
@@ -768,27 +826,35 @@ document.addEventListener('DOMContentLoaded', function() {
   // Tabs
   tabButtons.forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
 
-  // Results view
+  // Results
   function viewResults(uid, studyId){
     db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap=>{
-      const study=snap.val(); resultsStudyName.textContent=study?.name||'';
+      const study=snap.val();
+      resultsStudyName.textContent = study?.name || '';
+
       db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2=>{
-        const results=snap2.val()||{}; lastResultsCache=null; downloadCsvBtn.disabled=true;
+        const results=snap2.val()||{}; lastResultsCache=null; downloadCsvBtn.disabled=true; downloadMatrixBtn.disabled=true;
+
         let arr=Object.values(results);
         if(arr.length===0){
           participantsSummary.textContent='No results yet.';
           participantsDetails.innerHTML=''; categoriesSummary.textContent='';
-          categoriesChart.innerHTML=''; categoriesLabels.innerHTML='';
+          categoriesChart.innerHTML=''; categoriesLabels.innerHTML=''; categoryFreqList.innerHTML='';
           matrixMeta.textContent=''; matrixTableWrap.innerHTML='';
           show(resultsView); activateTab('participants'); return;
         }
+
+        // Sort by timestamp ascending if available
         arr = arr.sort((a,b)=>new Date(a.timestamp||0)-new Date(b.timestamp||0));
         const completed = arr.filter(r=>r.status==='completed' || Array.isArray(r.categories));
         const startedCount = arr.length, completedCount = completed.length;
+
+        // Participants summary
         const durations = completed.map(r=>r.durationMs).filter(v=>typeof v==='number'&&isFinite(v)&&v>=0);
         const avgDurationMs = durations.length ? Math.round(durations.reduce((a,b)=>a+b,0)/durations.length) : null;
-
         participantsSummary.textContent = `Started: ${startedCount} | Completed: ${completedCount} | Avg sorting time: ${avgDurationMs!=null?formatDuration(avgDurationMs)+` (n=${durations.length})`:'N/A'}`;
+
+        // Participants details
         participantsDetails.innerHTML='';
         completed.forEach((res,i)=>{
           const w=document.createElement('div');
@@ -812,10 +878,11 @@ document.addEventListener('DOMContentLoaded', function() {
           participantsDetails.appendChild(w);
         });
 
-        // Categories tab
+        // Categories tab: distribution and frequency of names
         const catsPer = completed.map(r=>(r.categories||[]).length);
         const avgCats = catsPer.length ? (catsPer.reduce((a,b)=>a+b,0)/catsPer.length) : 0;
         categoriesSummary.textContent=`Average number of categories: ${avgCats.toFixed(2)} (n=${completedCount})`;
+
         const dist = new Map(); catsPer.forEach(n=>dist.set(n,(dist.get(n)||0)+1));
         const maxBuckets = dist.size ? Math.max(...dist.keys()) : 0;
         categoriesChart.innerHTML=''; categoriesLabels.innerHTML='';
@@ -829,25 +896,80 @@ document.addEventListener('DOMContentLoaded', function() {
           });
         }else{ const p=document.createElement('p'); p.textContent='No completed participants yet.'; categoriesChart.appendChild(p); }
 
-        // Matrix tab
+        // Category name frequency (case-insensitive)
+        const freqMap = new Map(); // key: normalized, value: {count, sample}
+        completed.forEach(r=>{
+          (r.categories||[]).forEach(cat=>{
+            const raw = String(cat.name||'Unnamed');
+            const norm = sanitizeText(raw).toLowerCase() || 'unnamed';
+            if(!freqMap.has(norm)) freqMap.set(norm, {count:0, sample: raw.trim() || 'Unnamed'});
+            freqMap.get(norm).count++;
+          });
+        });
+        const freqArr = [...freqMap.entries()].sort((a,b)=>b[1].count - a[1].count).slice(0, 10);
+        categoryFreqList.innerHTML = '';
+        if(freqArr.length){
+          freqArr.forEach(([norm, info])=>{
+            const li = document.createElement('li');
+            li.textContent = `${info.sample} — ${info.count}`;
+            categoryFreqList.appendChild(li);
+          });
+        } else {
+          const li = document.createElement('li'); li.textContent = 'No categories yet.'; categoryFreqList.appendChild(li);
+        }
+
+        // Matrix tab (percentages)
         matrixMeta.innerHTML=''; matrixTableWrap.innerHTML='';
-        const cards = study?.cards || []; const matrix={}; cards.forEach(a=>{ matrix[a]={}; cards.forEach(b=>matrix[a][b]=0); });
-        let totalCats=0; completed.forEach(r=>{ const catsR=r.categories||[]; totalCats+=catsR.length; catsR.forEach(cat=>{ const cs=cat.cards||[]; cs.forEach(a=>cs.forEach(b=>{ if(a!==b) matrix[a][b]+=1; })); }); });
-        const mm=document.createElement('p'); mm.textContent=`Started: ${startedCount} | Completed: ${completedCount} | Avg categories: ${completedCount?(totalCats/completedCount).toFixed(2):'0.00'}`; matrixMeta.appendChild(mm);
+        const cards = study?.cards || [];
+        const matrixCounts={}; cards.forEach(a=>{ matrixCounts[a]={}; cards.forEach(b=>matrixCounts[a][b]=0); });
+
+        completed.forEach(r=>{
+          const catsR=r.categories||[];
+          catsR.forEach(cat=>{
+            const cs=cat.cards||[];
+            cs.forEach(a=>cs.forEach(b=>{
+              if(a!==b) matrixCounts[a][b]+=1;
+            }));
+          });
+        });
+
+        // Render table with percentages
         const table=document.createElement('table'); const thead=document.createElement('thead'); const hr=document.createElement('tr'); hr.appendChild(document.createElement('th'));
         cards.forEach(c=>{ const th=document.createElement('th'); th.textContent=c; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
-        const tbody=document.createElement('tbody'); cards.forEach(a=>{ const tr=document.createElement('tr'); const rh=document.createElement('th'); rh.textContent=a; tr.appendChild(rh);
-          cards.forEach(b=>{ const td=document.createElement('td'); td.textContent=(a===b)?'-':matrix[a][b]; tr.appendChild(td); }); tbody.appendChild(tr);
-        }); table.appendChild(tbody); matrixTableWrap.appendChild(table);
+        const tbody=document.createElement('tbody');
+        cards.forEach(a=>{
+          const tr=document.createElement('tr'); const rh=document.createElement('th'); rh.textContent=a; tr.appendChild(rh);
+          cards.forEach(b=>{
+            const td=document.createElement('td');
+            if(a===b){ td.textContent='—'; }
+            else{
+              const pct = completedCount ? (matrixCounts[a][b] / completedCount * 100) : 0;
+              td.textContent = `${pct.toFixed(0)}%`;
+              td.title = `${matrixCounts[a][b]} of ${completedCount} participants`;
+            }
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        matrixTableWrap.appendChild(table);
 
-        lastResultsCache = { arr, study, uid, studyId }; downloadCsvBtn.disabled=false;
+        const mm=document.createElement('p');
+        mm.textContent=`Percentages are of completed participants (n=${completedCount}).`;
+        matrixMeta.appendChild(mm);
+
+        // Cache for CSV export
+        lastResultsCache = { arr, completed, completedCount, study, uid, studyId, cards, matrixCounts };
+        downloadCsvBtn.disabled = false;
+        downloadMatrixBtn.disabled = false;
+
         show(resultsView); activateTab('participants');
       });
     });
   }
 
-  // CSV export
-  document.getElementById('downloadCsvBtn').onclick = () => {
+  // CSV export: participant rows
+  downloadCsvBtn.onclick = () => {
     if(!lastResultsCache){ alert('No results to export.'); return; }
     const { arr, study } = lastResultsCache;
     const studyName = (study?.name||'study').replace(/[^\w\-]+/g,'_');
@@ -858,13 +980,35 @@ document.addEventListener('DOMContentLoaded', function() {
       if(!(res.status==='completed'||Array.isArray(res.categories))) return;
       idx+=1; const p=res.participant||{}; const ts=res.timestamp||res.completedAt||'';
       (res.categories||[]).forEach(cat=>{
-        const catName=cat.name||'Unnamed';
+        const catName=sanitizeText(cat.name||'Unnamed')||'Unnamed';
         (cat.cards||[]).forEach(card=>{
           lines.push([csvEscape(idx),csvEscape(ts),csvEscape(p.name||''),csvEscape(p.idNumber||''),csvEscape(p.address||''),csvEscape(p.course||''),csvEscape(p.nationality||''),csvEscape(p.ethnicity||''),csvEscape(p.outsideHome||''),csvEscape(catName),csvEscape(card)].join(','));
         });
       });
     });
     downloadCSV(`${studyName}_results.csv`, lines.join('\n'));
+  };
+
+  // CSV export: similarity matrix percentages
+  downloadMatrixBtn.onclick = () => {
+    if(!lastResultsCache){ alert('No matrix to export.'); return; }
+    const { study, cards, matrixCounts, completedCount } = lastResultsCache;
+    const studyName = (study?.name||'study').replace(/[^\w\-]+/g,'_');
+
+    const head = [''].concat(cards).map(csvEscape).join(',');
+    const lines=[head];
+    cards.forEach(a=>{
+      const row=[csvEscape(a)];
+      cards.forEach(b=>{
+        if(a===b){ row.push(''); }
+        else{
+          const pct = completedCount ? (matrixCounts[a][b] / completedCount * 100) : 0;
+          row.push(csvEscape(pct.toFixed(0) + '%'));
+        }
+      });
+      lines.push(row.join(','));
+    });
+    downloadCSV(`${studyName}_similarity_matrix.csv`, lines.join('\n'));
   };
 
   // Expose for dashboard buttons
