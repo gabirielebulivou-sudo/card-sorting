@@ -1,188 +1,341 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Open Card Sorting Tool - Researcher Accounts</title>
   <style>
     :root {
-      --primary:#4a6fa5;
-      --secondary:#6b8cae;
-      --accent:#ff6b6b;
-      --light:#f8f9fa;
-      --dark:#343a40;
-      --success:#28a745;
-      --border:#dee2e6;
+      --primary: #4a6fa5;
+      --secondary: #6b8cae;
+      --accent: #ff6b6b;
+      --light: #f8f9fa;
+      --dark: #343a40;
+      --success: #28a745;
+      --border: #dee2e6;
     }
 
-    * { box-sizing:border-box; margin:0; padding:0; font-family:'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+    }
 
-    body { background:#f5f7fa; color:var(--dark); line-height:1.5 }
+    body { background: #f5f7fa; color: var(--dark); line-height: 1.5; }
 
-    .container { max-width:1200px; margin:0 auto; padding:20px }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
 
     header {
-      background:var(--primary); color:white; padding:1rem; text-align:center; margin-bottom:2rem; border-radius:5px
+      background: var(--primary);
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      margin-bottom: 2rem;
+      border-radius: 5px;
     }
-    #welcomeBanner { margin-top:.25rem; opacity:.95 }
-    #headActions { margin-top:.5rem; display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap }
 
-    .view { display:none; background:white; padding:2rem; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,.1); margin-bottom:2rem }
-    .active { display:block }
+    .view {
+      display: none;
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.1);
+      margin-bottom: 2rem;
+    }
+    .view.active { display: block; }
 
-    .btn { padding:.5rem 1rem; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer; margin:.25rem; touch-action:manipulation }
-    .btn:hover { background:var(--secondary) }
-    .btn:disabled { opacity:.6; cursor:not-allowed }
-    .btn-success { background:var(--success) }
-    .btn-accent { background:var(--accent); color:#fff }
-    .btn-accent:hover { filter:brightness(0.95) }
+    .btn {
+      padding: .5rem 1rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: .25rem;
+      touch-action: manipulation;
+    }
+    .btn:hover { background: var(--secondary); }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    .btn-success { background: var(--success); }
+    .btn-accent { background: var(--accent); color: #fff; }
+    .btn-accent:hover { filter: brightness(0.95); }
 
-    .hidden { display:none !important }
+    .hidden { display: none !important; }
 
-    label { display:block; margin:.25rem 0 .25rem; font-weight:600 }
+    label { display: block; margin: .25rem 0 .25rem; font-weight: 600; }
     input, textarea {
-      width:100%; padding:.5rem; margin-bottom:1rem; border:1px solid var(--border); border-radius:4px;
+      width: 100%;
+      padding: .5rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
     }
 
     .study-item {
-      border:1px solid var(--border); padding:.75rem; margin-bottom:.5rem;
-      display:flex; justify-content:space-between; align-items:center; gap:.5rem; flex-wrap:wrap;
+      border: 1px solid var(--border);
+      padding: .75rem;
+      margin-bottom: .5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .5rem;
+      flex-wrap: wrap;
     }
-    .study-actions { display:flex; gap:.25rem; flex-wrap:wrap }
+    .study-actions { display: flex; gap: .25rem; flex-wrap: wrap; }
 
-    .instructions { background:#e9ecef; padding:1rem; margin-bottom:1rem; border-radius:4px }
+    .instructions { background: #e9ecef; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
 
-    .category-card { background:#eee; padding:.25rem .5rem; border-radius:4px; margin:.25rem; display:inline-block }
+    .category-card {
+      background: #eee;
+      padding: .25rem .5rem;
+      border-radius: 4px;
+      margin: .25rem;
+      display: inline-block;
+    }
 
-    .table-wrap { overflow:auto; margin-top:1rem; border:1px solid var(--border); border-radius:6px }
-    table { border-collapse:collapse; min-width:600px; width:100% }
-    th, td { border:1px solid var(--border); padding:.5rem; text-align:center; white-space:nowrap }
+    .table-wrap { overflow: auto; margin-top: 1rem; border: 1px solid var(--border); border-radius: 6px; }
+    table { border-collapse: collapse; min-width: 600px; width: 100%; }
+    th, td { border: 1px solid var(--border); padding: .5rem; text-align: center; white-space: nowrap; }
 
-    .card { background:white; border:1px solid var(--border); padding:1rem; margin:.25rem; border-radius:6px; cursor:grab; user-select:none; box-shadow:0 1px 0 rgba(0,0,0,0.05) }
-    .card:active { cursor:grabbing }
-    .card:focus { outline:3px solid #9ec5fe; outline-offset:2px }
-    .card[aria-selected="true"] { box-shadow:0 0 0 3px #ffae42 inset }
+    .card {
+      background: white;
+      border: 1px solid var(--border);
+      padding: 1rem;
+      margin: .25rem;
+      border-radius: 6px;
+      cursor: grab;
+      user-select: none;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+    }
+    .card:active { cursor: grabbing; }
+    .card:focus { outline: 3px solid #9ec5fe; outline-offset: 2px; }
+    .card[aria-selected="true"] { box-shadow: 0 0 0 3px #ffae42 inset; }
 
-    .muted { color:#e7eef8 }
-    .badge { display:inline-block; padding:.1rem .4rem; border-radius:.25rem; font-size:.8rem; background:#edf2ff; color:#2f4e8b; border:1px solid #dbe4ff }
+    .muted { color: #6c757d; }
+    .badge {
+      display: inline-block;
+      padding: .1rem .4rem;
+      border-radius: .25rem;
+      font-size: .8rem;
+      background: #edf2ff;
+      color: #2f4e8b;
+      border: 1px solid #dbe4ff;
+    }
 
     /* Participant workspace layout (cards left, canvas right) */
-    .workspace { display:grid; grid-template-columns: 340px 1fr; gap:18px; align-items:start; }
-    .left-panel {
-      background:#d1d1cf; border:1px solid #c5c5c3; border-radius:10px; padding:12px;
-      position:sticky; top:12px; max-height:calc(100vh - 180px); overflow:auto;
+    .workspace {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 18px;
+      align-items: start;
     }
-    .left-panel h3 { margin:.25rem 0 .5rem; }
-    .cards-list { display:flex; flex-direction:column; gap:.5rem; }
+    .left-panel {
+      background: #d1d1cf;
+      border: 1px solid #c5c5c3;
+      border-radius: 10px;
+      padding: 12px;
+      position: sticky;
+      top: 12px;
+      max-height: calc(100vh - 180px);
+      overflow: auto;
+    }
+    .left-panel h3 { margin: .25rem 0 .5rem; }
+    .cards-list { display: flex; flex-direction: column; gap: .5rem; }
 
-    .right-panel { min-height:60vh; position:relative; }
-    .toolbar { margin-bottom:.5rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; justify-content:flex-end }
+    .right-panel { min-height: 60vh; position: relative; }
+    .toolbar {
+      margin-bottom: .5rem;
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
 
     /* Mobile responsiveness */
-    @media (max-width: 900px){
+    @media (max-width: 900px) {
       .workspace { grid-template-columns: 1fr; }
-      .left-panel { position:static; max-height:none; }
-      .right-panel { order:2 }
-      .left-panel { order:1 }
+      .left-panel { position: static; max-height: none; }
+      .right-panel { order: 2; }
+      .left-panel { order: 1; }
       .categories-wrap { grid-template-columns: 1fr; }
     }
-    @media (max-width: 520px){
-      .card { padding:.8rem }
-      .cat-header { font-size:.95rem }
+    @media (max-width: 520px) {
+      .card { padding: .8rem; }
+      .cat-header { font-size: .95rem; }
     }
 
     /* Steps shown until a category exists */
-    .steps { display:flex; flex-direction:column; gap:18px; margin-bottom:18px; }
+    .steps { display: flex; flex-direction: column; gap: 18px; margin-bottom: 18px; }
     .stepbox {
-      border:2px dashed #ddd; border-radius:14px; padding:18px; background:#fff;
+      border: 2px dashed #ddd;
+      border-radius: 14px;
+      padding: 18px;
+      background: #fff;
       box-shadow: 0 1px 0 rgba(0,0,0,0.02);
     }
-    .stepbox h3 { font-size:1.35rem; margin-bottom:.5rem }
-    .stepbox ol { margin-left:1.25rem }
-    .stepbox li { margin:.25rem 0 }
+    .stepbox h3 { font-size: 1.35rem; margin-bottom: .5rem; }
+    .stepbox ol { margin-left: 1.25rem; }
+    .stepbox li { margin: .25rem 0; }
 
-    /* Big dropzone for creating a new category (visible when no categories) */
+    /* Dropzone (visible until at least one category exists) */
     .new-cat-dropzone {
-      border:2px dashed #cfcfcf; border-radius:10px; min-height:110px; padding:14px; background:#fafafa; margin-top:.5rem;
-      display:flex; align-items:center; justify-content:center; color:#666; font-weight:600;
+      border: 2px dashed #cfcfcf;
+      border-radius: 10px;
+      min-height: 110px;
+      padding: 14px;
+      background: #fafafa;
+      margin-top: .5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      font-weight: 600;
     }
 
     /* Categories canvas */
     .categories-wrap {
-      display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap:16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+      min-height: 200px;
     }
 
-    /* Category card with dark header */
+    /* Category card */
     .category {
-      background:#fff; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,.06); border:1px solid var(--border); overflow:hidden;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.06);
+      border: 1px solid var(--border);
+      overflow: hidden;
     }
     .cat-header {
-      background:#3d4038; color:#fff; padding:.5rem .75rem; font-weight:600; text-align:center; position:relative; display:flex; align-items:center; justify-content:center; gap:.5rem
+      background: #3d4038;
+      color: #fff;
+      padding: .5rem .75rem;
+      font-weight: 600;
+      text-align: center;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
     }
-    .cat-header:focus { outline:3px solid #9ec5fe; outline-offset:2px }
     .cat-title-input {
-      background:transparent; border:none; color:#fff; font-weight:600; text-align:center; width:70%; outline:none; padding:.15rem .25rem; border-bottom:1px dashed rgba(255,255,255,.35)
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      text-align: center;
+      width: 70%;
+      outline: none;
+      padding: .15rem .25rem;
+      border-bottom: 1px dashed rgba(255,255,255,.35);
     }
-    .cat-title-input::placeholder { color:#e7e7e7; opacity:.85 }
+    .cat-title-input::placeholder { color: #e7e7e7; opacity: .85; }
     .cat-icon-btn {
-      background:transparent; border:none; color:#fff; cursor:pointer; padding:0 .25rem; font-size:1rem
+      background: transparent;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      padding: 0 .25rem;
+      font-size: 1rem;
     }
-    .cat-icon-btn:focus { outline:2px solid #9ec5fe; border-radius:4px }
+    .cat-icon-btn:focus { outline: 2px solid #9ec5fe; border-radius: 4px; }
 
     .cat-body {
-      padding:.5rem; background:#fff; margin:.5rem; border:1px solid var(--border); border-radius:8px; min-height:80px;
+      padding: .5rem;
+      background: #fff;
+      margin: .5rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      min-height: 80px;
     }
-    .cat-footer { text-align:center; font-size:.75rem; color:#6b6b6b; padding:.25rem .5rem .6rem; text-transform:uppercase; letter-spacing:.02em }
+    .cat-footer {
+      text-align: center;
+      font-size: .75rem;
+      color: #6b6b6b;
+      padding: .25rem .5rem .6rem;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
 
-    /* Small drop tile to create new category (visible when categories exist) */
     .new-cat-tile {
-      border:2px dashed #cfcfcf; border-radius:10px; min-height:90px; display:flex; align-items:center; justify-content:center;
-      background:#fafafa; color:#666; font-weight:600; margin-top:12px;
+      border: 2px dashed #cfcfcf;
+      border-radius: 10px;
+      min-height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fafafa;
+      color: #666;
+      font-weight: 600;
+      margin-top: 12px;
     }
 
     /* Modal (participant info + instructions) */
     .modal-backdrop {
-      position:fixed; inset:0; background:rgba(0,0,0,.5);
-      display:flex; align-items:center; justify-content:center;
-      z-index:9999; padding:1rem;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 1rem;
     }
     .modal {
-      background:#fff; border-radius:10px; width:min(640px, 100%); padding:1.25rem 1.25rem 1rem;
-      box-shadow:0 10px 30px rgba(0,0,0,.25);
-      max-height:90vh; overflow:auto; overscroll-behavior:contain;
+      background: #fff;
+      border-radius: 10px;
+      width: min(640px, 100%);
+      padding: 1.25rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      max-height: 90vh;
+      overflow: auto;
+      overscroll-behavior: contain;
     }
-    .modal h3 { margin-bottom:.5rem }
-    .modal p { margin:.25rem 0 1rem }
-    .modal .actions { display:flex; justify-content:flex-end; gap:.5rem; margin-top:.25rem }
-    fieldset { border:1px solid var(--border); border-radius:6px; padding:.75rem; margin-bottom:1rem }
-    legend { padding:0 .25rem; font-weight:600 }
-    .radio-row { display:flex; gap:1rem; margin-top:.5rem }
-    .radio-row label { font-weight:500; margin:0; display:flex; align-items:center; gap:.35rem }
-    .modal ol { margin-left:1.25rem; }
-    .modal ol li { margin: .25rem 0; }
-    .modal strong { font-weight:700; }
-
-    /* Skip links */
-    .skip-links { position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
-    .skip-links a:focus { position:static; left:auto; width:auto; height:auto; padding:.5rem; background:#000; color:#fff; display:inline-block; z-index:10000 }
+    .modal .actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .25rem; }
 
     /* Tabs (results) */
-    .tabs { display:flex; gap:.5rem; margin: .5rem 0 1rem; border-bottom:1px solid var(--border) }
-    .tab-btn { background:transparent; color:var(--dark); border:none; padding:.5rem .75rem; cursor:pointer; border-bottom:3px solid transparent }
-    .tab-btn.active { border-bottom-color:var(--primary); color:var(--primary); font-weight:600 }
-    .tab-pane { display:none }
-    .tab-pane.active { display:block }
+    .tabs { display: flex; gap: .5rem; margin: .5rem 0 1rem; border-bottom: 1px solid var(--border); }
+    .tab-btn {
+      background: transparent;
+      color: var(--dark);
+      border: none;
+      padding: .5rem .75rem;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+    }
+    .tab-btn.active { border-bottom-color: var(--primary); color: var(--primary); font-weight: 600; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
 
     /* Simple bar chart */
-    .chart-wrap { margin-top:.5rem }
-    .chart { display:flex; align-items:flex-end; gap:8px; height:220px; padding:8px; border-left:1px solid var(--border); border-bottom:1px solid var(--border) }
-    .bar { background:linear-gradient(180deg, var(--secondary), var(--primary)); flex:1; min-width:24px; border-radius:4px 4px 0 0; position:relative }
-    .bar span { position:absolute; bottom:100%; transform:translateY(-4px); font-size:.8rem; color:var(--dark) }
-    .xlabels { display:flex; gap:8px; margin-top:4px }
-    .xlabel { flex:1; min-width:24px; text-align:center; font-size:.8rem; color:var(--dark) }
-    .list { margin-top:.5rem }
-    .list li { margin:.15rem 0 }
+    .chart-wrap { margin-top: .5rem; }
+    .chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 220px;
+      padding: 8px;
+      border-left: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .bar {
+      background: linear-gradient(180deg, var(--secondary), var(--primary));
+      flex: 1;
+      min-width: 24px;
+      border-radius: 4px 4px 0 0;
+      position: relative;
+    }
+    .bar span { position: absolute; bottom: 100%; transform: translateY(-4px); font-size: .8rem; color: var(--dark); }
+    .xlabels { display: flex; gap: 8px; margin-top: 4px; }
+    .xlabel { flex: 1; min-width: 24px; text-align: center; font-size: .8rem; color: var(--dark); }
+
+    /* Share results row */
+    .share-row input { width: 100%; }
+    .share-row { display: flex; gap: .5rem; margin-top: .5rem; align-items: center; }
   </style>
 
   <!-- Firebase SDK (Compat) -->
@@ -194,22 +347,10 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 </head>
 <body>
-  <!-- Skip links for keyboard users -->
-  <nav class="skip-links" aria-label="Skip links">
-    <a href="#availableCards">Skip to cards</a>
-    <a href="#sortingArea">Skip to categories</a>
-    <a href="#resultsView">Skip to results</a>
-  </nav>
-
   <div class="container">
     <header>
       <h1>Open Card Sorting Tool</h1>
       <div id="welcomeBanner" class="muted" aria-live="polite"></div>
-      <div id="headActions">
-        <!-- Researcher Login button removed on participant view (always hidden now) -->
-        <button id="gotoResearcherBtn" class="btn btn-accent hidden" type="button">Researcher Login</button>
-        <button id="gotoParticipantBtn" class="btn hidden" type="button">Back to Participant View</button>
-      </div>
     </header>
 
     <!-- Login / Signup -->
@@ -217,13 +358,13 @@
       <h2 id="authHeading">Researcher Login</h2>
       <form id="authForm" novalidate>
         <label for="displayName">Full name (for new sign-ups)</label>
-        <input type="text" id="displayName" placeholder="e.g., John Doe" autocomplete="name">
+        <input type="text" id="displayName" placeholder="e.g., John Doe" autocomplete="name"/>
 
         <label for="email">Email</label>
-        <input type="email" id="email" placeholder="name@example.com" autocomplete="username" inputmode="email" required>
+        <input type="email" id="email" placeholder="name@example.com" autocomplete="username" inputmode="email" required/>
 
         <label for="password">Password</label>
-        <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password" required/>
 
         <div>
           <button id="loginBtn" type="submit" class="btn">Login</button>
@@ -247,8 +388,9 @@
     <!-- Create Study -->
     <div id="setupView" class="view">
       <h2>Create a New Study</h2>
+
       <label for="studyName">Study name</label>
-      <input type="text" id="studyName" placeholder="e.g., Information Architecture Test" required>
+      <input type="text" id="studyName" placeholder="e.g., Information Architecture Test" required/>
 
       <label for="cardsInput">Cards (one per line)</label>
       <textarea id="cardsInput" rows="8" placeholder="Card 1&#10;Card 2&#10;Card 3" required></textarea>
@@ -266,7 +408,7 @@
     <div id="studyCreatedView" class="view">
       <h2>Study Created!</h2>
       <label for="studyLink">Share this link with participants</label>
-      <input type="text" id="studyLink" readonly>
+      <input type="text" id="studyLink" readonly/>
       <div>
         <button id="copyLinkBtn" class="btn">Copy Link</button>
         <button id="backToDashboardBtn" class="btn">Back to Dashboard</button>
@@ -282,12 +424,13 @@
       <div class="workspace" role="region" aria-label="Card sorting workspace">
         <aside class="left-panel" role="region" aria-label="Card list">
           <h3>Cards</h3>
-          <div class="muted" style="margin-bottom:.5rem;">Drag a card to the right to create or fill categories. Tip: focus a category header, then press Enter on a card to send it there.</div>
+          <div class="muted" style="margin-bottom:.5rem;">
+            Drag a card to the right to create or fill categories.
+          </div>
           <div id="availableCards" class="cards-list"></div>
         </aside>
 
         <section class="right-panel" role="region" aria-label="Categories canvas">
-          <!-- Helper steps shown until at least one category exists -->
           <div id="stepsWrap" class="steps">
             <div class="stepbox">
               <h3>Step 1</h3>
@@ -299,8 +442,10 @@
             </div>
             <div class="stepbox">
               <h3>Step 2</h3>
-              <p>Drag a card from the left and drop it here. This will create a new category.</p>
-              <div id="newCategoryDropzone" class="new-cat-dropzone" aria-label="Drop here to create a new category">Drop here to create a new category</div>
+              <p>Drag a card from the left and drop it here or anywhere on the right to create a new category.</p>
+              <div id="newCategoryDropzone" class="new-cat-dropzone" aria-label="Drop here to create a new category">
+                Drop here to create a new category
+              </div>
             </div>
           </div>
 
@@ -309,8 +454,9 @@
           </div>
 
           <div id="sortingArea" class="categories-wrap"></div>
-          <!-- When categories exist, show this tile to make new categories by dropping -->
-          <div id="newCategoryTile" class="new-cat-tile hidden" aria-label="Drop here to create a new category">Drop here to create a new category</div>
+          <div id="newCategoryTile" class="new-cat-tile hidden" aria-label="Drop here to create a new category">
+            Drop here to create a new category
+          </div>
         </section>
       </div>
     </div>
@@ -322,28 +468,28 @@
         <p>Please enter your details to proceed.</p>
 
         <label for="pName">Full name</label>
-        <input id="pName" type="text" placeholder="Your name" required>
+        <input id="pName" type="text" placeholder="Your name" required/>
 
         <label for="pId">ID number</label>
-        <input id="pId" type="text" placeholder="Your ID number" required>
+        <input id="pId" type="text" placeholder="Your ID number" required/>
 
         <label for="pAddress">Address</label>
         <textarea id="pAddress" rows="3" placeholder="Your address" required></textarea>
 
         <label for="pCourse">Course</label>
-        <input id="pCourse" type="text" placeholder="Your course" required>
+        <input id="pCourse" type="text" placeholder="Your course" required/>
 
         <label for="pNationality">Nationality</label>
-        <input id="pNationality" type="text" placeholder="Your nationality" required>
+        <input id="pNationality" type="text" placeholder="Your nationality" required/>
 
         <label for="pEthnicity">Ethnicity</label>
-        <input id="pEthnicity" type="text" placeholder="Your ethnicity" required>
+        <input id="pEthnicity" type="text" placeholder="Your ethnicity" required/>
 
         <fieldset>
           <legend>Is your family home outside of Suva/Nausori? (Yes/No)</legend>
           <div class="radio-row">
-            <label><input type="radio" name="pOutsideHome" value="Yes" required> Yes</label>
-            <label><input type="radio" name="pOutsideHome" value="No" required> No</label>
+            <label><input type="radio" name="pOutsideHome" value="Yes" required/> Yes</label>
+            <label><input type="radio" name="pOutsideHome" value="No" required/> No</label>
           </div>
         </fieldset>
 
@@ -353,7 +499,7 @@
       </div>
     </div>
 
-    <!-- Instructions Modal (after details) -->
+    <!-- Instructions Modal -->
     <div id="instructionsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="instructionsModalTitle">
       <div class="modal">
         <h3 id="instructionsModalTitle">Instructions</h3>
@@ -380,16 +526,16 @@
         <button class="tab-btn" data-tab="matrix">Similarity Matrix</button>
       </div>
 
-      <!-- Share results controls (researcher view) -->
+      <!-- Share results controls -->
       <div id="shareSection" class="instructions hidden">
         <strong>Share results</strong>
         <div style="margin-top:.5rem">
           <label style="display:inline-flex; align-items:center; gap:.5rem">
-            <input type="checkbox" id="toggleResultsPublic"> Enable public results link
+            <input type="checkbox" id="toggleResultsPublic"/> Enable public results link
           </label>
         </div>
-        <div id="publicResultsLinkRow" class="hidden" style="display:flex; gap:.5rem; margin-top:.5rem; align-items:center;">
-          <input type="text" id="publicResultsLink" readonly style="flex:1">
+        <div id="publicResultsLinkRow" class="share-row hidden">
+          <input type="text" id="publicResultsLink" readonly/>
           <button id="copyPublicResultsBtn" class="btn">Copy Public Link</button>
         </div>
         <div class="muted" style="margin-top:.25rem">Anyone with the link can view the results without logging in.</div>
@@ -428,826 +574,776 @@
     </div>
   </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Firebase Config
-  const firebaseConfig = {
-    apiKey: "AIzaSyAu1hawycY2uQgzWolaHeTfCdWtSWux7XA",
-    authDomain: "card-sorting-tool-762a3.firebaseapp.com",
-    databaseURL: "https://card-sorting-tool-762a3-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "card-sorting-tool-762a3",
-    storageBucket: "card-sorting-tool-762a3.firebasestorage.app",
-    messagingSenderId: "361630774945",
-    appId: "1:361630774945:web:402edb363d388a61baa2e0",
-    measurementId: "G-BGV3P2HQZP"
-  };
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Firebase Config
+      const firebaseConfig = {
+        apiKey: "AIzaSyAu1hawycY2uQgzWolaHeTfCdWtSWux7XA",
+        authDomain: "card-sorting-tool-762a3.firebaseapp.com",
+        databaseURL: "https://card-sorting-tool-762a3-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "card-sorting-tool-762a3",
+        storageBucket: "card-sorting-tool-762a3.firebasestorage.app",
+        messagingSenderId: "361630774945",
+        appId: "1:361630774945:web:402edb363d388a61baa2e0",
+        measurementId: "G-BGV3P2HQZP"
+      };
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+      const db = firebase.database();
 
-  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.database();
+      // Views
+      const authView = document.getElementById('authView');
+      const dashboardView = document.getElementById('dashboardView');
+      const setupView = document.getElementById('setupView');
+      const studyCreatedView = document.getElementById('studyCreatedView');
+      const participantView = document.getElementById('participantView');
+      const resultsView = document.getElementById('resultsView');
+      const welcomeBanner = document.getElementById('welcomeBanner');
 
-  // DOM refs
-  const authView = document.getElementById('authView');
-  const dashboardView = document.getElementById('dashboardView');
-  const setupView = document.getElementById('setupView');
-  const studyCreatedView = document.getElementById('studyCreatedView');
-  const participantView = document.getElementById('participantView');
-  const resultsView = document.getElementById('resultsView');
+      // Inputs
+      const displayNameInput = document.getElementById('displayName');
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+      const studyNameInput = document.getElementById('studyName');
+      const cardsInput = document.getElementById('cardsInput');
+      const instructionsInput = document.getElementById('instructionsInput');
+      const studyLinkInput = document.getElementById('studyLink');
 
-  const studyNameInput = document.getElementById('studyName');
-  const cardsInput = document.getElementById('cardsInput');
-  const instructionsInput = document.getElementById('instructionsInput');
-  const studyLinkInput = document.getElementById('studyLink');
+      // Participant DOM
+      const availableCardsContainer = document.getElementById('availableCards');
+      const sortingArea = document.getElementById('sortingArea');
+      const participantStudyName = document.getElementById('participantStudyName');
+      const participantInstructions = document.getElementById('participantInstructions');
+      const participantStatus = document.getElementById('participantStatus');
+      const stepsWrap = document.getElementById('stepsWrap');
+      const newCategoryDropzone = document.getElementById('newCategoryDropzone');
+      const newCategoryTile = document.getElementById('newCategoryTile');
 
-  const studiesList = document.getElementById('studiesList');
-  const availableCardsContainer = document.getElementById('availableCards');
-  const sortingArea = document.getElementById('sortingArea');
-  const participantStudyName = document.getElementById('participantStudyName');
-  const participantInstructions = document.getElementById('participantInstructions');
-  const participantStatus = document.getElementById('participantStatus');
-  const stepsWrap = document.getElementById('stepsWrap');
-  const newCategoryDropzone = document.getElementById('newCategoryDropzone');
-  const newCategoryTile = document.getElementById('newCategoryTile');
+      // Results DOM
+      const resultsStudyName = document.getElementById('resultsStudyName');
+      const participantsSummary = document.getElementById('participantsSummary');
+      const participantsDetails = document.getElementById('participantsDetails');
+      const categoriesSummary = document.getElementById('categoriesSummary');
+      const categoriesChart = document.getElementById('categoriesChart');
+      const categoriesLabels = document.getElementById('categoriesLabels');
+      const categoryFreqList = document.getElementById('categoryFreqList');
+      const matrixMeta = document.getElementById('matrixMeta');
+      const matrixTableWrap = document.getElementById('matrixTableWrap');
+      const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+      const downloadMatrixBtn = document.getElementById('downloadMatrixBtn');
+      const shareSection = document.getElementById('shareSection');
+      const toggleResultsPublic = document.getElementById('toggleResultsPublic');
+      const publicResultsLinkRow = document.getElementById('publicResultsLinkRow');
+      const publicResultsLink = document.getElementById('publicResultsLink');
+      const copyPublicResultsBtn = document.getElementById('copyPublicResultsBtn');
 
-  const resultsStudyName = document.getElementById('resultsStudyName');
+      // Participant modals
+      const participantModal = document.getElementById('participantModal');
+      const instructionsModal = document.getElementById('instructionsModal');
+      const pName = document.getElementById('pName');
+      const pId = document.getElementById('pId');
+      const pAddress = document.getElementById('pAddress');
+      const pCourse = document.getElementById('pCourse');
+      const pNationality = document.getElementById('pNationality');
+      const pEthnicity = document.getElementById('pEthnicity');
+      const startSortingBtn = document.getElementById('startSortingBtn');
+      const beginSortingBtn = document.getElementById('beginSortingBtn');
 
-  // Header actions
-  const welcomeBanner = document.getElementById('welcomeBanner');
-  const gotoResearcherBtn = document.getElementById('gotoResearcherBtn');
-  const gotoParticipantBtn = document.getElementById('gotoParticipantBtn');
+      // Params
+      const params = new URLSearchParams(location.search);
+      const pUid = params.get('uid');
+      const pStudyId = params.get('study');
+      const viewParam = params.get('view');
+      const hasParticipantLink = Boolean(pUid && pStudyId && !viewParam);
+      const isPublicResultsLink = Boolean(pUid && pStudyId && viewParam === 'results');
 
-  // Results tab refs
-  const tabButtons = document.querySelectorAll('.tab-btn');
-  const tabParticipants = document.getElementById('tabParticipants');
-  const tabCategories = document.getElementById('tabCategories');
-  const tabMatrix = document.getElementById('tabMatrix');
+      // Cache
+      let participantMeta = null;
+      let lastResultsCache = null;
 
-  const participantsSummary = document.getElementById('participantsSummary');
-  const participantsDetails = document.getElementById('participantsDetails');
-
-  const categoriesSummary = document.getElementById('categoriesSummary');
-  const categoriesChart = document.getElementById('categoriesChart');
-  const categoriesLabels = document.getElementById('categoriesLabels');
-  const categoryFreqList = document.getElementById('categoryFreqList');
-
-  const matrixMeta = document.getElementById('matrixMeta');
-  const matrixTableWrap = document.getElementById('matrixTableWrap');
-
-  const authForm = document.getElementById('authForm');
-  const displayNameInput = document.getElementById('displayName');
-  const emailInput = document.getElementById('email');
-  const passwordInput = document.getElementById('password');
-
-  // Participant modals
-  const participantModal = document.getElementById('participantModal');
-  const instructionsModal = document.getElementById('instructionsModal');
-  const pName = document.getElementById('pName');
-  const pId = document.getElementById('pId');
-  const pAddress = document.getElementById('pAddress');
-  const pCourse = document.getElementById('pCourse');
-  const pNationality = document.getElementById('pNationality');
-  const pEthnicity = document.getElementById('pEthnicity');
-  const startSortingBtn = document.getElementById('startSortingBtn');
-  const beginSortingBtn = document.getElementById('beginSortingBtn');
-
-  // Results export + share controls
-  const downloadCsvBtn = document.getElementById('downloadCsvBtn');
-  const downloadMatrixBtn = document.getElementById('downloadMatrixBtn');
-  const backToDashboardFromResultsBtn = document.getElementById('backToDashboardFromResultsBtn');
-  const shareSection = document.getElementById('shareSection');
-  const toggleResultsPublic = document.getElementById('toggleResultsPublic');
-  const publicResultsLinkRow = document.getElementById('publicResultsLinkRow');
-  const publicResultsLink = document.getElementById('publicResultsLink');
-  const copyPublicResultsBtn = document.getElementById('copyPublicResultsBtn');
-
-  // Participant/public link handling and mode switching
-  const params = new URLSearchParams(location.search);
-  const pUid = params.get('uid');
-  const pStudyId = params.get('study');
-  const viewMode = params.get('view');
-  const hasParticipantLink = Boolean(pUid && pStudyId);
-  const isPublicResultsLink = Boolean(pUid && pStudyId && viewMode === 'results');
-  let participantLoaded = false;
-
-  const storedMode = sessionStorage.getItem('mode');
-  const defaultMode = hasParticipantLink ? 'participant' : 'researcher';
-  let appMode = storedMode || defaultMode;
-
-  function setMode(mode){
-    appMode = mode;
-    sessionStorage.setItem('mode', mode);
-    updateHeaderModeButtons();
-    route();
-  }
-  function updateHeaderModeButtons(){
-    // Always hide the Researcher Login button on the participant page/link
-    gotoResearcherBtn.classList.add('hidden');
-    // Optionally show "Back to Participant View" if someone is in researcher mode while a participant link exists
-    if(hasParticipantLink){
-      gotoParticipantBtn.classList.toggle('hidden', appMode !== 'researcher');
-    } else {
-      gotoParticipantBtn.classList.add('hidden');
-    }
-  }
-  gotoParticipantBtn.addEventListener('click', () => setMode('participant'));
-
-  // In-memory caches
-  let participantMeta = null;
-  let lastResultsCache = null;
-  let currentDropTargetCat = null; // for keyboard move
-
-  // Helpers
-  function show(view) {
-    [authView, dashboardView, setupView, studyCreatedView, participantView, resultsView].forEach(v => v.classList.remove('active'));
-    view.classList.add('active');
-  }
-  function activateTab(name) {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
-    tabParticipants.classList.toggle('active', name === 'participants');
-    tabCategories.classList.toggle('active', name === 'categories');
-    tabMatrix.classList.toggle('active', name === 'matrix');
-  }
-  function makeShareLink(uid, studyId) {
-    const base = new URL(window.location.href);
-    base.search = ''; base.hash = '';
-    return `${base.toString()}?uid=${uid}&study=${studyId}`;
-  }
-  function makePublicResultsLink(uid, studyId) {
-    const base = new URL(window.location.href);
-    base.search = ''; base.hash = '';
-    return `${base.toString()}?uid=${uid}&study=${studyId}&view=results`;
-  }
-  function formatDuration(ms) {
-    if (typeof ms !== 'number' || !isFinite(ms) || ms < 0) return '';
-    let s = Math.floor(ms / 1000);
-    const h = Math.floor(s / 3600);
-    s %= 3600;
-    const m = Math.floor(s / 60);
-    s %= 60;
-    if (h) return `${h}h ${m}m ${s}s`;
-    return `${m}m ${s}s`;
-  }
-  function sanitizeText(v) {
-    return String(v ?? '')
-      .replace(/<[^>]*>/g, '')
-      .replace(/[\u0000-\u001F\u007F]/g,'')
-      .replace(/\s+/g,' ')
-      .trim()
-      .slice(0, 200);
-  }
-
-  // CSV helpers
-  function csvEscape(v) { const s = (v == null ? '' : String(v)); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
-  function downloadCSV(filename, text) {
-    const blob = new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8;" });
-    if (navigator.msSaveBlob) { navigator.msSaveBlob(blob, filename); }
-    else { const link = document.createElement('a'); const url = URL.createObjectURL(blob);
-      link.href = url; link.download = filename; link.style.visibility = 'hidden';
-      document.body.appendChild(link); link.click(); document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(url), 0);
-    }
-  }
-
-  // Auth actions
-  async function doLogin(){
-    try{
-      await auth.signInWithEmailAndPassword(emailInput.value.trim(), passwordInput.value);
-      // onAuthStateChanged will route to dashboard
-    }catch(e){ alert(e.message); }
-  }
-  async function doSignup(){
-    try{
-      const email = emailInput.value.trim();
-      const pwd = passwordInput.value;
-      const name = sanitizeText(displayNameInput.value);
-      if(!name){ alert('Please enter your full name for sign-up.'); displayNameInput.focus(); return; }
-      const cred = await auth.createUserWithEmailAndPassword(email, pwd);
-      if (cred.user) {
-        await cred.user.updateProfile({ displayName: name });
-        await db.ref(`users/${cred.user.uid}/profile`).set({
-          name,
-          email,
-          createdAt: new Date().toISOString()
-        });
+      // Utils
+      function show(view) {
+        [authView, dashboardView, setupView, studyCreatedView, participantView, resultsView].forEach(v => v.classList.remove('active'));
+        view.classList.add('active');
       }
-      alert('Account created! You are now logged in.');
-      // onAuthStateChanged will route to dashboard
-    }catch(e){ alert(e.message); }
-  }
-  async function doForgotPassword(){
-    try{
-      const email = prompt('Enter your registered email address:');
-      if(!email) return;
-      await auth.sendPasswordResetEmail(email.trim());
-      alert('Password reset email sent. Please check your inbox.');
-    }catch(e){ alert(e.message); }
-  }
-
-  authForm.addEventListener('submit', e => { e.preventDefault(); doLogin(); });
-  document.getElementById('loginBtn').onclick = doLogin;
-  document.getElementById('signupBtn').onclick = doSignup;
-  document.getElementById('forgotPwdBtn').onclick = doForgotPassword;
-  document.getElementById('logoutBtn').onclick = () => auth.signOut();
-
-  // Greeting
-  function updateWelcome(user){
-    if(user && (user.displayName || user.email)){
-      welcomeBanner.textContent = `Welcome, ${user.displayName || user.email} 👋`;
-    } else {
-      welcomeBanner.textContent = '';
-    }
-  }
-
-  // Router based on mode + auth + public results
-  function route(){
-    // Public results viewer route (no auth required)
-    if (isPublicResultsLink) {
-      show(resultsView);
-      loadPublicResults(pUid, pStudyId);
-      return;
-    }
-
-    const user = auth.currentUser;
-    updateWelcome(user);
-    updateHeaderModeButtons();
-
-    if(appMode === 'participant' && hasParticipantLink){
-      show(participantView);
-      if(!participantLoaded){
-        participantStudyName.textContent='Loading study...';
-        participantStatus.textContent='Please wait while we prepare your card sort.';
-        loadParticipantView(pUid, pStudyId);
-        participantLoaded = true;
+      function sanitizeText(v) {
+        return String(v ?? '')
+          .replace(/<[^>]*>/g, '')
+          .replace(/[\u0000-\u001F\u007F]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, 200);
       }
-    } else {
-      // Researcher mode
-      if(user){
-        show(dashboardView);
-        showDashboard(user.uid);
-        document.getElementById('createStudyBtn').focus();
-      } else {
-        show(authView);
-        document.getElementById('email').focus();
+      function formatDuration(ms) {
+        if (typeof ms !== 'number' || !isFinite(ms) || ms < 0) return '';
+        let s = Math.floor(ms / 1000);
+        const h = Math.floor(s / 3600);
+        s %= 3600;
+        const m = Math.floor(s / 60);
+        s %= 60;
+        return h ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`;
       }
-    }
-  }
-
-  // Auth state change
-  auth.onAuthStateChanged(()=> route());
-
-  // Create study flow
-  document.getElementById('createStudyBtn').onclick = () => { show(setupView); setTimeout(()=>studyNameInput.focus(),0); };
-  document.getElementById('cancelCreateBtn').onclick = () => { show(dashboardView); document.getElementById('createStudyBtn').focus(); };
-  document.getElementById('saveStudyBtn').onclick = () => {
-    const user = auth.currentUser; if(!user){ alert('You must be logged in to save a study.'); return; }
-    const name = sanitizeText(studyNameInput.value);
-    const cards = cardsInput.value.split('\n').map(l=>sanitizeText(l)).filter(Boolean);
-    if(!name || cards.length===0){ alert('Enter name and at least one card'); return; }
-    const studyId = 'study_'+Date.now();
-    const study = { id:studyId, name, cards, instructions:sanitizeText(instructionsInput.value), createdAt:new Date().toISOString(), ownerUid:user.uid, isPublic:true, resultsPublic:false };
-    db.ref(`users/${user.uid}/studies/${studyId}`).set(study).then(()=>{
-      const base = new URL(window.location.href); base.search=''; base.hash='';
-      studyLinkInput.value = `${base.toString()}?uid=${user.uid}&study=${studyId}`;
-      show(studyCreatedView);
-      document.getElementById('copyLinkBtn').focus();
-    }).catch(err=>alert(err.message));
-  };
-  document.getElementById('backToDashboardBtn').onclick = () => show(dashboardView);
-  document.getElementById('copyLinkBtn').onclick = async () => {
-    try{ await navigator.clipboard.writeText(studyLinkInput.value); alert('Link copied!'); }
-    catch{ studyLinkInput.select(); document.execCommand('copy'); alert('Link copied!'); }
-  };
-  document.getElementById('backToDashboardFromResultsBtn').onclick = () => show(dashboardView);
-
-  // Dashboard listing
-  function showDashboard(uid){
-    studiesList.textContent=''; const seen=new Set();
-    db.ref(`users/${uid}/studies`).once('value').then(snap=>{
-      const data=snap.val()||{}; Object.entries(data).forEach(([studyId,study])=>{ if(seen.has(studyId))return; addStudyToDashboard(uid,studyId,study); seen.add(studyId); });
-    });
-  }
-  async function deleteStudy(uid, studyId, studyName, rowEl){
-    const confirmed = confirm(`Delete the study "${studyName||studyId}" and all of its results? This cannot be undone.`); if(!confirmed) return;
-    const buttons = rowEl ? rowEl.querySelectorAll('button') : []; buttons.forEach(b=>b.disabled=true);
-    try{
-      await db.ref().update({ [`users/${uid}/studies/${studyId}`]: null });
-      if(rowEl && rowEl.parentNode) rowEl.parentNode.removeChild(rowEl);
-      if(lastResultsCache && lastResultsCache.uid===uid && lastResultsCache.studyId===studyId){ lastResultsCache=null; show(dashboardView); }
-      alert('Study deleted.');
-    }catch(e){ console.error('Delete failed:',e); alert('Delete failed: '+e.message); buttons.forEach(b=>b.disabled=false); }
-  }
-  function addStudyToDashboard(uid, studyId, study){
-    const div=document.createElement('div'); div.className='study-item';
-    const left=document.createElement('div');
-    const title=document.createElement('div'); title.textContent=study.name||'(Untitled study)';
-    const pub=document.createElement('div'); pub.className='muted'; pub.innerHTML=`<span class="badge">${study.isPublic?'Published':'Unpublished'}</span>`;
-    left.appendChild(title); left.appendChild(pub);
-    const actions=document.createElement('div'); actions.className='study-actions';
-    const shareBtn=document.createElement('button'); shareBtn.className='btn'; shareBtn.textContent='Share Link';
-    shareBtn.onclick=async()=>{ const link=makeShareLink(uid,studyId); try{ await navigator.clipboard.writeText(link); alert('Link copied to clipboard.'); }catch{ prompt('Copy this link:',link); } };
-    const publishBtn=document.createElement('button'); publishBtn.className='btn'; publishBtn.textContent=study.isPublic?'Unpublish':'Publish';
-    publishBtn.onclick=async()=>{ const newVal=!Boolean(study.isPublic); await db.ref(`users/${uid}/studies/${studyId}/isPublic`).set(newVal); study.isPublic=newVal; publishBtn.textContent=newVal?'Unpublish':'Publish'; pub.innerHTML=`<span class="badge">${newVal?'Published':'Unpublished'}</span>`; };
-    const resultsBtn=document.createElement('button'); resultsBtn.className='btn btn-success'; resultsBtn.textContent='Results'; resultsBtn.onclick=()=>viewResults(uid,studyId);
-    const deleteBtn=document.createElement('button'); deleteBtn.className='btn btn-accent'; deleteBtn.textContent='Delete'; deleteBtn.onclick=()=>deleteStudy(uid,studyId,study.name,div);
-    actions.appendChild(shareBtn); actions.appendChild(publishBtn); actions.appendChild(resultsBtn); actions.appendChild(deleteBtn);
-    div.appendChild(left); div.appendChild(actions); studiesList.appendChild(div);
-  }
-
-  // Participant helper UI
-  function updateStepsVisibility(){
-    const hasAny = sortingArea.querySelectorAll('.category').length > 0;
-    stepsWrap.classList.toggle('hidden', hasAny);
-    newCategoryTile.classList.toggle('hidden', !hasAny);
-  }
-  function updateCategoryCount(cat){
-    const count = cat.querySelectorAll('.cat-body .card').length;
-    cat.querySelector('.cat-footer').textContent = (count===1 ? '1 CARD' : `${count} CARDS`);
-    updateStepsVisibility();
-  }
-  function deleteCategory(cat){
-    const cards = [...cat.querySelectorAll('.cat-body .card')];
-    cards.forEach(c => availableCardsContainer.appendChild(c));
-    cat.remove();
-    updateStepsVisibility();
-  }
-  function toggleCollapse(cat){
-    const body = cat.querySelector('.cat-body'); const icon = cat.querySelector('.cat-toggle');
-    const isHidden = body.classList.toggle('hidden');
-    icon.textContent = isHidden ? '▾' : '▴';
-    cat.querySelector('.cat-header').setAttribute('aria-expanded', String(!isHidden));
-  }
-
-  function makeCategory(name=''){
-    const cat = document.createElement('div'); cat.className='category';
-    cat.innerHTML = `
-      <div class="cat-header" tabindex="0" role="button" aria-expanded="true" aria-label="Category header. Press Enter to edit name, Delete to remove, C to collapse">
-        <button class="cat-icon-btn cat-delete" title="Delete" aria-label="Delete category">🗑</button>
-        <input class="cat-title-input" type="text" placeholder="Click to rename" value="${name ? sanitizeText(name) : ''}" maxlength="80" aria-label="Category name">
-        <button class="cat-icon-btn cat-toggle" title="Collapse" aria-label="Collapse">▴</button>
-      </div>
-      <div class="cat-body"></div>
-      <div class="cat-footer">0 CARDS</div>
-    `;
-    sortingArea.appendChild(cat);
-
-    // Events
-    const header = cat.querySelector('.cat-header');
-    const titleInput = cat.querySelector('.cat-title-input');
-    const delBtn = cat.querySelector('.cat-delete');
-    const togBtn = cat.querySelector('.cat-toggle');
-
-    function focusAsDropTarget() { currentDropTargetCat = cat; }
-    header.addEventListener('focus', focusAsDropTarget);
-    titleInput.addEventListener('focus', focusAsDropTarget);
-
-    // Sanitize as they type
-    titleInput.addEventListener('input', () => {
-      titleInput.value = sanitizeText(titleInput.value).slice(0, 80);
-    });
-
-    header.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); titleInput.focus(); }
-      else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteCategory(cat); }
-      else if (e.key.toLowerCase() === 'c') { e.preventDefault(); toggleCollapse(cat); }
-    });
-
-    delBtn.addEventListener('click', () => deleteCategory(cat));
-    delBtn.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' ') { e.preventDefault(); deleteCategory(cat); }});
-    togBtn.addEventListener('click', () => toggleCollapse(cat));
-    togBtn.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' ') { e.preventDefault(); toggleCollapse(cat); }});
-
-    // Clicking empty space in header focuses the input (not icons)
-    header.addEventListener('click', (e) => {
-      if (e.target === header) titleInput.focus();
-    });
-
-    // Sortable for the category body
-    new Sortable(cat.querySelector('.cat-body'), {
-      group:'cards', animation:150,
-      onAdd: () => updateCategoryCount(cat),
-      onRemove: () => updateCategoryCount(cat)
-    });
-
-    updateStepsVisibility();
-    return cat;
-  }
-
-  // Keyboard move support: Enter on a focused card sends it to currentDropTargetCat
-  function attachCardKeyboard(el){
-    el.setAttribute('tabindex', '0');
-    el.setAttribute('role', 'button');
-    el.setAttribute('aria-label', 'Card: ' + el.textContent);
-    el.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        if (currentDropTargetCat) {
-          const body = currentDropTargetCat.querySelector('.cat-body');
-          body.appendChild(el);
-          updateCategoryCount(currentDropTargetCat);
-          el.setAttribute('aria-selected','true');
-          setTimeout(()=>el.setAttribute('aria-selected','false'), 300);
+      function csvEscape(v) {
+        const s = (v == null ? '' : String(v));
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }
+      function downloadCSV(filename, text) {
+        const blob = new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8;" });
+        if (navigator.msSaveBlob) {
+          navigator.msSaveBlob(blob, filename);
+        } else {
+          const a = document.createElement('a');
+          const url = URL.createObjectURL(blob);
+          a.href = url;
+          a.download = filename;
+          a.style.visibility = 'hidden';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 0);
         }
       }
-    });
-  }
+      function makeShareLink(uid, studyId) {
+        const base = new URL(window.location.href);
+        base.search = ''; base.hash = '';
+        return `${base.toString()}?uid=${uid}&study=${studyId}`;
+      }
+      function makePublicResultsLink(uid, studyId) {
+        const base = new URL(window.location.href);
+        base.search = ''; base.hash = '';
+        return `${base.toString()}?uid=${uid}&study=${studyId}&view=results`;
+      }
 
-  // Begin flow: details -> instructions -> mark started
-  startSortingBtn.onclick = () => {
-    const name = sanitizeText(pName.value);
-    const idNumber = sanitizeText(pId.value);
-    const address = sanitizeText(pAddress.value);
-    const course = sanitizeText(pCourse.value);
-    const nationality = sanitizeText(pNationality.value);
-    const ethnicity = sanitizeText(pEthnicity.value);
-    const outsideHome = sanitizeText((document.querySelector('input[name="pOutsideHome"]:checked') || {}).value || '');
+      // Auth
+      document.getElementById('loginBtn').onclick = async () => {
+        try { await auth.signInWithEmailAndPassword(emailInput.value.trim(), passwordInput.value); }
+        catch (e) { alert(e.message); }
+      };
+      document.getElementById('signupBtn').onclick = async () => {
+        try {
+          const name = sanitizeText(displayNameInput.value);
+          if (!name) { alert('Please enter your full name for sign-up.'); displayNameInput.focus(); return; }
+          const cred = await auth.createUserWithEmailAndPassword(emailInput.value.trim(), passwordInput.value);
+          await cred.user.updateProfile({ displayName: name });
+          await db.ref(`users/${cred.user.uid}/profile`).set({ name, email: cred.user.email, createdAt: new Date().toISOString() });
+          alert('Account created! You are now logged in.');
+        } catch (e) { alert(e.message); }
+      };
+      document.getElementById('forgotPwdBtn').onclick = async () => {
+        try {
+          const email = prompt('Enter your registered email address:');
+          if (!email) return;
+          await auth.sendPasswordResetEmail(email.trim());
+          alert('Password reset email sent. Please check your inbox.');
+        } catch (e) { alert(e.message); }
+      };
+      document.getElementById('logoutBtn').onclick = () => auth.signOut();
 
-    if(!name || !idNumber || !address || !course || !nationality || !ethnicity || !outsideHome){
-      alert('Please complete all fields to begin.'); return;
-    }
-    participantMeta = { name, idNumber, address, course, nationality, ethnicity, outsideHome };
-    participantModal.classList.add('hidden');
-    instructionsModal.classList.remove('hidden');
-    setTimeout(()=>document.getElementById('beginSortingBtn').focus(),0);
-  };
-  beginSortingBtn.onclick = async () => {
-    const uid = participantView.dataset.uid, studyId = participantView.dataset.studyId;
-    if(!uid||!studyId){ alert('Study not loaded yet.'); return; }
-    const startedAt = new Date().toISOString();
-    participantView.dataset.startedAt = startedAt;
-    try{
-      const ref = db.ref(`users/${uid}/studies/${studyId}/results`).push();
-      await ref.set({ timestamp: startedAt, participant: participantMeta, status:'started' });
-      participantView.dataset.resultKey = ref.key;
-    }catch(e){ console.warn('Could not create started result entry:', e); }
-    instructionsModal.classList.add('hidden');
-  };
+      auth.onAuthStateChanged(user => {
+        if (user && (user.displayName || user.email)) welcomeBanner.textContent = `Welcome, ${user.displayName || user.email} 👋`;
+        else welcomeBanner.textContent = '';
 
-  // Load participant study and initialize Sortables
-  async function loadParticipantView(uid, studyId){
-    participantStatus.textContent='Loading study...';
-    db.ref(`users/${uid}/studies/${studyId}`).once('value')
-      .then(async snap=>{
-        const study=snap.val();
-        if(!study){ participantStudyName.textContent='Study unavailable'; participantStatus.textContent='This study could not be found. Please check the link with the researcher.'; return; }
-        if(study.isPublic!==true){ participantStudyName.textContent='Study not published'; participantStatus.textContent='This study is currently not available to participants. Please contact the researcher.'; return; }
+        if (isPublicResultsLink) { show(resultsView); loadPublicResults(pUid, pStudyId); return; }
+        if (hasParticipantLink) { show(participantView); loadParticipantView(pUid, pStudyId); return; }
 
-        try{
-          participantStudyName.textContent=study.name||'';
-          if(study.instructions){ participantInstructions.textContent=study.instructions; participantInstructions.classList.remove('hidden'); }
-          else { participantInstructions.textContent=''; participantInstructions.classList.add('hidden'); }
+        if (user) { show(dashboardView); showDashboard(user.uid); }
+        else { show(authView); emailInput.focus(); }
+      });
 
-          // Populate cards list
-          availableCardsContainer.innerHTML='';
-          (study.cards||[]).forEach(card=>{
-            const d=document.createElement('div');
-            d.className='card'; d.textContent=card; d.dataset.cardText=card;
+      // Dashboard
+      function showDashboard(uid) {
+        const studiesList = document.getElementById('studiesList');
+        studiesList.textContent = '';
+        const seen = new Set();
+        db.ref(`users/${uid}/studies`).once('value').then(snap => {
+          const data = snap.val() || {};
+          Object.entries(data).forEach(([id, study]) => {
+            if (seen.has(id)) return;
+            addStudyToDashboard(uid, id, study);
+            seen.add(id);
+          });
+        });
+      }
+      function addStudyToDashboard(uid, studyId, study) {
+        const list = document.getElementById('studiesList');
+        const div = document.createElement('div');
+        div.className = 'study-item';
+
+        const info = document.createElement('div');
+        const title = document.createElement('div'); title.textContent = study.name || '(Untitled study)';
+        const pub = document.createElement('div'); pub.className = 'muted'; pub.innerHTML = `<span class="badge">${study.isPublic ? 'Published' : 'Unpublished'}</span>`;
+        info.appendChild(title); info.appendChild(pub);
+
+        const actions = document.createElement('div'); actions.className = 'study-actions';
+        const shareBtn = document.createElement('button'); shareBtn.className = 'btn'; shareBtn.textContent = 'Share Link';
+        shareBtn.onclick = async () => { const link = makeShareLink(uid, studyId); try { await navigator.clipboard.writeText(link); alert('Link copied.'); } catch { prompt('Copy this link:', link); } };
+        const publishBtn = document.createElement('button'); publishBtn.className = 'btn'; publishBtn.textContent = study.isPublic ? 'Unpublish' : 'Publish';
+        publishBtn.onclick = async () => {
+          const val = !Boolean(study.isPublic);
+          await db.ref(`users/${uid}/studies/${studyId}/isPublic`).set(val);
+          study.isPublic = val;
+          publishBtn.textContent = val ? 'Unpublish' : 'Publish';
+          pub.innerHTML = `<span class="badge">${val ? 'Published' : 'Unpublished'}</span>`;
+        };
+        const resultsBtn = document.createElement('button'); resultsBtn.className = 'btn btn-success'; resultsBtn.textContent = 'Results'; resultsBtn.onclick = () => viewResults(uid, studyId);
+        const deleteBtn = document.createElement('button'); deleteBtn.className = 'btn btn-accent'; deleteBtn.textContent = 'Delete'; deleteBtn.onclick = () => deleteStudy(uid, studyId, study.name, div);
+
+        actions.appendChild(shareBtn);
+        actions.appendChild(publishBtn);
+        actions.appendChild(resultsBtn);
+        actions.appendChild(deleteBtn);
+
+        div.appendChild(info);
+        div.appendChild(actions);
+        list.appendChild(div);
+      }
+      async function deleteStudy(uid, studyId, studyName, rowEl) {
+        if (!confirm(`Delete the study "${studyName || studyId}" and all of its results? This cannot be undone.`)) return;
+        const buttons = rowEl ? rowEl.querySelectorAll('button') : [];
+        buttons.forEach(b => b.disabled = true);
+        try {
+          await db.ref().update({ [`users/${uid}/studies/${studyId}`]: null });
+          if (rowEl && rowEl.parentNode) rowEl.parentNode.removeChild(rowEl);
+          alert('Study deleted.');
+        } catch (e) {
+          alert('Delete failed: ' + e.message);
+          buttons.forEach(b => b.disabled = false);
+        }
+      }
+
+      // Create study
+      document.getElementById('createStudyBtn').onclick = () => { show(setupView); setTimeout(() => studyNameInput.focus(), 0); };
+      document.getElementById('cancelCreateBtn').onclick = () => show(dashboardView);
+      document.getElementById('saveStudyBtn').onclick = () => {
+        const user = auth.currentUser;
+        if (!user) { alert('You must be logged in to save a study.'); return; }
+        const name = sanitizeText(studyNameInput.value);
+        const cards = cardsInput.value.split('\n').map(s => sanitizeText(s)).filter(Boolean);
+        if (!name || cards.length === 0) { alert('Enter name and at least one card'); return; }
+        const studyId = 'study_' + Date.now();
+        const study = {
+          id: studyId,
+          name,
+          cards,
+          instructions: sanitizeText(instructionsInput.value),
+          createdAt: new Date().toISOString(),
+          ownerUid: user.uid,
+          isPublic: true
+        };
+        db.ref(`users/${user.uid}/studies/${studyId}`).set(study).then(() => {
+          studyLinkInput.value = makeShareLink(user.uid, studyId);
+          show(studyCreatedView);
+        });
+      };
+      document.getElementById('copyLinkBtn').onclick = async () => {
+        try { await navigator.clipboard.writeText(studyLinkInput.value); alert('Link copied!'); }
+        catch { studyLinkInput.select(); document.execCommand('copy'); alert('Link copied!'); }
+      };
+      document.getElementById('backToDashboardBtn').onclick = () => show(dashboardView);
+      document.getElementById('backToDashboardFromResultsBtn').onclick = () => show(dashboardView);
+
+      // Participant helpers
+      function updateStepsVisibility() {
+        const hasAny = sortingArea.querySelectorAll('.category').length > 0;
+        stepsWrap.classList.toggle('hidden', hasAny);
+        newCategoryTile.classList.toggle('hidden', !hasAny);
+      }
+      function updateCategoryCount(cat) {
+        const count = cat.querySelectorAll('.cat-body .card').length;
+        cat.querySelector('.cat-footer').textContent = (count === 1 ? '1 CARD' : `${count} CARDS`);
+        updateStepsVisibility();
+      }
+      function toggleCollapse(cat) {
+        const body = cat.querySelector('.cat-body');
+        const icon = cat.querySelector('.cat-toggle');
+        const hidden = body.classList.toggle('hidden');
+        icon.textContent = hidden ? '▾' : '▴';
+        cat.querySelector('.cat-header').setAttribute('aria-expanded', String(!hidden));
+      }
+      function deleteCategory(cat) {
+        [...cat.querySelectorAll('.cat-body .card')].forEach(c => availableCardsContainer.appendChild(c));
+        cat.remove();
+        updateStepsVisibility();
+      }
+      function makeCategory(name = '') {
+        const cat = document.createElement('div');
+        cat.className = 'category';
+        cat.innerHTML = `
+          <div class="cat-header" tabindex="0" role="button" aria-expanded="true">
+            <button class="cat-icon-btn cat-delete" title="Delete" aria-label="Delete category">🗑</button>
+            <input class="cat-title-input" type="text" placeholder="Click to rename" value="${sanitizeText(name)}" maxlength="80" aria-label="Category name" />
+            <button class="cat-icon-btn cat-toggle" title="Collapse" aria-label="Collapse">▴</button>
+          </div>
+          <div class="cat-body"></div>
+          <div class="cat-footer">0 CARDS</div>
+        `;
+        sortingArea.appendChild(cat);
+
+        const header = cat.querySelector('.cat-header');
+        const input = cat.querySelector('.cat-title-input');
+        const delBtn = cat.querySelector('.cat-delete');
+        const togBtn = cat.querySelector('.cat-toggle');
+
+        // Important: don't delete on Backspace while editing
+        input.addEventListener('keydown', (e) => { e.stopPropagation(); });
+        input.addEventListener('input', () => { input.value = sanitizeText(input.value).slice(0, 80); });
+
+        header.addEventListener('keydown', (e) => {
+          if (e.target === input) return;
+          if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); input.focus(); }
+          else if (e.key.toLowerCase() === 'c') { e.preventDefault(); toggleCollapse(cat); }
+          else if (e.key === 'Delete') { e.preventDefault(); deleteCategory(cat); } // Backspace no longer deletes
+        });
+
+        delBtn.onclick = () => deleteCategory(cat);
+        togBtn.onclick = () => toggleCollapse(cat);
+
+        new Sortable(cat.querySelector('.cat-body'), {
+          group: 'cards',
+          animation: 150,
+          onAdd: () => updateCategoryCount(cat),
+          onRemove: () => updateCategoryCount(cat)
+        });
+
+        updateStepsVisibility();
+        return cat;
+      }
+      function attachCardKeyboard(el) {
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('role', 'button');
+        el.setAttribute('aria-label', 'Card: ' + el.textContent);
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            const firstCat = sortingArea.querySelector('.category');
+            if (firstCat) {
+              firstCat.querySelector('.cat-body').appendChild(el);
+              updateCategoryCount(firstCat);
+              el.setAttribute('aria-selected', 'true');
+              setTimeout(() => el.setAttribute('aria-selected', 'false'), 300);
+            }
+          }
+        });
+      }
+
+      // Participant flow
+      startSortingBtn.onclick = () => {
+        const meta = {
+          name: sanitizeText(pName.value),
+          idNumber: sanitizeText(pId.value),
+          address: sanitizeText(pAddress.value),
+          course: sanitizeText(pCourse.value),
+          nationality: sanitizeText(pNationality.value),
+          ethnicity: sanitizeText(pEthnicity.value),
+          outsideHome: sanitizeText((document.querySelector('input[name="pOutsideHome"]:checked') || {}).value || '')
+        };
+        if (!meta.name || !meta.idNumber || !meta.address || !meta.course || !meta.nationality || !meta.ethnicity || !meta.outsideHome) {
+          alert('Please complete all fields to begin.');
+          return;
+        }
+        participantMeta = meta;
+        participantModal.classList.add('hidden');
+        instructionsModal.classList.remove('hidden');
+        setTimeout(() => beginSortingBtn.focus(), 0);
+      };
+
+      beginSortingBtn.onclick = async () => {
+        const uid = participantView.dataset.uid;
+        const studyId = participantView.dataset.studyId;
+        if (!uid || !studyId) { alert('Study not loaded yet.'); return; }
+
+        const startedAt = new Date().toISOString();
+        participantView.dataset.startedAt = startedAt;
+        try {
+          const ref = db.ref(`users/${uid}/studies/${studyId}/results`).push();
+          await ref.set({ timestamp: startedAt, participant: participantMeta, status: 'started' });
+          participantView.dataset.resultKey = ref.key;
+        } catch (e) {
+          console.warn('Could not create started result entry:', e);
+        }
+        instructionsModal.classList.add('hidden');
+      };
+
+      async function loadParticipantView(uid, studyId) {
+        participantStatus.textContent = 'Loading study...';
+        db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => {
+          const study = snap.val();
+          if (!study) { participantStudyName.textContent = 'Study unavailable'; participantStatus.textContent = 'Link invalid.'; return; }
+          if (study.isPublic !== true) { participantStudyName.textContent = 'Study not published'; participantStatus.textContent = 'Ask the researcher to publish it.'; return; }
+
+          participantStudyName.textContent = study.name || '';
+          if (study.instructions) { participantInstructions.textContent = study.instructions; participantInstructions.classList.remove('hidden'); }
+          else { participantInstructions.textContent = ''; participantInstructions.classList.add('hidden'); }
+
+          availableCardsContainer.innerHTML = '';
+          (study.cards || []).forEach(card => {
+            const d = document.createElement('div');
+            d.className = 'card';
+            d.textContent = card;
+            d.dataset.cardText = card;
             attachCardKeyboard(d);
             availableCardsContainer.appendChild(d);
           });
 
-          // Initialize left panel sortable
-          new Sortable(availableCardsContainer, { group:'cards', animation:150 });
+          // Left list Sortable
+          new Sortable(availableCardsContainer, { group: 'cards', animation: 150 });
 
-          // Big "create new category" zone (visible when no categories yet)
+          // Drop anywhere in the grid to create a category
+          new Sortable(sortingArea, {
+            group: 'cards',
+            animation: 150,
+            sort: false, // categories themselves not re-ordered by drag
+            onAdd: (evt) => {
+              const cardEl = evt.item;
+              const idx = evt.newIndex;
+              const cat = makeCategory();
+              const ref = sortingArea.children[idx] || null;
+              sortingArea.insertBefore(cat, ref);
+              cat.querySelector('.cat-body').appendChild(cardEl);
+              updateCategoryCount(cat);
+              cat.querySelector('.cat-title-input').focus();
+            }
+          });
+
+          // Optional drop targets (visible before categories exist / as a helper)
           new Sortable(newCategoryDropzone, {
-            group:'cards', animation:150,
-            onAdd: evt => {
+            group: 'cards',
+            animation: 150,
+            onAdd: (evt) => {
               const item = evt.item;
               const cat = makeCategory();
               cat.querySelector('.cat-body').appendChild(item);
               updateCategoryCount(cat);
-              cat.querySelector('.cat-header').focus();
             }
           });
-
-          // Tile to create new category when categories already exist
           new Sortable(newCategoryTile, {
-            group:'cards', animation:150,
-            onAdd: evt => {
+            group: 'cards',
+            animation: 150,
+            onAdd: (evt) => {
               const item = evt.item;
               const cat = makeCategory();
               cat.querySelector('.cat-body').appendChild(item);
               updateCategoryCount(cat);
-              cat.querySelector('.cat-header').focus();
             }
           });
 
-          sortingArea.innerHTML=''; // starts empty
+          sortingArea.innerHTML = ''; // ensure empty canvas initially
           updateStepsVisibility();
 
           participantView.dataset.uid = uid;
           participantView.dataset.studyId = studyId;
 
-          participantStatus.textContent='';
-          participantMeta = null;
+          participantStatus.textContent = '';
           participantModal.classList.remove('hidden');
-          setTimeout(()=>pName.focus(),0);
-        }catch(err){ console.error('Render error:',err); participantStatus.textContent='Something went wrong while rendering the study. Please refresh the page.'; }
-      })
-      .catch(err=>{ console.error('DB read failed:',err); participantStudyName.textContent='Unable to load study'; participantStatus.textContent='This study is not publicly accessible. Ask the researcher to publish it.'; });
-  }
-
-  // Submit sorting (must sort ALL cards; and ALL category labels must be filled)
-  function submitSorting(){
-    const uid = participantView.dataset.uid, studyId = participantView.dataset.studyId;
-    if(!uid||!studyId){ alert('Study not loaded yet.'); return; }
-    if(!participantMeta){ alert('Please enter your details before submitting.'); participantModal.classList.remove('hidden'); return; }
-
-    const unsortedCount = availableCardsContainer.querySelectorAll('.card').length;
-    if (unsortedCount > 0) {
-      alert(`Please sort all cards before finishing. You still have ${unsortedCount} card(s) left.`);
-      availableCardsContainer.scrollIntoView({behavior:'smooth', block:'center'});
-      return;
-    }
-
-    // Build categories and verify names
-    const cats = [];
-    let firstInvalidCatInput = null;
-    sortingArea.querySelectorAll('.category').forEach(cat=>{
-      const input = cat.querySelector('.cat-title-input');
-      const name = sanitizeText(input?.value || '');
-      const cards = [...cat.querySelectorAll('.cat-body .card')].map(c=>c.dataset.cardText);
-      if(cards.length>0){
-        if(!name && !firstInvalidCatInput){ firstInvalidCatInput = input; }
-        cats.push({ name: name || 'Unnamed', cards });
+          setTimeout(() => pName.focus(), 0);
+        });
       }
-    });
 
-    if (firstInvalidCatInput){
-      alert('Please name all categories before finishing.');
-      firstInvalidCatInput.focus();
-      firstInvalidCatInput.scrollIntoView({behavior:'smooth', block:'center'});
-      return;
-    }
-    if(cats.length===0){ alert('Please sort at least one card.'); return; }
+      // Submit sorting
+      document.getElementById('submitSortingBtn').onclick = () => {
+        const uid = participantView.dataset.uid;
+        const studyId = participantView.dataset.studyId;
+        if (!uid || !studyId) { alert('Study not loaded yet.'); return; }
+        if (!participantMeta) { alert('Please enter your details before submitting.'); participantModal.classList.remove('hidden'); return; }
 
-    const startedAtIso = participantView.dataset.startedAt || null;
-    const now = new Date();
-    const resultData = { participant: participantMeta, categories: cats, status:'completed', completedAt: now.toISOString() };
-    if(startedAtIso){ const durationMs = now.getTime()-new Date(startedAtIso).getTime(); resultData.durationMs = durationMs; }
-
-    const resultsRef = db.ref(`users/${uid}/studies/${studyId}/results`);
-    const existingKey = participantView.dataset.resultKey;
-    const promise = existingKey ? resultsRef.child(existingKey).update(resultData) : resultsRef.push({ timestamp: now.toISOString(), ...resultData });
-
-    promise.then(()=>{ participantView.innerHTML='<h2>Thank you!</h2><p>Your responses have been recorded.</p>'; }).catch(err=>alert(err.message));
-  }
-  document.getElementById('submitSortingBtn').onclick = submitSorting;
-
-  // Tabs
-  tabButtons.forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
-
-  // Share controls (researcher)
-  function setupShareControls(uid, studyId, study){
-    shareSection.classList.remove('hidden');
-    toggleResultsPublic.checked = Boolean(study.resultsPublic);
-    publicResultsLink.value = makePublicResultsLink(uid, studyId);
-    publicResultsLinkRow.classList.toggle('hidden', !toggleResultsPublic.checked);
-
-    toggleResultsPublic.onchange = async () => {
-      const val = toggleResultsPublic.checked;
-      publicResultsLinkRow.classList.toggle('hidden', !val);
-      try { await db.ref(`users/${uid}/studies/${studyId}/resultsPublic`).set(val); }
-      catch(e){ alert('Failed to update sharing setting: ' + e.message); }
-    };
-    copyPublicResultsBtn.onclick = async () => {
-      try{ await navigator.clipboard.writeText(publicResultsLink.value); alert('Public results link copied!'); }
-      catch{ publicResultsLink.select(); document.execCommand('copy'); alert('Link copied!'); }
-    };
-  }
-
-  // Results UI builder (used by both researcher and public viewer)
-  function buildResultsUI(study, results){
-    let arr = Object.values(results || {});
-    lastResultsCache=null; downloadCsvBtn.disabled=true; downloadMatrixBtn.disabled=true;
-
-    if(arr.length===0){
-      participantsSummary.textContent='No results yet.';
-      participantsDetails.innerHTML=''; categoriesSummary.textContent='';
-      categoriesChart.innerHTML=''; categoriesLabels.innerHTML=''; categoryFreqList.innerHTML='';
-      matrixMeta.textContent=''; matrixTableWrap.innerHTML='';
-      show(resultsView); activateTab('participants'); return;
-    }
-
-    arr = arr.sort((a,b)=>new Date(a.timestamp||0)-new Date(b.timestamp||0));
-    const completed = arr.filter(r=>r.status==='completed' || Array.isArray(r.categories));
-    const startedCount = arr.length, completedCount = completed.length;
-
-    const durations = completed.map(r=>r.durationMs).filter(v=>typeof v==='number'&&isFinite(v)&&v>=0);
-    const avgDurationMs = durations.length ? Math.round(durations.reduce((a,b)=>a+b,0)/durations.length) : null;
-    participantsSummary.textContent = `Started: ${startedCount} | Completed: ${completedCount} | Avg sorting time: ${avgDurationMs!=null?formatDuration(avgDurationMs)+` (n=${durations.length})`:'N/A'}`;
-
-    participantsDetails.innerHTML='';
-    completed.forEach((res,i)=>{
-      const w=document.createElement('div');
-      const h4=document.createElement('h4'); const pinfo=res.participant||{}; const dn=pinfo.name?` — ${pinfo.name}`:'';
-      h4.textContent=`Participant ${i+1}${dn}`; w.appendChild(h4);
-      const meta=document.createElement('div'); meta.className='muted';
-      meta.textContent=[
-        pinfo.idNumber?`ID: ${pinfo.idNumber}`:'', pinfo.course?`Course: ${pinfo.course}`:'',
-        pinfo.nationality?`Nationality: ${pinfo.nationality}`:'', pinfo.ethnicity?`Ethnicity: ${pinfo.ethnicity}`:'',
-        pinfo.outsideHome?`Home outside Suva/Nausori: ${pinfo.outsideHome}`:'',
-        res.completedAt?`Completed: ${new Date(res.completedAt).toLocaleString()}`:(res.timestamp?`Time: ${new Date(res.timestamp).toLocaleString()}`:''),
-        typeof res.durationMs==='number'?`Duration: ${formatDuration(res.durationMs)}`:''
-      ].filter(Boolean).join(' | ');
-      if(meta.textContent) w.appendChild(meta);
-      (res.categories||[]).forEach(cat=>{
-        const p=document.createElement('p'); const strong=document.createElement('strong');
-        strong.textContent=cat.name||'Unnamed'; p.appendChild(strong); p.append(' ');
-        (cat.cards||[]).forEach(c=>{ const chip=document.createElement('span'); chip.className='category-card'; chip.textContent=c; p.appendChild(chip); p.append(' '); });
-        w.appendChild(p);
-      });
-      participantsDetails.appendChild(w);
-    });
-
-    // Categories tab: distribution and frequency of names
-    const catsPer = completed.map(r=>(r.categories||[]).length);
-    const avgCats = catsPer.length ? (catsPer.reduce((a,b)=>a+b,0)/catsPer.length) : 0;
-    categoriesSummary.textContent=`Average number of categories: ${avgCats.toFixed(2)} (n=${completedCount})`;
-
-    const dist = new Map(); catsPer.forEach(n=>dist.set(n,(dist.get(n)||0)+1));
-    const maxBuckets = dist.size ? Math.max(...dist.keys()) : 0;
-    categoriesChart.innerHTML=''; categoriesLabels.innerHTML='';
-    if(maxBuckets>0){
-      const counts=[]; for(let i=1;i<=maxBuckets;i++) counts.push(dist.get(i)||0);
-      const peak=Math.max(...counts,1);
-      counts.forEach((count,idx)=>{
-        const bar=document.createElement('div'); bar.className='bar'; bar.style.height=Math.round((count/peak)*100)+'%';
-        const val=document.createElement('span'); val.textContent=count; bar.appendChild(val); categoriesChart.appendChild(bar);
-        const xl=document.createElement('div'); xl.className='xlabel'; xl.textContent=String(idx+1); categoriesLabels.appendChild(xl);
-      });
-    }else{ const p=document.createElement('p'); p.textContent='No completed participants yet.'; categoriesChart.appendChild(p); }
-
-    // Category name frequency (case-insensitive)
-    const categoryFreqList = document.getElementById('categoryFreqList');
-    const freqMap = new Map();
-    completed.forEach(r=>{
-      (r.categories||[]).forEach(cat=>{
-        const raw = String(cat.name||'Unnamed');
-        const norm = sanitizeText(raw).toLowerCase() || 'unnamed';
-        if(!freqMap.has(norm)) freqMap.set(norm, {count:0, sample: raw.trim() || 'Unnamed'});
-        freqMap.get(norm).count++;
-      });
-    });
-    const freqArr = [...freqMap.entries()].sort((a,b)=>b[1].count - a[1].count).slice(0, 10);
-    categoryFreqList.innerHTML = '';
-    if(freqArr.length){
-      freqArr.forEach(([norm, info])=>{
-        const li = document.createElement('li');
-        li.textContent = `${info.sample} — ${info.count}`;
-        categoryFreqList.appendChild(li);
-      });
-    } else {
-      const li = document.createElement('li'); li.textContent = 'No categories yet.'; categoryFreqList.appendChild(li);
-    }
-
-    // Matrix tab (percentages)
-    matrixMeta.innerHTML=''; matrixTableWrap.innerHTML='';
-    const cards = study?.cards || [];
-    const matrixCounts={}; cards.forEach(a=>{ matrixCounts[a]={}; cards.forEach(b=>matrixCounts[a][b]=0); });
-
-    completed.forEach(r=>{
-      const catsR=r.categories||[];
-      catsR.forEach(cat=>{
-        const cs=cat.cards||[];
-        cs.forEach(a=>cs.forEach(b=>{
-          if(a!==b) matrixCounts[a][b]+=1;
-        }));
-      });
-    });
-
-    const table=document.createElement('table'); const thead=document.createElement('thead'); const hr=document.createElement('tr'); hr.appendChild(document.createElement('th'));
-    cards.forEach(c=>{ const th=document.createElement('th'); th.textContent=c; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
-    const tbody=document.createElement('tbody');
-    cards.forEach(a=>{
-      const tr=document.createElement('tr'); const rh=document.createElement('th'); rh.textContent=a; tr.appendChild(rh);
-      cards.forEach(b=>{
-        const td=document.createElement('td');
-        if(a===b){ td.textContent='—'; }
-        else{
-          const pct = completedCount ? (matrixCounts[a][b] / completedCount * 100) : 0;
-          td.textContent = `${pct.toFixed(0)}%`;
-          td.title = `${matrixCounts[a][b]} of ${completedCount} participants`;
+        const unsorted = availableCardsContainer.querySelectorAll('.card').length;
+        if (unsorted > 0) {
+          alert(`Please sort all cards. ${unsorted} remaining on the left.`);
+          availableCardsContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
         }
-        tr.appendChild(td);
-      });
-      tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-    matrixTableWrap.appendChild(table);
 
-    // Meta
-    const mm=document.createElement('p');
-    mm.textContent=`Percentages are of completed participants (n=${completedCount}).`;
-    matrixMeta.appendChild(mm);
+        const cats = [];
+        let firstInvalid = null;
+        sortingArea.querySelectorAll('.category').forEach(cat => {
+          const name = sanitizeText(cat.querySelector('.cat-title-input')?.value || '');
+          const cards = [...cat.querySelectorAll('.cat-body .card')].map(c => c.dataset.cardText);
+          if (cards.length > 0) {
+            if (!name && !firstInvalid) firstInvalid = cat.querySelector('.cat-title-input');
+            cats.push({ name: name || 'Unnamed', cards });
+          }
+        });
 
-    // Cache for CSV export
-    lastResultsCache = { arr, completed, completedCount, study, cards, matrixCounts };
-    downloadCsvBtn.disabled = false;
-    downloadMatrixBtn.disabled = false;
+        if (firstInvalid) {
+          alert('Please name all categories.');
+          firstInvalid.focus();
+          firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+        if (cats.length === 0) { alert('Please sort at least one card.'); return; }
 
-    show(resultsView); activateTab('participants');
-  }
+        const startedAt = participantView.dataset.startedAt || null;
+        const now = new Date();
+        const data = {
+          participant: participantMeta,
+          categories: cats,
+          status: 'completed',
+          completedAt: now.toISOString()
+        };
+        if (startedAt) data.durationMs = now.getTime() - new Date(startedAt).getTime();
 
-  function viewResults(uid, studyId){
-    // Researcher results view + share controls
-    db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap=>{
-      const study=snap.val();
-      resultsStudyName.textContent = study?.name || '';
-      setupShareControls(uid, studyId, study || {});
-      db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2=>{
-        buildResultsUI(study||{}, snap2.val()||{});
-      });
-    });
-  }
+        const resultsRef = db.ref(`users/${uid}/studies/${studyId}/results`);
+        const key = participantView.dataset.resultKey;
+        const p = key ? resultsRef.child(key).update(data) : resultsRef.push({ timestamp: now.toISOString(), ...data });
 
-  // Public results (no auth)
-  function loadPublicResults(uid, studyId){
-    // Hide researcher-only controls
-    shareSection.classList.add('hidden');
-    downloadCsvBtn.style.display = 'none';
-    downloadMatrixBtn.style.display = 'none';
-    backToDashboardFromResultsBtn.style.display = 'none';
+        p.then(() => { participantView.innerHTML = '<h2>Thank you!</h2><p>Your responses have been recorded.</p>'; })
+         .catch(e => alert(e.message));
+      };
 
-    db.ref(`users/${uid}/studies/${studyId}`).once('value')
-      .then(snap=>{
-        const study=snap.val();
-        if(!study){ resultsStudyName.textContent = 'Study unavailable'; show(resultsView); activateTab('participants'); return; }
-        resultsStudyName.textContent = study.name || '';
-        if(study.resultsPublic!==true){
-          participantsSummary.textContent = 'These results are not publicly available.';
-          participantsDetails.textContent = '';
+      // Results + sharing
+      function setupShareControls(uid, studyId, study) {
+        shareSection.classList.remove('hidden');
+        toggleResultsPublic.checked = Boolean(study.resultsPublic);
+        publicResultsLink.value = makePublicResultsLink(uid, studyId);
+        publicResultsLinkRow.classList.toggle('hidden', !toggleResultsPublic.checked);
+
+        toggleResultsPublic.onchange = async () => {
+          const val = toggleResultsPublic.checked;
+          publicResultsLinkRow.classList.toggle('hidden', !val);
+          try { await db.ref(`users/${uid}/studies/${studyId}/resultsPublic`).set(val); }
+          catch (e) { alert('Failed to update sharing setting: ' + e.message); }
+        };
+        copyPublicResultsBtn.onclick = async () => {
+          try { await navigator.clipboard.writeText(publicResultsLink.value); alert('Public results link copied!'); }
+          catch { publicResultsLink.select(); document.execCommand('copy'); alert('Link copied!'); }
+        };
+      }
+
+      function viewResults(uid, studyId) {
+        db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => {
+          const study = snap.val();
+          resultsStudyName.textContent = study?.name || '';
+          setupShareControls(uid, studyId, study || {});
+          db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => {
+            buildResultsUI(study || {}, snap2.val() || {}, uid, studyId, { publicViewer: false });
+          });
+        });
+      }
+
+      function loadPublicResults(uid, studyId) {
+        shareSection.classList.add('hidden');
+        db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => {
+          const study = snap.val();
+          resultsStudyName.textContent = study?.name || '';
+          if (!study || study.resultsPublic !== true) {
+            participantsSummary.textContent = 'These results are not publicly available.';
+            participantsDetails.innerHTML = '';
+            categoriesSummary.textContent = '';
+            categoriesChart.innerHTML = '';
+            categoriesLabels.innerHTML = '';
+            matrixMeta.textContent = '';
+            matrixTableWrap.innerHTML = '';
+            return;
+          }
+          db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => {
+            buildResultsUI(study, snap2.val() || {}, uid, studyId, { publicViewer: true });
+          });
+        });
+      }
+
+      function buildResultsUI(study, resultsObj, uid, studyId, opts) {
+        const arr0 = Object.values(resultsObj || {});
+        let arr = arr0;
+        lastResultsCache = null;
+        downloadCsvBtn.disabled = true;
+        downloadMatrixBtn.disabled = true;
+
+        if (arr.length === 0) {
+          participantsSummary.textContent = 'No results yet.';
+          participantsDetails.innerHTML = '';
           categoriesSummary.textContent = '';
           categoriesChart.innerHTML = '';
           categoriesLabels.innerHTML = '';
           matrixMeta.textContent = '';
           matrixTableWrap.innerHTML = '';
-          show(resultsView); activateTab('participants'); return;
+          show(resultsView);
+          return;
         }
-        db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2=>{
-          buildResultsUI(study, snap2.val()||{});
-        }).catch(err=>{
-          participantsSummary.textContent = 'Unable to load results publicly.';
-          console.error(err);
-          show(resultsView); activateTab('participants');
+
+        arr = arr.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+
+        const completed = arr.filter(r => r.status === 'completed' || Array.isArray(r.categories));
+        const startedCount = arr.length;
+        const completedCount = completed.length;
+
+        const durations = completed.map(r => r.durationMs).filter(v => typeof v === 'number' && isFinite(v) && v >= 0);
+        const avgDurationMs = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : null;
+
+        participantsSummary.textContent = `Started: ${startedCount} | Completed: ${completedCount} | Avg sorting time: ${avgDurationMs != null ? formatDuration(avgDurationMs) + ` (n=${durations.length})` : 'N/A'}`;
+
+        participantsDetails.innerHTML = '';
+        completed.forEach((res, i) => {
+          const w = document.createElement('div');
+          const h4 = document.createElement('h4');
+          const pinfo = res.participant || {};
+          const dn = pinfo.name ? ` — ${pinfo.name}` : '';
+          h4.textContent = `Participant ${i + 1}${dn}`;
+          w.appendChild(h4);
+
+          const meta = document.createElement('div');
+          meta.className = 'muted';
+          meta.textContent = [
+            pinfo.idNumber ? `ID: ${pinfo.idNumber}` : '',
+            pinfo.course ? `Course: ${pinfo.course}` : '',
+            pinfo.nationality ? `Nationality: ${pinfo.nationality}` : '',
+            pinfo.ethnicity ? `Ethnicity: ${pinfo.ethnicity}` : '',
+            pinfo.outsideHome ? `Home outside Suva/Nausori: ${pinfo.outsideHome}` : '',
+            res.completedAt ? `Completed: ${new Date(res.completedAt).toLocaleString()}` :
+              (res.timestamp ? `Time: ${new Date(res.timestamp).toLocaleString()}` : ''),
+            typeof res.durationMs === 'number' ? `Duration: ${formatDuration(res.durationMs)}` : ''
+          ].filter(Boolean).join(' | ');
+          if (meta.textContent) w.appendChild(meta);
+
+          (res.categories || []).forEach(cat => {
+            const p = document.createElement('p');
+            const strong = document.createElement('strong');
+            strong.textContent = cat.name || 'Unnamed';
+            p.appendChild(strong);
+            p.append(' ');
+            (cat.cards || []).forEach(c => {
+              const chip = document.createElement('span');
+              chip.className = 'category-card';
+              chip.textContent = c;
+              p.appendChild(chip);
+              p.append(' ');
+            });
+            w.appendChild(p);
+          });
+
+          participantsDetails.appendChild(w);
         });
-      }).catch(err=>{
-        console.error(err);
-        resultsStudyName.textContent = 'Unable to load study';
-        show(resultsView); activateTab('participants');
-      });
-  }
 
-  // CSV export: participant rows
-  downloadCsvBtn.onclick = () => {
-    if(!lastResultsCache){ alert('No results to export.'); return; }
-    const { arr, study } = lastResultsCache;
-    const studyName = (study?.name||'study').replace(/[^\w\-]+/g,'_');
-    const headers = ['Participant #','Timestamp','Name','ID Number','Address','Course','Nationality','Ethnicity','HomeOutsideSuvaNausori','Category','Card'];
-    const lines=[headers.join(',')];
-    let idx=0;
-    arr.forEach(res=>{
-      if(!(res.status==='completed'||Array.isArray(res.categories))) return;
-      idx+=1; const p=res.participant||{}; const ts=res.timestamp||res.completedAt||'';
-      (res.categories||[]).forEach(cat=>{
-        const catName=sanitizeText(cat.name||'Unnamed')||'Unnamed';
-        (cat.cards||[]).forEach(card=>{
-          lines.push([csvEscape(idx),csvEscape(ts),csvEscape(p.name||''),csvEscape(p.idNumber||''),csvEscape(p.address||''),csvEscape(p.course||''),csvEscape(p.nationality||''),csvEscape(p.ethnicity||''),csvEscape(p.outsideHome||''),csvEscape(catName),csvEscape(card)].join(','));
-        });
-      });
-    });
-    downloadCSV(`${studyName}_results.csv`, lines.join('\n'));
-  };
+        // Categories tab
+        const catsPer = completed.map(r => (r.categories || []).length);
+        const avgCats = catsPer.length ? (catsPer.reduce((a, b) => a + b, 0) / catsPer.length) : 0;
+        categoriesSummary.textContent = `Average number of categories: ${avgCats.toFixed(2)} (n=${completedCount})`;
+        const dist = new Map();
+        catsPer.forEach(n => dist.set(n, (dist.get(n) || 0) + 1));
+        const maxBuckets = dist.size ? Math.max(...dist.keys()) : 0;
+        categoriesChart.innerHTML = '';
+        categoriesLabels.innerHTML = '';
+        if (maxBuckets > 0) {
+          const counts = [];
+          for (let i = 1; i <= maxBuckets; i++) counts.push(dist.get(i) || 0);
+          const peak = Math.max(...counts, 1);
+          counts.forEach((count, idx) => {
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            bar.style.height = Math.round((count / peak) * 100) + '%';
+            const val = document.createElement('span');
+            val.textContent = count;
+            bar.appendChild(val);
+            categoriesChart.appendChild(bar);
 
-  // CSV export: similarity matrix percentages
-  downloadMatrixBtn.onclick = () => {
-    if(!lastResultsCache){ alert('No matrix to export.'); return; }
-    const { study, cards, matrixCounts, completedCount } = lastResultsCache;
-    const studyName = (study?.name||'study').replace(/[^\w\-]+/g,'_');
-
-    const head = [''].concat(cards).map(csvEscape).join(',');
-    const lines=[head];
-    cards.forEach(a=>{
-      const row=[csvEscape(a)];
-      cards.forEach(b=>{
-        if(a===b){ row.push(''); }
-        else{
-          const pct = completedCount ? (matrixCounts[a][b] / completedCount * 100) : 0;
-          row.push(csvEscape(pct.toFixed(0) + '%'));
+            const xl = document.createElement('div');
+            xl.className = 'xlabel';
+            xl.textContent = String(idx + 1);
+            categoriesLabels.appendChild(xl);
+          });
+        } else {
+          const p = document.createElement('p');
+          p.textContent = 'No completed participants yet.';
+          categoriesChart.appendChild(p);
         }
-      });
-      lines.push(row.join(','));
+
+        // Similarity matrix (percentages)
+        matrixMeta.innerHTML = '';
+        matrixTableWrap.innerHTML = '';
+        const cards = study?.cards || [];
+        const matrixCounts = {};
+        cards.forEach(a => { matrixCounts[a] = {}; cards.forEach(b => matrixCounts[a][b] = 0); });
+        completed.forEach(r => {
+          (r.categories || []).forEach(cat => {
+            const cs = cat.cards || [];
+            cs.forEach(a => cs.forEach(b => { if (a !== b) matrixCounts[a][b] += 1; }));
+          });
+        });
+
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const hr = document.createElement('tr');
+        hr.appendChild(document.createElement('th'));
+        cards.forEach(c => { const th = document.createElement('th'); th.textContent = c; hr.appendChild(th); });
+        thead.appendChild(hr);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        cards.forEach(a => {
+          const tr = document.createElement('tr');
+          const rh = document.createElement('th'); rh.textContent = a;
+          tr.appendChild(rh);
+          cards.forEach(b => {
+            const td = document.createElement('td');
+            if (a === b) td.textContent = '—';
+            else {
+              const pct = completedCount ? (matrixCounts[a][b] / completedCount * 100) : 0;
+              td.textContent = `${pct.toFixed(0)}%`;
+              td.title = `${matrixCounts[a][b]} of ${completedCount} participants`;
+            }
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        matrixTableWrap.appendChild(table);
+
+        const mm = document.createElement('p');
+        mm.textContent = `Percentages are of completed participants (n=${completedCount}).`;
+        matrixMeta.appendChild(mm);
+
+        lastResultsCache = { arr, completed, completedCount, study, uid, studyId, cards, matrixCounts };
+        if (!opts.publicViewer) { downloadCsvBtn.disabled = false; downloadMatrixBtn.disabled = false; }
+
+        show(resultsView);
+      }
+
+      // CSV exports
+      downloadCsvBtn.onclick = () => {
+        if (!lastResultsCache) { alert('No results to export.'); return; }
+        const { arr, study } = lastResultsCache;
+        const studyName = (study?.name || 'study').replace(/[^\w\-]+/g, '_');
+        const headers = ['Participant #','Timestamp','Name','ID Number','Address','Course','Nationality','Ethnicity','HomeOutsideSuvaNausori','Category','Card'];
+        const lines = [headers.join(',')];
+        let idx = 0;
+        arr.forEach(res => {
+          if (!(res.status === 'completed' || Array.isArray(res.categories))) return;
+          idx += 1;
+          const p = res.participant || {};
+          const ts = res.timestamp || res.completedAt || '';
+          (res.categories || []).forEach(cat => {
+            const catName = sanitizeText(cat.name || 'Unnamed') || 'Unnamed';
+            (cat.cards || []).forEach(card => {
+              lines.push([csvEscape(idx),csvEscape(ts),csvEscape(p.name || ''),csvEscape(p.idNumber || ''),csvEscape(p.address || ''),csvEscape(p.course || ''),csvEscape(p.nationality || ''),csvEscape(p.ethnicity || ''),csvEscape(p.outsideHome || ''),csvEscape(catName),csvEscape(card)].join(','));
+            });
+          });
+        });
+        downloadCSV(`${studyName}_results.csv`, lines.join('\n'));
+      };
+
+      downloadMatrixBtn.onclick = () => {
+        if (!lastResultsCache) { alert('No matrix to export.'); return; }
+        const { study, cards, matrixCounts, completedCount } = lastResultsCache;
+        const studyName = (study?.name || 'study').replace(/[^\w\-]+/g, '_');
+        const head = [''].concat(cards).map(csvEscape).join(',');
+        const lines = [head];
+        cards.forEach(a => {
+          const row = [csvEscape(a)];
+          cards.forEach(b => {
+            if (a === b) row.push('');
+            else {
+              const pct = completedCount ? (matrixCounts[a][b] / completedCount * 100) : 0;
+              row.push(csvEscape(pct.toFixed(0) + '%'));
+            }
+          });
+          lines.push(row.join(','));
+        });
+        downloadCSV(`${studyName}_similarity_matrix.csv`, lines.join('\n'));
+      };
+
+      // Initial route fallback
+      if (isPublicResultsLink) { show(resultsView); loadPublicResults(pUid, pStudyId); }
+      else if (hasParticipantLink) { show(participantView); loadParticipantView(pUid, pStudyId); }
     });
-    downloadCSV(`${studyName}_similarity_matrix.csv`, lines.join('\n'));
-  };
-
-  // Initial route
-  updateHeaderModeButtons();
-  route();
-
-  // Expose for dashboard buttons
-  window.viewResults = viewResults;
-});
-</script>
+  </script>
 </body>
 </html>
