@@ -17,7 +17,7 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif; }
     body { background: #f5f7fa; color: var(--dark); line-height: 1.5; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
 
     header { background: var(--primary); color: white; padding: 1rem; text-align: center; margin-bottom: 2rem; border-radius: 5px; }
     .view { display: none; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,.1); margin-bottom: 2rem; }
@@ -54,35 +54,29 @@
     .info-icon:focus { outline: 2px solid #9ec5fe; border-radius: 4px; }
     .card-desc { display: none; position: absolute; z-index: 10; right: 8px; top: 28px; background: #2c2c2c; color: #fff; padding: 8px 10px; border-radius: 6px; width: 260px; max-width: 70vw; box-shadow: 0 4px 16px rgba(0,0,0,.2); font-size: .9rem; }
     .card-desc.show { display: block; }
+    
+    /* Workspace (New Layout) */
+    .workspace { display: grid; grid-template-columns: 300px 1fr 1fr 1fr; gap: 16px; align-items: start; }
+    #availableCardsContainer { background: #d1d1cf; border: 1px solid #c5c5c3; border-radius: 10px; padding: 12px; position: sticky; top: 12px; max-height: calc(100vh - 180px); overflow-y: auto; }
+    #availableCardsContainer h3 { margin: .25rem 0 .5rem; }
+    .cards-list { display: flex; flex-direction: column; gap: .5rem; min-height: 50px; }
 
-    /* Workspace */
-    .workspace { display: grid; grid-template-columns: 340px 1fr; gap: 18px; align-items: start; }
-    .left-panel { background: #d1d1cf; border: 1px solid #c5c5c3; border-radius: 10px; padding: 12px; position: sticky; top: 12px; max-height: calc(100vh - 180px); overflow: auto; }
-    .left-panel h3 { margin: .25rem 0 .5rem; }
-    .cards-list { display: flex; flex-direction: column; gap: .5rem; }
+    .category-columns-wrap { grid-column: 2 / 5; display: contents; } /* Spans the last 3 grid columns */
+    .category-column { min-height: 60vh; display: flex; flex-direction: column; gap: 16px; }
 
-    .right-panel { min-height: 60vh; position: relative; }
-    .toolbar { margin-bottom: .5rem; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    .drop-zone-placeholder { border: 2px dashed #cfcfcf; border-radius: 10px; min-height: 110px; padding: 14px; background: #fafafa; display: flex; align-items: center; justify-content: center; color: #666; font-weight: 600; text-align: center; }
+    
+    .toolbar { margin-bottom: .5rem; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; grid-column: 1 / -1; }
 
+    @media (max-width: 1200px) { .workspace { grid-template-columns: 250px 1fr 1fr 1fr; } }
     @media (max-width: 900px) {
       .workspace { grid-template-columns: 1fr; }
-      .left-panel { position: static; max-height: none; }
-      .right-panel { order: 2; }
-      .left-panel { order: 1; }
-      .categories-wrap { grid-template-columns: 1fr; }
+      #availableCardsContainer { position: static; max-height: 300px; order: 1; }
+      .category-columns-wrap { grid-column: auto; order: 2; }
+      .category-column { min-height: 40vh; }
     }
+    @media (max-width: 700px) { .category-columns-wrap { display: flex; flex-direction: column; gap: 16px; } }
     @media (max-width: 520px) { .card { padding: .8rem; } .cat-header { font-size: .95rem; } }
-
-    /* Steps */
-    .steps { display: flex; flex-direction: column; gap: 18px; margin-bottom: 18px; }
-    .stepbox { border: 2px dashed #ddd; border-radius: 14px; padding: 18px; background: #fff; box-shadow: 0 1px 0 rgba(0,0,0,0.02); }
-    .stepbox h3 { font-size: 1.35rem; margin-bottom: .5rem; }
-    .stepbox ol { margin-left: 1.25rem; }
-    .stepbox li { margin: .25rem 0; }
-    .new-cat-dropzone { border: 2px dashed #cfcfcf; border-radius: 10px; min-height: 110px; padding: 14px; background: #fafafa; margin-top: .5rem; display: flex; align-items: center; justify-content: center; color: #666; font-weight: 600; }
-
-    /* Categories canvas */
-    .categories-wrap { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; min-height: 200px; }
 
     /* Category card */
     .category { background: #fff; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.06); border: 1px solid var(--border); overflow: hidden; }
@@ -93,8 +87,6 @@
     .cat-icon-btn:focus { outline: 2px solid #9ec5fe; border-radius: 4px; }
     .cat-body { padding: .5rem; background: #fff; margin: .5rem; border: 1px solid var(--border); border-radius: 8px; min-height: 80px; }
     .cat-footer { text-align: center; font-size: .75rem; color: #6b6b6b; padding: .25rem .5rem .6rem; text-transform: uppercase; letter-spacing: .02em; }
-
-    .new-cat-tile { border: 2px dashed #cfcfcf; border-radius: 10px; min-height: 90px; display: flex; align-items: center; justify-content: center; background: #fafafa; color: #666; font-weight: 600; margin-top: 12px; }
 
     /* Modals */
     .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; }
@@ -155,12 +147,11 @@
     }
     body { background: var(--light); }
     .view { background: #fff; border: 1px solid #eee7d8; }
-    .left-panel { background: linear-gradient(180deg, #eae2d3 0%, #e4dccb 100%); border: 1px solid #d7ccb9; }
+    #availableCardsContainer { background: linear-gradient(180deg, #eae2d3 0%, #e4dccb 100%); border: 1px solid #d7ccb9; }
     .card { border: 1px solid #e5dfd3; transition: transform .12s ease, box-shadow .12s ease; background: #fff; }
     .card:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.08); }
     .info-icon { color: #1f8a70; }
     .card-desc { background:#1b1b1b; }
-    .stepbox { border: 2px dashed #d6c7b2; background: #fffdfa; }
     .cat-header { background: linear-gradient(180deg, #4a3b2e, #2f2923); color: #fff; border-bottom: 1px solid rgba(255,255,255,.08); }
     .cat-body { border-color: #e9dfcd; }
     .cat-footer { color: #8b857a; }
@@ -170,7 +161,7 @@
     .btn-accent { background: linear-gradient(180deg, var(--accent), #d75745); }
     .chart { background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.8)); }
     .tab-btn.active { border-bottom-color: var(--primary); color: var(--primary); }
-    .instructions { background: #f4ead7; border: 1px solid #eadfca; }
+    .instructions { background: #f4ead7; border: 1px solid #eadfca; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
     table { border-color: #efe6d6; }
     th, td { border-color: #efe6d6; }
   </style>
@@ -229,7 +220,6 @@
       <label for="studyName">Study name</label>
       <input type="text" id="studyName" placeholder="e.g., Information Architecture Test" required/>
 
-      <!-- NEW: Bulk Import Section -->
       <div class="bulk-import-wrap" style="margin: 1.5rem 0 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; background: #fdfaf6;">
           <label for="excelUpload">Bulk import cards from Excel (.xlsx)</label>
           <input type="file" id="excelUpload" accept=".xlsx, .xls, .csv" style="padding: .25rem; border: 1px solid var(--border); border-radius: 4px;"/>
@@ -237,20 +227,17 @@
               For simple mode, use one column (card names). For advanced mode, use two columns (card name, description). The first row is treated as data, not a header.
           </div>
       </div>
-      <!-- END: Bulk Import Section -->
 
       <label>
         <input type="checkbox" id="enableDescriptions"/>
         Add descriptions (tooltips) to cards
       </label>
 
-      <!-- Simple mode (names only) -->
       <div id="simpleCardsWrap">
         <label for="cardsInput">Cards (one per line)</label>
         <textarea id="cardsInput" rows="8" placeholder="Card 1&#10;Card 2&#10;Card 3"></textarea>
       </div>
 
-      <!-- Builder mode (names + descriptions) -->
       <div id="builderWrap" class="builder-wrap hidden">
         <div class="builder-head">
           <strong>Cards and descriptions</strong>
@@ -287,36 +274,23 @@
       <div id="participantStatus" class="muted" aria-live="polite"></div>
 
       <div class="workspace" role="region" aria-label="Card sorting workspace">
-        <aside class="left-panel" role="region" aria-label="Card list">
-          <h3>Cards</h3>
-          <div class="muted" style="margin-bottom:.5rem;">Drag a card to the right to create or fill categories.</div>
+        <div class="toolbar">
+            <button id="showInstructionsBtn" class="btn">Instructions</button>
+            <button id="fullscreenBtn" class="btn">Full Screen</button>
+            <button id="submitSortingBtn" class="btn btn-success">Finish Sorting</button>
+        </div>
+        
+        <aside id="availableCardsContainer" role="region" aria-label="Unsorted cards">
+          <h3>Unsorted Cards</h3>
           <div id="availableCards" class="cards-list"></div>
         </aside>
 
-        <section class="right-panel" role="region" aria-label="Categories canvas">
-          <div id="stepsWrap" class="steps">
-            <div class="stepbox">
-              <h3>Step 1</h3>
-              <ol>
-                <li>Take note of the list of cards on the left.</li>
-                <li>Please, split these cards into categories that feel “right” to you.</li>
-                <li><strong>There’s no actual right or wrong way</strong> to do it. Simply sort them by intuition.</li>
-              </ol>
-            </div>
-            <div class="stepbox">
-              <h3>Step 2</h3>
-              <p>Drag a card from the left and drop it here or anywhere on the right to create a new category.</p>
-              <div id="newCategoryDropzone" class="new-cat-dropzone">Drop here to create a new category</div>
-            </div>
-          </div>
+        <div class="category-columns-wrap">
+          <div class="category-column"></div>
+          <div class="category-column"></div>
+          <div class="category-column"></div>
+        </div>
 
-          <div class="toolbar">
-            <button id="submitSortingBtn" class="btn btn-success">Finish</button>
-          </div>
-
-          <div id="sortingArea" class="categories-wrap"></div>
-          <div id="newCategoryTile" class="new-cat-tile hidden">Drop here to create a new category</div>
-        </section>
       </div>
     </div>
 
@@ -359,13 +333,17 @@
     <div id="instructionsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="instructionsModalTitle">
       <div class="modal">
         <h3 id="instructionsModalTitle">Instructions</h3>
-        <p><strong>Here's how it works:</strong></p>
-        <ol>
-          <li>You will be presented with a list of cards.</li>
-          <li>Drag and drop the cards into the categories that you think they fit the most.</li>
-          <li>If you change your opinion, feel free to move the cards between the different categories until you're satisfied.</li>
-          <li>Once done, click <strong>Finish</strong> to complete the card sort.</li>
-        </ol>
+        <div id="instructionsModalContent">
+            <p><strong>Here's how it works:</strong></p>
+            <ol>
+              <li>Drag cards from the "Unsorted Cards" list on the left.</li>
+              <li>Drop a card into an empty column on the right to create a new category.</li>
+              <li>Give each category a name that makes sense to you.</li>
+              <li>Continue sorting all cards into the categories you've created.</li>
+              <li>You can move cards between categories at any time.</li>
+              <li>When you're finished, click the "Finish Sorting" button.</li>
+            </ol>
+        </div>
         <div class="actions">
           <button id="beginSortingBtn" class="btn btn-success">Begin</button>
         </div>
@@ -459,7 +437,7 @@
       const cardsInput = document.getElementById('cardsInput');
       const instructionsInput = document.getElementById('instructionsInput');
       const enableDescriptions = document.getElementById('enableDescriptions');
-      const excelUploadInput = document.getElementById('excelUpload'); // New
+      const excelUploadInput = document.getElementById('excelUpload');
 
       // Builder
       const builderWrap = document.getElementById('builderWrap');
@@ -471,14 +449,13 @@
       const studyLinkInput = document.getElementById('studyLink');
 
       // Participant DOM
-      const availableCardsContainer = document.getElementById('availableCards');
-      const sortingArea = document.getElementById('sortingArea');
+      const availableCards = document.getElementById('availableCards');
+      const categoryColumns = participantView.querySelectorAll('.category-column');
       const participantStudyName = document.getElementById('participantStudyName');
       const participantInstructions = document.getElementById('participantInstructions');
       const participantStatus = document.getElementById('participantStatus');
-      const stepsWrap = document.getElementById('stepsWrap');
-      const newCategoryDropzone = document.getElementById('newCategoryDropzone');
-      const newCategoryTile = document.getElementById('newCategoryTile');
+      const showInstructionsBtn = document.getElementById('showInstructionsBtn');
+      const fullscreenBtn = document.getElementById('fullscreenBtn');
 
       // Results DOM
       const resultsStudyName = document.getElementById('resultsStudyName');
@@ -552,7 +529,6 @@
         return String(v ?? '')
           .replace(/<[^>]*>/g, '')
           .replace(/[\u0000-\u001F\u007F]/g, '')
-          .replace(/\s+/g, ' ')
           .trim()
           .slice(0, 500);
       }
@@ -682,7 +658,6 @@
 
       addCardRowBtn.addEventListener('click', () => addCardRow('', ''));
 
-      // NEW: Excel file upload handler
       excelUploadInput.addEventListener('change', handleFileUpload);
       function handleFileUpload(event) {
           const file = event.target.files[0];
@@ -707,13 +682,11 @@
                   const isAdvancedMode = enableDescriptions.checked;
 
                   if (isAdvancedMode) {
-                      builderRows.innerHTML = ''; // Clear existing rows
+                      builderRows.innerHTML = ''; 
                       rows.forEach(row => {
                           const name = sanitizeText(row[0] || '');
                           const desc = sanitizeText(row[1] || '');
-                          if (name) {
-                              addCardRow(name, desc);
-                          }
+                          if (name) { addCardRow(name, desc); }
                       });
                       alert(`${rows.length} cards imported into the advanced builder.`);
                   } else {
@@ -721,12 +694,11 @@
                       cardsInput.value = cardNames.join('\n');
                       alert(`${cardNames.length} cards imported into the textarea.`);
                   }
-
               } catch (error) {
                   console.error('Error processing Excel file:', error);
                   alert('There was an error processing your file. Please ensure it is a valid Excel (.xlsx) file.');
               } finally {
-                  event.target.value = ''; // Reset input to allow re-uploading the same file
+                  event.target.value = '';
               }
           };
           reader.onerror = function() {
@@ -739,8 +711,8 @@
       function addCardRow(name = '', desc = '') {
         const row = document.createElement('div'); row.className = 'builder-row';
         row.innerHTML = `
-          <input type="text" class="row-name" placeholder="Card name" value="${sanitizeText(name)}" />
-          <input type="text" class="row-desc" placeholder="Description (shown on ℹ️)" value="${sanitizeText(desc)}" />
+          <input type="text" class="row-name" placeholder="Card name" value="${sanitizeText(name).replace(/"/g, '&quot;')}" />
+          <input type="text" class="row-desc" placeholder="Description (shown on ℹ️)" value="${sanitizeText(desc).replace(/"/g, '&quot;')}" />
           <button type="button" class="row-del" title="Remove">×</button>
         `;
         row.querySelector('.row-del').onclick = () => row.remove();
@@ -797,69 +769,82 @@
       document.getElementById('backToDashboardBtn').onclick = () => show(dashboardView);
       document.getElementById('backToDashboardFromResultsBtn').onclick = () => show(dashboardView);
 
-      // Participant helpers
-      function updateStepsVisibility() {
-        const hasAny = sortingArea.querySelectorAll('.category').length > 0;
-        stepsWrap.classList.toggle('hidden', hasAny);
-        newCategoryTile.classList.toggle('hidden', !hasAny);
+      // --- PARTICIPANT VIEW LOGIC ---
+
+      function updateColumnPlaceholders() {
+          categoryColumns.forEach(col => {
+              const hasCategories = col.querySelector('.category');
+              let placeholder = col.querySelector('.drop-zone-placeholder');
+              if (!hasCategories && !placeholder) {
+                  placeholder = document.createElement('div');
+                  placeholder.className = 'drop-zone-placeholder';
+                  placeholder.textContent = 'Drop here to create a category';
+                  col.appendChild(placeholder);
+              } else if (hasCategories && placeholder) {
+                  placeholder.remove();
+              }
+          });
       }
+
       function updateCategoryCount(cat) {
         const count = cat.querySelectorAll('.cat-body .card').length;
         cat.querySelector('.cat-footer').textContent = (count === 1 ? '1 CARD' : `${count} CARDS`);
-        updateStepsVisibility();
       }
-      function toggleCollapse(cat) {
-        const body = cat.querySelector('.cat-body');
-        const icon = cat.querySelector('.cat-toggle');
-        const hidden = body.classList.toggle('hidden');
-        icon.textContent = hidden ? '▾' : '▴';
-        cat.querySelector('.cat-header').setAttribute('aria-expanded', String(!hidden));
-      }
+
       function deleteCategory(cat) {
-        [...cat.querySelectorAll('.cat-body .card')].forEach(c => availableCardsContainer.appendChild(c));
+        [...cat.querySelectorAll('.cat-body .card')].forEach(c => availableCards.appendChild(c));
         cat.remove();
-        updateStepsVisibility();
+        updateColumnPlaceholders();
       }
-      function makeCategory(name = '') {
+
+      function makeCategory(targetColumn, name = '') {
         const cat = document.createElement('div');
         cat.className = 'category';
         cat.innerHTML = `
           <div class="cat-header" tabindex="0" role="button" aria-expanded="true">
             <button class="cat-icon-btn cat-delete" title="Delete" aria-label="Delete category">🗑</button>
             <input class="cat-title-input" type="text" placeholder="Click to rename" value="${sanitizeText(name)}" maxlength="80" aria-label="Category name" />
-            <button class="cat-icon-btn cat-toggle" title="Collapse" aria-label="Collapse">▴</button>
           </div>
           <div class="cat-body"></div>
           <div class="cat-footer">0 CARDS</div>
         `;
-        sortingArea.appendChild(cat);
+        targetColumn.appendChild(cat);
 
         const header = cat.querySelector('.cat-header');
         const input = cat.querySelector('.cat-title-input');
         const delBtn = cat.querySelector('.cat-delete');
-        const togBtn = cat.querySelector('.cat-toggle');
+        const body = cat.querySelector('.cat-body');
 
-        input.addEventListener('keydown', (e) => { e.stopPropagation(); });
+        // Allow spaces in input
+        input.addEventListener('keydown', (e) => e.stopPropagation());
         input.addEventListener('input', () => { input.value = sanitizeText(input.value).slice(0, 80); });
 
+        // Fixed: Removed spacebar from this event to allow typing spaces
         header.addEventListener('keydown', (e) => {
           if (e.target === input) return;
-          if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); input.focus(); }
-          else if (e.key.toLowerCase() === 'c') { e.preventDefault(); toggleCollapse(cat); }
+          if (e.key === 'Enter') { e.preventDefault(); input.focus(); }
           else if (e.key === 'Delete') { e.preventDefault(); deleteCategory(cat); }
         });
 
         delBtn.onclick = () => deleteCategory(cat);
-        togBtn.onclick = () => toggleCollapse(cat);
-
-        new Sortable(cat.querySelector('.cat-body'), {
+        
+        new Sortable(body, {
           group: 'cards',
           animation: 150,
           onAdd: () => updateCategoryCount(cat),
-          onRemove: () => updateCategoryCount(cat)
+          onRemove: () => {
+            updateCategoryCount(cat);
+            // Auto-delete category if it becomes empty
+            setTimeout(() => {
+                if (body.children.length === 0) {
+                    cat.remove();
+                    updateColumnPlaceholders();
+                }
+            }, 0);
+          }
         });
-
-        updateStepsVisibility();
+        
+        updateColumnPlaceholders();
         return cat;
       }
 
@@ -867,18 +852,6 @@
         el.setAttribute('tabindex', '0');
         el.setAttribute('role', 'button');
         el.setAttribute('aria-label', 'Card: ' + (el.querySelector('.card-text')?.textContent || el.textContent));
-        el.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            const firstCat = sortingArea.querySelector('.category');
-            if (firstCat) {
-              firstCat.querySelector('.cat-body').appendChild(el);
-              updateCategoryCount(firstCat);
-              el.setAttribute('aria-selected', 'true');
-              setTimeout(() => el.setAttribute('aria-selected', 'false'), 300);
-            }
-          }
-        });
       }
 
       function createCardEl(text, desc) {
@@ -913,10 +886,54 @@
         return card;
       }
 
-      // Participant flow (from link)
-      const studyLinkParams = new URLSearchParams(location.search);
-      const linkUid = studyLinkParams.get('uid');
-      const linkStudyId = studyLinkParams.get('study');
+      function loadParticipantView(uid, studyId) {
+        participantStatus.textContent = 'Loading study...';
+        db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => {
+          const study = snap.val();
+          if (!study) { participantStudyName.textContent = 'Study unavailable'; participantStatus.textContent = 'Link invalid.'; return; }
+          if (study.isPublic !== true) { participantStudyName.textContent = 'Study not published'; participantStatus.textContent = 'Ask the researcher to publish it.'; return; }
+
+          participantStudyName.textContent = study.name || '';
+          if (study.instructions) { participantInstructions.textContent = study.instructions; participantInstructions.classList.remove('hidden'); }
+          else { participantInstructions.textContent = ''; participantInstructions.classList.add('hidden'); }
+
+          availableCards.innerHTML = '';
+          const cardsArr = Array.isArray(study.cards) ? study.cards : [];
+          cardsArr.forEach(c => {
+            const text = typeof c === 'string' ? c : sanitizeText(c?.text || '');
+            const desc = typeof c === 'string' ? '' : sanitizeText(c?.desc || '');
+            if (!text) return;
+            availableCards.appendChild(createCardEl(text, desc));
+          });
+
+          new Sortable(availableCards, { group: 'cards', animation: 150 });
+
+          categoryColumns.forEach(column => {
+              new Sortable(column, {
+                  group: 'cards',
+                  animation: 150,
+                  onAdd: (evt) => {
+                      const cardEl = evt.item;
+                      if (cardEl.classList.contains('card')) {
+                          const newCat = makeCategory(column);
+                          newCat.querySelector('.cat-body').appendChild(cardEl);
+                          updateCategoryCount(newCat);
+                          setTimeout(() => newCat.querySelector('.cat-title-input').focus(), 100);
+                      }
+                  }
+              });
+          });
+
+          updateColumnPlaceholders();
+
+          participantView.dataset.uid = uid;
+          participantView.dataset.studyId = studyId;
+
+          participantStatus.textContent = '';
+          participantModal.classList.remove('hidden');
+          setTimeout(() => pName.focus(), 0);
+        });
+      }
 
       document.getElementById('startSortingBtn').onclick = () => {
         const meta = {
@@ -951,91 +968,23 @@
         instructionsModal.classList.add('hidden');
       };
 
-      if (hasParticipantLink) { show(participantView); loadParticipantView(linkUid, linkStudyId); }
-
-      function loadParticipantView(uid, studyId) {
-        participantStatus.textContent = 'Loading study...';
-        db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => {
-          const study = snap.val();
-          if (!study) { participantStudyName.textContent = 'Study unavailable'; participantStatus.textContent = 'Link invalid.'; return; }
-          if (study.isPublic !== true) { participantStudyName.textContent = 'Study not published'; participantStatus.textContent = 'Ask the researcher to publish it.'; return; }
-
-          participantStudyName.textContent = study.name || '';
-          if (study.instructions) { participantInstructions.textContent = study.instructions; participantInstructions.classList.remove('hidden'); }
-          else { participantInstructions.textContent = ''; participantInstructions.classList.add('hidden'); }
-
-          availableCardsContainer.innerHTML = '';
-          const cardsArr = Array.isArray(study.cards) ? study.cards : [];
-          cardsArr.forEach(c => {
-            const text = typeof c === 'string' ? c : sanitizeText(c?.text || '');
-            const desc = typeof c === 'string' ? '' : sanitizeText(c?.desc || '');
-            if (!text) return;
-            availableCardsContainer.appendChild(createCardEl(text, desc));
-          });
-
-          new Sortable(availableCardsContainer, { group: 'cards', animation: 150 });
-
-          new Sortable(sortingArea, {
-            group: 'cards', animation: 150, sort: false,
-            onAdd: (evt) => {
-              const cardEl = evt.item;
-              const idx = evt.newIndex;
-              const cat = makeCategory();
-              const ref = sortingArea.children[idx] || null;
-              sortingArea.insertBefore(cat, ref);
-              cat.querySelector('.cat-body').appendChild(cardEl);
-              updateCategoryCount(cat);
-              cat.querySelector('.cat-title-input').focus();
-            }
-          });
-
-          new Sortable(newCategoryDropzone, {
-            group: 'cards', animation: 150,
-            onAdd: (evt) => {
-              const item = evt.item;
-              const cat = makeCategory();
-              cat.querySelector('.cat-body').appendChild(item);
-              updateCategoryCount(cat);
-            }
-          });
-          new Sortable(newCategoryTile, {
-            group: 'cards', animation: 150,
-            onAdd: (evt) => {
-              const item = evt.item;
-              const cat = makeCategory();
-              cat.querySelector('.cat-body').appendChild(item);
-              updateCategoryCount(cat);
-            }
-          });
-
-          sortingArea.innerHTML = '';
-          updateStepsVisibility();
-
-          participantView.dataset.uid = uid;
-          participantView.dataset.studyId = studyId;
-
-          participantStatus.textContent = '';
-          participantModal.classList.remove('hidden');
-          setTimeout(() => pName.focus(), 0);
-        });
-      }
-
       document.getElementById('submitSortingBtn').onclick = () => {
         const uid = participantView.dataset.uid;
         const studyId = participantView.dataset.studyId;
         if (!uid || !studyId) { alert('Study not loaded yet.'); return; }
         if (!participantMeta) { alert('Please enter your details before submitting.'); participantModal.classList.remove('hidden'); return; }
 
-        const unsorted = availableCardsContainer.querySelectorAll('.card').length;
+        const unsorted = availableCards.querySelectorAll('.card').length;
         if (unsorted > 0) {
           alert(`Please sort all cards. ${unsorted} remaining on the left.`);
-          availableCardsContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          document.getElementById('availableCardsContainer').scrollIntoView({ behavior: 'smooth', block: 'center' });
           return;
         }
-
+        
+        const allCategories = participantView.querySelectorAll('.category');
         const cats = [];
         let firstInvalid = null;
-        sortingArea.querySelectorAll('.category').forEach(cat => {
+        allCategories.forEach(cat => {
           const name = sanitizeText(cat.querySelector('.cat-title-input')?.value || '');
           const cards = [...cat.querySelectorAll('.cat-body .card')].map(c => c.dataset.cardText);
           if (cards.length > 0) {
@@ -1050,7 +999,10 @@
           firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
           return;
         }
-        if (cats.length === 0) { alert('Please sort at least one card.'); return; }
+        if (cats.length === 0 && availableCards.children.length === 0) {
+            // All cards are sorted but maybe categories were deleted. Let's check.
+            if (!confirm("You haven't created any categories. Are you sure you want to finish?")) { return; }
+        }
 
         const startedAt = participantView.dataset.startedAt || null;
         const now = new Date();
@@ -1063,8 +1015,32 @@
           .then(() => { participantView.innerHTML = '<h2>Thank you!</h2><p>Your responses have been recorded.</p>'; })
           .catch(e => alert(e.message));
       };
+      
+      showInstructionsBtn.onclick = () => {
+          instructionsModal.classList.remove('hidden');
+      };
 
-      // Share results
+      function toggleFullScreen() {
+          const doc = window.document;
+          const docEl = doc.documentElement;
+          const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+          const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+          if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+              requestFullScreen.call(docEl);
+          } else {
+              cancelFullScreen.call(doc);
+          }
+      }
+      
+      fullscreenBtn.onclick = toggleFullScreen;
+      document.addEventListener('fullscreenchange', () => {
+          fullscreenBtn.textContent = document.fullscreenElement ? 'Exit Full Screen' : 'Full Screen';
+      });
+
+      // --- RESULTS & OTHER LOGIC (UNCHANGED) ---
+
+      if (hasParticipantLink) { show(participantView); loadParticipantView(pUid, pStudyId); }
+
       function setupShareControls(uid, studyId, study) {
         shareSection.classList.remove('hidden');
         toggleResultsPublic.checked = Boolean(study.resultsPublic);
@@ -1101,12 +1077,9 @@
           resultsStudyName.textContent = study?.name || '';
           if (!study || study.resultsPublic !== true) {
             participantsSummary.textContent = 'These results are not publicly available.';
-            participantsDetails.innerHTML = '';
-            categoriesSummary.textContent = '';
-            categoriesChart.innerHTML = '';
-            categoriesLabels.innerHTML = '';
-            matrixMeta.textContent = '';
-            matrixTableWrap.innerHTML = '';
+            participantsDetails.innerHTML = ''; categoriesSummary.textContent = '';
+            categoriesChart.innerHTML = ''; categoriesLabels.innerHTML = '';
+            matrixMeta.textContent = ''; matrixTableWrap.innerHTML = '';
             activateTab('participants');
             return;
           }
@@ -1125,28 +1098,20 @@
 
         if (arr.length === 0) {
           participantsSummary.textContent = 'No results yet.';
-          participantsDetails.innerHTML = '';
-          categoriesSummary.textContent = '';
-          categoriesChart.innerHTML = '';
-          categoriesLabels.innerHTML = '';
-          matrixMeta.textContent = '';
-          matrixTableWrap.innerHTML = '';
-          show(resultsView);
-          activateTab('participants');
+          participantsDetails.innerHTML = ''; categoriesSummary.textContent = '';
+          categoriesChart.innerHTML = ''; categoriesLabels.innerHTML = '';
+          matrixMeta.textContent = ''; matrixTableWrap.innerHTML = '';
+          show(resultsView); activateTab('participants');
           return;
         }
 
         arr = arr.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
-
         const completed = arr.filter(r => r.status === 'completed' || Array.isArray(r.categories));
         const startedCount = arr.length;
-        theCompletedCount = completed.length;
-
+        const theCompletedCount = completed.length;
         const durations = completed.map(r => r.durationMs).filter(v => typeof v === 'number' && isFinite(v) && v >= 0);
         const avgDurationMs = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : null;
-
         participantsSummary.textContent = `Started: ${startedCount} | Completed: ${theCompletedCount} | Avg sorting time: ${avgDurationMs != null ? formatDuration(avgDurationMs) + ` (n=${durations.length})` : 'N/A'}`;
-
         participantsDetails.innerHTML = '';
         completed.forEach((res, i) => {
           const w = document.createElement('div');
@@ -1159,72 +1124,46 @@
           const meta = document.createElement('div');
           meta.className = 'muted';
           meta.textContent = [
-            pinfo.idNumber ? `ID: ${pinfo.idNumber}` : '',
-            pinfo.course ? `Course: ${pinfo.course}` : '',
-            pinfo.nationality ? `Nationality: ${pinfo.nationality}` : '',
-            pinfo.ethnicity ? `Ethnicity: ${pinfo.ethnicity}` : '',
+            pinfo.idNumber ? `ID: ${pinfo.idNumber}` : '', pinfo.course ? `Course: ${pinfo.course}` : '',
+            pinfo.nationality ? `Nationality: ${pinfo.nationality}` : '', pinfo.ethnicity ? `Ethnicity: ${pinfo.ethnicity}` : '',
             pinfo.outsideHome ? `Home outside Suva/Nausori: ${pinfo.outsideHome}` : '',
-            res.completedAt ? `Completed: ${new Date(res.completedAt).toLocaleString()}` :
-              (res.timestamp ? `Time: ${new Date(res.timestamp).toLocaleString()}` : ''),
+            res.completedAt ? `Completed: ${new Date(res.completedAt).toLocaleString()}` : (res.timestamp ? `Time: ${new Date(res.timestamp).toLocaleString()}` : ''),
             typeof res.durationMs === 'number' ? `Duration: ${formatDuration(res.durationMs)}` : ''
           ].filter(Boolean).join(' | ');
           if (meta.textContent) w.appendChild(meta);
 
           (res.categories || []).forEach(cat => {
             const p = document.createElement('p');
-            const strong = document.createElement('strong');
-            strong.textContent = cat.name || 'Unnamed';
-            p.appendChild(strong);
-            p.append(' ');
+            const strong = document.createElement('strong'); strong.textContent = cat.name || 'Unnamed'; p.appendChild(strong); p.append(' ');
             (cat.cards || []).forEach(c => {
-              const chip = document.createElement('span');
-              chip.className = 'category-card';
-              chip.textContent = c;
-              p.appendChild(chip);
-              p.append(' ');
+              const chip = document.createElement('span'); chip.className = 'category-card'; chip.textContent = c; p.appendChild(chip); p.append(' ');
             });
             w.appendChild(p);
           });
-
           participantsDetails.appendChild(w);
         });
 
-        // Categories tab
         const catsPer = completed.map(r => (r.categories || []).length);
         const avgCats = catsPer.length ? (catsPer.reduce((a, b) => a + b, 0) / catsPer.length) : 0;
         categoriesSummary.textContent = `Average number of categories: ${avgCats.toFixed(2)} (n=${theCompletedCount})`;
         const dist = new Map();
         catsPer.forEach(n => dist.set(n, (dist.get(n) || 0) + 1));
         const maxBuckets = dist.size ? Math.max(...dist.keys()) : 0;
-        categoriesChart.innerHTML = '';
-        categoriesLabels.innerHTML = '';
+        categoriesChart.innerHTML = ''; categoriesLabels.innerHTML = '';
         if (maxBuckets > 0) {
           const counts = [];
           for (let i = 1; i <= maxBuckets; i++) counts.push(dist.get(i) || 0);
           const peak = Math.max(...counts, 1);
           counts.forEach((count, idx) => {
-            const bar = document.createElement('div');
-            bar.className = 'bar';
-            bar.style.height = Math.round((count / peak) * 100) + '%';
-            const val = document.createElement('span');
-            val.textContent = count;
-            bar.appendChild(val);
-            categoriesChart.appendChild(bar);
-
-            const xl = document.createElement('div');
-            xl.className = 'xlabel';
-            xl.textContent = String(idx + 1);
-            categoriesLabels.appendChild(xl);
+            const bar = document.createElement('div'); bar.className = 'bar'; bar.style.height = Math.round((count / peak) * 100) + '%';
+            const val = document.createElement('span'); val.textContent = count; bar.appendChild(val); categoriesChart.appendChild(bar);
+            const xl = document.createElement('div'); xl.className = 'xlabel'; xl.textContent = String(idx + 1); categoriesLabels.appendChild(xl);
           });
         } else {
-          const p = document.createElement('p');
-          p.textContent = 'No completed participants yet.';
-          categoriesChart.appendChild(p);
+          const p = document.createElement('p'); p.textContent = 'No completed participants yet.'; categoriesChart.appendChild(p);
         }
 
-        // Matrix tab (use card text for headers)
-        matrixMeta.innerHTML = '';
-        matrixTableWrap.innerHTML = '';
+        matrixMeta.innerHTML = ''; matrixTableWrap.innerHTML = '';
         const cardTexts = (study?.cards || []).map(c => typeof c === 'string' ? c : (c?.text || '')).filter(Boolean);
         const matrixCounts = {};
         cardTexts.forEach(a => { matrixCounts[a] = {}; cardTexts.forEach(b => matrixCounts[a][b] = 0); });
@@ -1234,48 +1173,28 @@
             cs.forEach(a => cs.forEach(b => { if (a !== b) matrixCounts[a][b] += 1; }));
           });
         });
-
-        const table = document.createElement('table');
-        const thead = document.createElement('thead');
-        const hr = document.createElement('tr');
-        hr.appendChild(document.createElement('th'));
+        const table = document.createElement('table'); const thead = document.createElement('thead'); const hr = document.createElement('tr'); hr.appendChild(document.createElement('th'));
         cardTexts.forEach(c => { const th = document.createElement('th'); th.textContent = c; hr.appendChild(th); });
-        thead.appendChild(hr);
-        table.appendChild(thead);
-
+        thead.appendChild(hr); table.appendChild(thead);
         const tbody = document.createElement('tbody');
         cardTexts.forEach(a => {
-          const tr = document.createElement('tr');
-          const rh = document.createElement('th'); rh.textContent = a;
-          tr.appendChild(rh);
+          const tr = document.createElement('tr'); const rh = document.createElement('th'); rh.textContent = a; tr.appendChild(rh);
           cardTexts.forEach(b => {
             const td = document.createElement('td');
             if (a === b) td.textContent = '—';
-            else {
-              const pct = theCompletedCount ? (matrixCounts[a][b] / theCompletedCount * 100) : 0;
-              td.textContent = `${pct.toFixed(0)}%`;
-              td.title = `${matrixCounts[a][b]} of ${theCompletedCount} participants`;
-            }
+            else { const pct = theCompletedCount ? (matrixCounts[a][b] / theCompletedCount * 100) : 0; td.textContent = `${pct.toFixed(0)}%`; td.title = `${matrixCounts[a][b]} of ${theCompletedCount} participants`; }
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
         });
-        table.appendChild(tbody);
-        matrixTableWrap.appendChild(table);
-
-        const mm = document.createElement('p');
-        mm.textContent = `Percentages are of completed participants (n=${theCompletedCount}).`;
-        matrixMeta.appendChild(mm);
+        table.appendChild(tbody); matrixTableWrap.appendChild(table);
+        const mm = document.createElement('p'); mm.textContent = `Percentages are of completed participants (n=${theCompletedCount}).`; matrixMeta.appendChild(mm);
 
         lastResultsCache = { arr, completed, completedCount: theCompletedCount, study, uid, studyId, cards: cardTexts, matrixCounts };
-        downloadCsvBtn.disabled = false;
-        downloadMatrixBtn.disabled = false;
-
-        show(resultsView);
-        activateTab('participants');
+        downloadCsvBtn.disabled = false; downloadMatrixBtn.disabled = false;
+        show(resultsView); activateTab('participants');
       }
 
-      // CSV exports
       downloadCsvBtn.onclick = () => {
         if (!lastResultsCache) { alert('No results to export.'); return; }
         const { arr, study } = lastResultsCache;
@@ -1285,9 +1204,7 @@
         let idx = 0;
         arr.forEach(res => {
           if (!(res.status === 'completed' || Array.isArray(res.categories))) return;
-          idx += 1;
-          const p = res.participant || {};
-          const ts = res.timestamp || res.completedAt || '';
+          idx += 1; const p = res.participant || {}; const ts = res.timestamp || res.completedAt || '';
           (res.categories || []).forEach(cat => {
             const catName = sanitizeText(cat.name || 'Unnamed') || 'Unnamed';
             (cat.cards || []).forEach(card => {
@@ -1308,31 +1225,15 @@
           const row = [csvEscape(a)];
           cards.forEach(b => {
             if (a === b) row.push('');
-            else {
-              const pct = completedCount ? (matrixCounts[a][b] / completedCount * 100) : 0;
-              row.push(csvEscape(pct.toFixed(0) + '%'));
-            }
+            else { const pct = completedCount ? (matrixCounts[a][b] / completedCount * 100) : 0; row.push(csvEscape(pct.toFixed(0) + '%')); }
           });
           lines.push(row.join(','));
         });
         downloadCSV(`${studyName}_similarity_matrix.csv`, lines.join('\n'));
       };
 
-      // Routing fallback
       if (isPublicResultsLink) { show(resultsView); loadPublicResults(pUid, pStudyId); }
       else if (hasParticipantLink) { show(participantView); loadParticipantView(pUid, pStudyId); }
-
-      // Builder helpers
-      function addCardRow(name = '', desc = '') {
-        const row = document.createElement('div'); row.className = 'builder-row';
-        row.innerHTML = `
-          <input type="text" class="row-name" placeholder="Card name" value="${sanitizeText(name)}" />
-          <input type="text" class="row-desc" placeholder="Description (shown on ℹ️)" value="${sanitizeText(desc)}" />
-          <button type="button" class="row-del" title="Remove">×</button>
-        `;
-        row.querySelector('.row-del').onclick = () => row.remove();
-        builderRows.appendChild(row);
-      }
     });
   </script>
 </body>
