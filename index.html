@@ -8,275 +8,151 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   
   <style>
-    /* --- NEW MODERN UI STYLES --- */
     :root {
-      --brand-primary: #ff9f1c;
-      --brand-primary-dark: #f0900c;
-      --bg-main: #f4f5f7;
-      --bg-panel: #ffffff;
-      --text-dark: #2d3748;
-      --text-light: #718096;
-      --border-color: #e2e8f0;
-      --success: #48bb78;
-      --danger: #e53e3e;
-      --primary: var(--brand-primary); /* Pasifika theme override */
+      --primary: #4a6fa5;
+      --secondary: #6b8cae;
+      --accent: #ff6b6b;
+      --light: #f8f9fa;
+      --dark: #343a40;
+      --success: #28a745;
+      --border: #dee2e6;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { font-size: 16px; }
-    body { 
-      font-family: 'Poppins', 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
-      background: var(--bg-main);
-      color: var(--text-dark);
-      line-height: 1.6;
-    }
-    
-    /* Hide all views by default */
-    .view { display: none; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif; }
+    body { background: #f5f7fa; color: var(--dark); line-height: 1.6; font-size: 16px; }
+    .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+
+    header { background: var(--primary); color: white; padding: 1rem; text-align: center; margin-bottom: 2rem; border-radius: 5px; }
+    .view { display: none; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,.1); margin-bottom: 2rem; }
     .view.active { display: block; }
 
-    /* Researcher Layout */
-    .researcher-layout {
-      display: grid;
-      grid-template-columns: 80px 1fr;
-      min-height: 100vh;
-    }
-    .sidebar {
-      background: var(--bg-panel);
-      border-right: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 1.5rem 0;
-      position: sticky;
-      top: 0;
-      height: 100vh;
-    }
-    .sidebar .logo {
-      width: 40px;
-      height: 40px;
-      background: var(--brand-primary);
-      border-radius: 8px;
-      margin-bottom: 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-    }
-    .sidebar-nav {
-      list-style: none;
-      width: 100%;
-    }
-    .sidebar-nav li a {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 0.75rem 0;
-      color: var(--text-light);
-      text-decoration: none;
-      gap: 4px;
-      font-size: 0.7rem;
-      position: relative;
-    }
-    .sidebar-nav li a:hover { background: #f7fafc; }
-    .sidebar-nav li a.active { color: var(--brand-primary); }
-    .sidebar-nav li a.active::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 4px;
-      height: 24px;
-      background: var(--brand-primary);
-      border-radius: 0 4px 4px 0;
-    }
-    .sidebar-nav svg { width: 24px; height: 24px; }
-    
-    .main-content { padding: 2rem 3rem; }
-    
-    .top-nav {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      gap: 1.5rem;
-    }
-    .top-nav .user-profile { display: flex; align-items: center; gap: 0.5rem; }
-    .top-nav .user-avatar {
-      width: 32px;
-      height: 32px;
-      background: #cbd5e0;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      color: var(--text-dark);
-    }
-    
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
-    .page-header h2 { font-size: 1.8rem; font-weight: 600; }
-    
-    .btn { 
-      padding: .6rem 1.25rem;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.95rem;
-      font-weight: 500;
-      transition: all .2s ease;
-    }
-    .btn-brand { background: var(--brand-primary); color: white; }
-    .btn-brand:hover { background: var(--brand-primary-dark); }
-    .btn-secondary { background: var(--bg-panel); color: var(--text-dark); border: 1px solid var(--border-color); }
-    .btn-secondary:hover { background: #f7fafc; border-color: #cbd5e0; }
-    .btn-danger { background: var(--danger); color: white; }
+    .btn { padding: .5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; margin: .25rem; font-size: 0.95rem; }
+    .btn:hover { background: var(--secondary); }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    .btn-success { background: var(--success); }
+    .btn-accent { background: var(--accent); color: #fff; }
+    .btn-accent:hover { filter: brightness(0.95); }
 
-    /* Dashboard Study Cards */
-    .studies-list-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1.5rem;
-      margin-top: 2rem;
-    }
-    .study-card {
-      background: var(--bg-panel);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-    }
-    .study-card-header h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
-    .study-card-header .badge {
-      display: inline-block;
-      padding: .15rem .5rem;
-      border-radius: 99px;
-      font-size: .75rem;
-      font-weight: 500;
-      background: #e2e8f0;
-      color: var(--text-light);
-    }
-    .study-card-header .badge.published { background: #c6f6d5; color: #2f855a; }
-    .study-card-actions {
-      margin-top: 1.5rem;
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-    .study-card-actions .btn { padding: .4rem .8rem; font-size: 0.85rem; }
-
-    /* Study Setup View */
-    .setup-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-    .setup-header h2 { font-size: 1.5rem; }
-    .panel {
-      background: var(--bg-panel);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 2rem;
-      margin-top: 1.5rem;
-    }
-    .tabs { display: flex; gap: .5rem; border-bottom: 1px solid var(--border-color); }
-    .tab-btn {
-      background: transparent;
-      border: none;
-      padding: .75rem 1rem;
-      cursor: pointer;
-      font-size: 1rem;
-      font-weight: 500;
-      color: var(--text-light);
-      border-bottom: 2px solid transparent;
-      margin-bottom: -1px;
-    }
-    .tab-btn.active { color: var(--brand-primary); border-bottom-color: var(--brand-primary); }
-    .tab-pane { display: none; padding-top: 2rem; }
-    .tab-pane.active { display: block; }
-    
-    /* Modern Form Styling */
-    .form-group {
-      position: relative;
-      margin-bottom: 1.5rem;
-    }
-    .form-group label {
-      position: absolute;
-      top: 1rem;
-      left: 1rem;
-      color: var(--text-light);
-      pointer-events: none;
-      transition: all 0.2s ease-out;
-      background: var(--bg-panel);
-      padding: 0 0.25rem;
-    }
-    .form-group input, .form-group textarea {
-      width: 100%;
-      padding: 1rem;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      font-size: 1rem;
-      font-family: inherit;
-      background: transparent;
-    }
-    .form-group input:focus, .form-group textarea:focus {
-      outline: none;
-      border-color: var(--brand-primary);
-      box-shadow: 0 0 0 2px rgba(255, 159, 28, 0.2);
-    }
-    .form-group input:not(:placeholder-shown) + label,
-    .form-group input:focus + label,
-    .form-group textarea:not(:placeholder-shown) + label,
-    .form-group textarea:focus + label {
-      top: -0.6rem;
-      left: 0.75rem;
-      font-size: 0.8rem;
-      color: var(--brand-primary);
-    }
-    
-    /* Cards Builder (Setup) */
-    .builder-wrap { border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; background: #fafafa; }
-    .builder-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-    .builder-rows { display: flex; flex-direction: column; gap: 0.75rem; }
-    .builder-row { display: grid; grid-template-columns: 1fr 1.5fr auto; gap: 0.75rem; align-items: center; }
-    .builder-row input { margin: 0; padding: .6rem; }
-    .row-del { background: transparent; border: none; color: var(--danger); font-size: 1.5rem; cursor: pointer; }
-    .bulk-import-wrap { margin-bottom: 2rem; }
-    
-    /* --- PARTICIPANT VIEW STYLES (Largely unchanged, but put in a container) --- */
-    .participant-container, .legacy-container { max-width: 1600px; margin: 0 auto; padding: 20px; }
-    .legacy-header { background: #1177bb; color: white; padding: 1rem; text-align: center; margin-bottom: 2rem; border-radius: 5px; }
-    
     .hidden { display: none !important; }
     .muted { color: #6c757d; }
-    
-    .card { background: white; border: 1px solid #dee2e6; padding: 1rem; margin: .25rem; border-radius: 6px; cursor: grab; user-select: none; box-shadow: 0 1px 0 rgba(0,0,0,0.05); position: relative; font-size: 1rem; }
+    .badge { display: inline-block; padding: .1rem .4rem; border-radius: .25rem; font-size: .8rem; background: #edf2ff; color: #2f4e8b; border: 1px solid #dbe4ff; }
+
+    label { display: block; margin: .25rem 0 .25rem; font-weight: 600; }
+    input, textarea { width: 100%; padding: .5rem; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; }
+
+    /* Create Study builder */
+    .builder-wrap { border: 1px solid var(--border); border-radius: 8px; padding: .75rem; background: #fafafa; margin-top: .5rem; }
+    .builder-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem; }
+    .builder-rows { display: flex; flex-direction: column; gap: .5rem; }
+    .builder-row { display: grid; grid-template-columns: 1fr 2fr auto; gap: .5rem; align-items: center; }
+    .builder-row input { margin: 0; }
+    .row-del { background: transparent; border: none; color: #b23; font-weight: 700; cursor: pointer; padding: .25rem .5rem; font-size: 1.2rem; }
+    .row-del:hover { color: #922; }
+
+    /* Cards */
+    .card { background: white; border: 1px solid var(--border); padding: 1rem; margin: .25rem; border-radius: 6px; cursor: grab; user-select: none; box-shadow: 0 1px 0 rgba(0,0,0,0.05); position: relative; font-size: 1rem; }
+    .card:active { cursor: grabbing; }
+    .card-text { padding-right: 24px; }
     .info-icon { position: absolute; top: 6px; right: 6px; background: transparent; border: none; color: #6b7280; font-size: 18px; cursor: pointer; }
+    .info-icon:focus { outline: 2px solid #9ec5fe; border-radius: 4px; }
     .card-desc { display: none; position: absolute; z-index: 10; right: 8px; top: 28px; background: #2c2c2c; color: #fff; padding: 8px 10px; border-radius: 6px; width: 260px; max-width: 70vw; box-shadow: 0 4px 16px rgba(0,0,0,.2); font-size: .9rem; }
     .card-desc.show { display: block; }
+    
+    /* Workspace (New Layout) */
     .workspace { display: grid; grid-template-columns: 300px 1fr 1fr 1fr; gap: 16px; align-items: start; }
-    #availableCardsContainer { background: #f4f5f7; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; position: sticky; top: 12px; max-height: calc(100vh - 180px); overflow-y: auto; }
+    #availableCardsContainer { background: #d1d1cf; border: 1px solid #c5c5c3; border-radius: 10px; padding: 12px; position: sticky; top: 12px; max-height: calc(100vh - 180px); overflow-y: auto; }
+    #availableCardsContainer h3 { margin: .25rem 0 .5rem; }
     .cards-list { display: flex; flex-direction: column; gap: .5rem; min-height: 50px; }
+
     .category-columns-wrap { grid-column: 2 / 5; display: contents; }
     .category-column { min-height: 60vh; display: flex; flex-direction: column; gap: 16px; }
+
     .drop-zone-placeholder { border: 2px dashed #cfcfcf; border-radius: 10px; min-height: 110px; padding: 14px; background: #fafafa; display: flex; align-items: center; justify-content: center; color: #666; font-weight: 600; text-align: center; }
+    
     .toolbar { margin-bottom: .5rem; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; grid-column: 1 / -1; }
-    .category { background: #fff; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.06); border: 1px solid #dee2e6; overflow: hidden; }
-    .cat-header { background: #2d3748; color: #fff; padding: .5rem .75rem; display: flex; align-items: center; justify-content: center; gap: .5rem; }
+
+    /* Category card */
+    .category { background: #fff; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.06); border: 1px solid var(--border); overflow: hidden; }
+    .cat-header { background: #3d4038; color: #fff; padding: .5rem .75rem; font-weight: 600; text-align: center; position: relative; display: flex; align-items: center; justify-content: center; gap: .5rem; }
     .cat-title-input { background: transparent; border: none; color: #fff; font-weight: 600; text-align: center; width: 70%; outline: none; padding: .15rem .25rem; border-bottom: 1px dashed rgba(255,255,255,.35); font-size: 1.05rem; }
-    .cat-body { padding: .5rem; background: #fff; margin: .5rem; border: 1px solid #dee2e6; border-radius: 8px; min-height: 80px; }
+    .cat-title-input::placeholder { color: #e7e7e7; opacity: .85; }
+    .cat-icon-btn { background: transparent; border: none; color: #fff; cursor: pointer; padding: 0 .25rem; font-size: 1rem; }
+    .cat-icon-btn:focus { outline: 2px solid #9ec5fe; border-radius: 4px; }
+    .cat-body { padding: .5rem; background: #fff; margin: .5rem; border: 1px solid var(--border); border-radius: 8px; min-height: 80px; }
+    .cat-footer { text-align: center; font-size: .75rem; color: #6b6b6b; padding: .25rem .5rem .6rem; text-transform: uppercase; letter-spacing: .02em; }
+
+    /* Modals */
     .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; }
     .modal { background: #fff; border-radius: 10px; width: min(640px, 100%); padding: 1.25rem; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-height: 90vh; overflow: auto; overscroll-behavior: contain; }
     .modal .actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .25rem; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: .5rem; margin: .5rem 0 1rem; border-bottom: 1px solid var(--border); }
+    .tab-btn { background: transparent; color: var(--dark); border: none; padding: .5rem .75rem; cursor: pointer; border-bottom: 3px solid transparent; }
+    .tab-btn.active { border-bottom-color: var(--primary); color: var(--primary); font-weight: 600; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Charts */
+    .chart-wrap { margin-top: .5rem; }
+    .chart { display: flex; align-items: flex-end; gap: 8px; height: 220px; padding: 8px; border-left: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .bar { background: linear-gradient(180deg, var(--secondary), var(--primary)); flex: 1; min-width: 24px; border-radius: 4px 4px 0 0; position: relative; }
+    .bar span { position: absolute; bottom: 100%; transform: translateY(-4px); font-size: .8rem; color: var(--dark); }
+    .xlabels { display: flex; gap: 8px; margin-top: 4px; }
+    .xlabel { flex: 1; min-width: 24px; text-align: center; font-size: .8rem; color: var(--dark); }
+
+    /* Participants Pie Chart */
+    #participantsPieChartWrap { display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; padding: 1rem; background: #fafafa; border-radius: 8px; border: 1px solid var(--border); }
+    #participantsPieChart { width: 100px; height: 100px; border-radius: 50%; }
+    #participantsPieSummary ul { list-style: none; padding: 0; }
+    #participantsPieSummary li { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+    /* Similarity Matrix */
+    .matrix-table-wrap { overflow-x: auto; padding: 1rem; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef; }
+    .similarity-matrix { border-collapse: collapse; width: 100%; font-size: 0.9rem; color: var(--dark); }
+    .similarity-matrix th, .similarity-matrix td { border: 1px solid #dee2e6; padding: 0.5rem; text-align: center; min-width: 60px; height: 36px; }
+    .similarity-matrix .label-cell { text-align: left; font-weight: 600; background-color: #e9ecef; padding-left: 1rem; }
+    .similarity-matrix .diag-cell { font-weight: bold; }
+    .similarity-matrix thead th { position: sticky; top: 0; background-color: #f8f9fa; z-index: 10; }
     
-    .results-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.95rem; }
-    .results-table th, .results-table td { border: 1px solid #e2e8f0; padding: 0.75rem; text-align: left; }
-    .results-table th { background-color: #f7fafc; }
+    /* Matrix Tooltip */
+    #matrixTooltip { position: absolute; display: none; background: rgba(10,20,30,0.9); color: white; padding: 8px 12px; border-radius: 6px; z-index: 10000; pointer-events: none; font-size: 0.9rem; white-space: nowrap; }
+    #matrixTooltip .pair { font-weight: 600; margin-bottom: 4px; }
+
+    /* General Table styles */
+    .results-table { width: 100%; border-collapse: collapse; margin-top: 1rem; table-layout: fixed; font-size: 0.95rem; }
+    .results-table th, .results-table td { border: 1px solid var(--border); padding: 0.75rem; text-align: left; }
+    .results-table th { background-color: #f8f9fa; }
+    .results-table td { word-break: break-word; }
+
+    /* ===== Pacific Theme Override ===== */
+    :root {
+      --ocean: #1177bb; --lagoon: #2a9d8f; --palm: #2e7d32; --sand: #f6efdf; --coconut:#3b3128; --coral: #ef6c57;
+      --primary: var(--ocean); --secondary:var(--lagoon); --accent: var(--coral); --light: var(--sand); --dark: var(--coconut); --success: var(--palm); --border: #e6dcc9;
+    }
+    header { position: relative; background: linear-gradient(135deg, var(--primary) 0%, #1c9a96 75%); color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,0.12); overflow: hidden; }
+    header::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .25; mix-blend-mode: overlay; background-size: 160px 160px; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='rgba(255,255,255,0.18)' stroke-width='1'><path d='M0 40 L40 0 L80 40 L40 80 Z'/><path d='M40 0 L40 80 M0 40 L80 40'/></g></svg>"); }
+    body { background: var(--light); }
+    .view { background: #fff; border: 1px solid #eee7d8; }
+    #availableCardsContainer { background: linear-gradient(180deg, #eae2d3 0%, #e4dccb 100%); border: 1px solid #d7ccb9; }
+    .card { border: 1px solid #e5dfd3; transition: transform .12s ease, box-shadow .12s ease; background: #fff; }
+    .card:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+    .info-icon { color: #1f8a70; }
+    .card-desc { background:#1b1b1b; }
+    .cat-header { background: linear-gradient(180deg, #4a3b2e, #2f2923); color: #fff; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .cat-body { border-color: #e9dfcd; }
+    .cat-footer { color: #8b857a; }
+    .btn { background: linear-gradient(180deg, var(--primary), #0f6aa6); border: 1px solid rgba(0,0,0,.05); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+    .btn:hover { filter: brightness(1.03); }
+    .btn-success { background: linear-gradient(180deg, var(--success), #246a2a); }
+    .btn-accent { background: linear-gradient(180deg, var(--accent), #d75745); }
+    .chart { background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.8)); }
+    .tab-btn.active { border-bottom-color: var(--primary); color: var(--primary); }
+    .instructions { background: #f4ead7; border: 1px solid #eadfca; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
   </style>
 
   <!-- Firebase SDK (Compat) -->
@@ -288,109 +164,14 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-  
-  <!-- NEW: Researcher Layout Wrapper -->
-  <div id="researcherLayout" class="researcher-layout hidden">
-    <aside class="sidebar">
-      <div class="logo" title="Pasifika Card Sort">CS</div>
-      <ul class="sidebar-nav">
-        <li><a href="#" class="active" id="navDashboard">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
-          Studies
-        </a></li>
-        <!-- Placeholder icons -->
-        <li><a href="#"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 5.25a7.5 7.5 0 001.5-6.975-1.5 1.5 0 011.085-1.462A7.5 7.5 0 0012 2.25zM12 18a7.5 7.5 0 01-1.5-6.975-1.5 1.5 0 00-1.085-1.462A7.5 7.5 0 0112 2.25zM12 21a9 9 0 100-18 9 9 0 000 18z" /></svg> Ideas</a></li>
-        <li><a href="#"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg> Participants</a></li>
-      </ul>
-    </aside>
-    <main class="main-content">
-      <nav class="top-nav">
-        <div class="user-profile">
-          <span id="welcomeBanner"></span>
-          <div id="userAvatar" class="user-avatar"></div>
-        </div>
-        <button id="logoutBtn" class="btn btn-secondary">Logout</button>
-      </nav>
+  <div class="container">
+    <header>
+      <h1>Pasifika Open Card Sorting Tool</h1>
+      <div id="welcomeBanner" aria-live="polite"></div>
+    </header>
 
-      <!-- Dashboard -->
-      <div id="dashboardView" class="view">
-        <div class="page-header">
-          <div>
-            <p class="muted">Dashboard</p>
-            <h2 id="dashboardGreeting">Hello!</h2>
-          </div>
-          <button id="createStudyBtn" class="btn btn-brand">New Study</button>
-        </div>
-        <div id="studiesList" class="studies-list-grid">
-          <!-- Study cards will be injected here -->
-        </div>
-      </div>
-      
-      <!-- Create Study -->
-      <div id="setupView" class="view">
-        <div class="setup-header">
-          <h2 id="setupViewTitle">Create a New Study</h2>
-          <div>
-            <button id="cancelCreateBtn" class="btn btn-secondary">Cancel</button>
-            <button id="saveStudyBtn" class="btn btn-brand">Save Study</button>
-          </div>
-        </div>
-        
-        <div class="panel">
-          <div class="tabs">
-            <button class="tab-btn active" data-tab="general">General</button>
-            <button class="tab-btn" data-tab="cards">Cards</button>
-          </div>
-          
-          <div id="tabGeneral" class="tab-pane active">
-            <div class="form-group">
-              <input type="text" id="studyName" placeholder=" " required/>
-              <label for="studyName">Study name</label>
-            </div>
-            <div class="form-group">
-              <textarea id="instructionsInput" rows="4" placeholder=" "></textarea>
-              <label for="instructionsInput">Instructions (optional)</label>
-            </div>
-          </div>
-          
-          <div id="tabCards" class="tab-pane">
-            <div class="bulk-import-wrap">
-              <label for="excelUpload">Bulk import cards from Excel (.xlsx)</label>
-              <input type="file" id="excelUpload" accept=".xlsx, .xls, .csv"/>
-            </div>
-            
-            <label>
-              <input type="checkbox" id="enableDescriptions"/>
-              Add descriptions (tooltips) to cards
-            </label>
-            
-            <div id="simpleCardsWrap" style="margin-top: 1rem;">
-              <div class="form-group">
-                <textarea id="cardsInput" rows="8" placeholder=" "></textarea>
-                <label for="cardsInput">Cards (one per line)</label>
-              </div>
-            </div>
-            
-            <div id="builderWrap" class="builder-wrap hidden" style="margin-top: 1rem;">
-              <div class="builder-head">
-                <strong>Cards and Descriptions</strong>
-                <button type="button" id="addCardRowBtn" class="btn btn-secondary">Add Card</button>
-              </div>
-              <div id="builderRows" class="builder-rows"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-    </main>
-  </div>
-  
-  <!-- Fallback/Legacy container for Auth/Participant/Results -->
-  <div id="legacyContainer" class="legacy-container">
-    
-    <!-- Auth View (uses legacy styles) -->
-    <div id="authView" class="view">
-      <header class="legacy-header"><h1>Pasifika Open Card Sorting Tool</h1></header>
+    <!-- Auth -->
+    <div id="authView" class="view active">
       <h2>Researcher Login</h2>
       <form id="authForm" novalidate>
         <label for="displayName">Full name (for new sign-ups)</label>
@@ -400,75 +181,193 @@
         <label for="password">Password</label>
         <input type="password" id="password" placeholder="Password" autocomplete="current-password" required/>
         <div>
-          <button id="loginBtn" type="submit" class="btn btn-brand">Login</button>
-          <button id="signupBtn" type="button" class="btn btn-danger">Sign Up</button>
-          <button id="forgotPwdBtn" type="button" class="btn btn-secondary">Forgot Password</button>
+          <button id="loginBtn" type="submit" class="btn">Login</button>
+          <button id="signupBtn" type="button" class="btn btn-accent">Sign Up</button>
+          <button id="forgotPwdBtn" type="button" class="btn">Forgot Password</button>
         </div>
       </form>
     </div>
-    
-    <!-- Share Link, Results (use legacy styles for now) -->
-    <div id="studyCreatedView" class="view panel">
+
+    <!-- Dashboard -->
+    <div id="dashboardView" class="view">
+      <h2>Dashboard</h2>
+      <div>
+        <button id="createStudyBtn" class="btn">Create New Study</button>
+        <button id="logoutBtn" class="btn btn-accent">Logout</button>
+      </div>
+      <h3>Your Studies</h3>
+      <div id="studiesList"></div>
+    </div>
+
+    <!-- Create Study -->
+    <div id="setupView" class="view">
+      <h2>Create a New Study</h2>
+      <label for="studyName">Study name</label>
+      <input type="text" id="studyName" placeholder="e.g., Information Architecture Test" required/>
+      <div class="bulk-import-wrap" style="margin: 1.5rem 0 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; background: #fdfaf6;">
+          <label for="excelUpload">Bulk import cards from Excel (.xlsx)</label>
+          <input type="file" id="excelUpload" accept=".xlsx, .xls, .csv" style="padding: .25rem; border: 1px solid var(--border); border-radius: 4px;"/>
+          <div class="muted" style="font-size: .9rem; margin-top: .5rem;">
+              For simple mode, use one column (card names). For advanced mode, use two columns (card name, description). The first row is treated as data, not a header.
+          </div>
+      </div>
+      <label>
+        <input type="checkbox" id="enableDescriptions"/>
+        Add descriptions (tooltips) to cards
+      </label>
+      <div id="simpleCardsWrap">
+        <label for="cardsInput">Cards (one per line)</label>
+        <textarea id="cardsInput" rows="8" placeholder="Card 1&#10;Card 2&#10;Card 3"></textarea>
+      </div>
+      <div id="builderWrap" class="builder-wrap hidden">
+        <div class="builder-head">
+          <strong>Cards and descriptions</strong>
+          <button type="button" id="addCardRowBtn" class="btn">Add Card</button>
+        </div>
+        <div id="builderRows" class="builder-rows"></div>
+        <div class="muted" style="margin-top:.25rem">Tip: toggle the checkbox to import lines from the textarea.</div>
+      </div>
+      <label for="instructionsInput">Instructions (optional)</label>
+      <textarea id="instructionsInput" rows="4" placeholder="Describe what participants should do..."></textarea>
+      <div>
+        <button id="saveStudyBtn" class="btn btn-success">Save Study</button>
+        <button id="cancelCreateBtn" class="btn">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Share Link -->
+    <div id="studyCreatedView" class="view">
       <h2>Study Created!</h2>
       <label for="studyLink">Share this link with participants</label>
       <input type="text" id="studyLink" readonly/>
       <div>
-        <button id="copyLinkBtn" class="btn btn-brand">Copy Link</button>
-        <button id="backToDashboardBtn" class="btn btn-secondary">Back to Dashboard</button>
+        <button id="copyLinkBtn" class="btn">Copy Link</button>
+        <button id="backToDashboardBtn" class="btn">Back to Dashboard</button>
       </div>
     </div>
-    <div id="resultsView" class="view panel">
-       <!-- This view's content is generated by JS and is complex to restyle quickly -->
-       <!-- It will retain the older functional style within the new layout for now -->
-       <h2 style="margin-bottom: 1.5rem;">Study Results: <span id="resultsStudyName"></span></h2>
-       <button id="backToDashboardFromResultsBtn" class="btn btn-secondary" style="margin-bottom: 1rem;">Back to Dashboard</button>
-       <!-- ... existing results content will go here ... -->
-    </div>
 
-  </div>
-
-  <!-- Participant View (completely separate from researcher layout) -->
-  <div id="participantContainer" class="participant-container hidden">
-      <header class="legacy-header">
-        <h1 id="participantStudyName"></h1>
-      </header>
-      <div id="participantView" class="view">
-        <p id="cardDescriptionInfo" class="muted hidden" style="text-align: center; margin-bottom: 1rem;">
-          Click the <span style="font-size: 1.2em; vertical-align: middle;">ℹ️</span> icon on a card to see its description.
-        </p>
-        <div class="workspace" role="region" aria-label="Card sorting workspace">
-          <div class="toolbar">
-              <button id="submitSortingBtn" class="btn btn-brand">Finish Sorting</button>
-          </div>
-          <aside id="availableCardsContainer" role="region" aria-label="Unsorted cards">
-            <h3>Unsorted Cards</h3>
-            <div id="availableCards" class="cards-list"></div>
-          </aside>
-          <div class="category-columns-wrap">
-            <div class="category-column"></div>
-            <div class="category-column"></div>
-            <div class="category-column"></div>
-          </div>
+    <!-- Participant -->
+    <div id="participantView" class="view" aria-live="polite">
+      <h2 id="participantStudyName"></h2>
+      <p id="cardDescriptionInfo" class="muted hidden" style="text-align: center; margin-bottom: 1rem;">
+        Click the <span style="font-size: 1.2em; vertical-align: middle;">ℹ️</span> icon on a card to see its description.
+      </p>
+      <div id="participantInstructions" class="instructions hidden"></div>
+      <div id="participantStatus" class="muted" aria-live="polite"></div>
+      <div class="workspace" role="region" aria-label="Card sorting workspace">
+        <div class="toolbar">
+            <button id="showInstructionsBtn" class="btn">Instructions</button>
+            <button id="fullscreenBtn" class="btn">Full Screen</button>
+            <button id="submitSortingBtn" class="btn btn-success">Finish Sorting</button>
+        </div>
+        <aside id="availableCardsContainer" role="region" aria-label="Unsorted cards">
+          <h3>Unsorted Cards</h3>
+          <div id="availableCards" class="cards-list"></div>
+        </aside>
+        <div class="category-columns-wrap">
+          <div class="category-column"></div>
+          <div class="category-column"></div>
+          <div class="category-column"></div>
         </div>
       </div>
-  </div>
-
-  <!-- Modals (unchanged) -->
-  <div id="participantModal" class="modal-backdrop hidden">
-    <div class="modal">
-        <h3>Before you begin</h3>
-        <p>Please enter your details to proceed.</p>
-        <label>Full name</label><input id="pName" type="text" placeholder="Your name" required/>
-        <label>ID number</label><input id="pId" type="text" placeholder="Your ID number" required/>
-        <label>Course</label><input id="pCourse" type="text" placeholder="Your course" required/>
-        <label>Nationality</label><input id="pNationality" type="text" placeholder="Your nationality" required/>
-        <label>Ethnicity</label><input id="pEthnicity" type="text" placeholder="Your ethnicity" required/>
-        <fieldset> <legend>Is your family home outside of Suva/Nausori? (Yes/No)</legend>
-          <label><input type="radio" name="pOutsideHome" value="Yes" required/> Yes</label>
-          <label><input type="radio" name="pOutsideHome" value="No" required/> No</label>
-        </fieldset>
-        <div class="actions"><button id="startSortingBtn" class="btn btn-brand">Continue</button></div>
     </div>
+
+    <!-- Participant Info Modal -->
+    <div id="participantModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="participantModalTitle">
+      <div class="modal">
+        <h3 id="participantModalTitle">Before you begin</h3>
+        <p>Please enter your details to proceed.</p>
+        <label for="pName">Full name</label><input id="pName" type="text" placeholder="Your name" required/>
+        <label for="pId">ID number</label><input id="pId" type="text" placeholder="Your ID number" required/>
+        <label for="pCourse">Course</label><input id="pCourse" type="text" placeholder="Your course" required/>
+        <label for="pNationality">Nationality</label><input id="pNationality" type="text" placeholder="Your nationality" required/>
+        <label for="pEthnicity">Ethnicity</label><input id="pEthnicity" type="text" placeholder="Your ethnicity" required/>
+        <fieldset>
+          <legend>Is your family home outside of Suva/Nausori? (Yes/No)</legend>
+          <div class="radio-row">
+            <label><input type="radio" name="pOutsideHome" value="Yes" required/> Yes</label>
+            <label><input type="radio" name="pOutsideHome" value="No" required/> No</label>
+          </div>
+        </fieldset>
+        <div class="actions"><button id="startSortingBtn" class="btn btn-success">Continue</button></div>
+      </div>
+    </div>
+
+    <!-- Instructions Modal -->
+    <div id="instructionsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="instructionsModalTitle">
+      <div class="modal">
+        <h3 id="instructionsModalTitle">Instructions</h3>
+        <div id="instructionsModalContent">
+            <p><strong>Here's how it works:</strong></p>
+            <ol>
+              <li>Drag cards from the "Unsorted Cards" list on the left.</li>
+              <li>Drop a card into an empty column on the right to create a new category.</li>
+              <li>Give each category a name that makes sense to you.</li>
+              <li>Continue sorting all cards into the categories you've created.</li>
+              <li>You can move cards between categories at any time.</li>
+              <li>When you're finished, click the "Finish Sorting" button.</li>
+            </ol>
+        </div>
+        <div class="actions"><button id="beginSortingBtn" class="btn btn-success">Begin</button></div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsView" class="view">
+      <h2>Study Results: <span id="resultsStudyName"></span></h2>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="participants">Participants</button>
+        <button class="tab-btn" data-tab="categories">Categories</button>
+        <button class="tab-btn" data-tab="matrix">Similarity Matrix</button>
+      </div>
+      <div id="shareSection" class="instructions hidden">
+        <strong>Share results</strong>
+        <div style="margin-top:.5rem">
+          <label style="display:inline-flex; align-items:center; gap:.5rem">
+            <input type="checkbox" id="toggleResultsPublic"/> Enable public results link
+          </label>
+        </div>
+        <div id="publicResultsLinkRow" class="share-row hidden">
+          <input type="text" id="publicResultsLink" readonly/><button id="copyPublicResultsBtn" class="btn">Copy Public Link</button>
+        </div>
+        <div class="muted" style="margin-top:.25rem">Anyone with the link can view the results without logging in.</div>
+      </div>
+
+      <div id="tabParticipants" class="tab-pane active">
+        <div id="participantsPieChartWrap"></div>
+        <!-- CHANGE 2: Add a toolbar for delete button -->
+        <div id="participantsToolbar" class="hidden" style="margin-bottom: 1rem;">
+          <button id="deleteSelectedBtn" class="btn btn-accent">Delete Selected</button>
+        </div>
+        <div id="participantsDetails"></div>
+      </div>
+
+      <div id="tabCategories" class="tab-pane">
+        <div id="categoriesSummary"></div>
+        <div class="chart-wrap">
+          <div class="chart" id="categoriesChart"></div>
+          <div class="xlabels" id="categoriesLabels"></div>
+        </div>
+        <div id="categoryFreq" style="margin-top:.75rem">
+          <h3 style="margin:.75rem 0 .25rem">Most common category names</h3>
+          <ul id="categoryFreqList" class="list"></ul>
+        </div>
+      </div>
+
+      <div id="tabMatrix" class="tab-pane">
+        <div id="matrixMeta"></div>
+        <div id="matrixTableWrap" class="matrix-table-wrap"></div>
+      </div>
+
+      <div style="margin-top: 1rem">
+        <button id="downloadCsvBtn" class="btn">Download CSV</button>
+        <button id="downloadMatrixBtn" class="btn">Download Matrix CSV</button>
+        <button id="backToDashboardFromResultsBtn" class="btn">Back to Dashboard</button>
+      </div>
+    </div>
+    
+    <div id="matrixTooltip"></div>
+
   </div>
 
   <script>
@@ -487,196 +386,266 @@
       const auth = firebase.auth();
       const db = firebase.database();
 
-      // --- DOM Elements ---
-      const researcherLayout = document.getElementById('researcherLayout');
-      const legacyContainer = document.getElementById('legacyContainer');
-      const participantContainer = document.getElementById('participantContainer');
-      
-      const allViews = document.querySelectorAll('.view');
-      const authView = document.getElementById('authView');
-      const dashboardView = document.getElementById('dashboardView');
-      const setupView = document.getElementById('setupView');
-      const studyCreatedView = document.getElementById('studyCreatedView');
-      const participantView = document.getElementById('participantView');
-      const resultsView = document.getElementById('resultsView'); // Will be appended to main content
-      
+      // DOM Elements
+      const authView = document.getElementById('authView'), dashboardView = document.getElementById('dashboardView'), setupView = document.getElementById('setupView'), studyCreatedView = document.getElementById('studyCreatedView'), participantView = document.getElementById('participantView'), resultsView = document.getElementById('resultsView');
       const welcomeBanner = document.getElementById('welcomeBanner');
-      const userAvatar = document.getElementById('userAvatar');
-      const dashboardGreeting = document.getElementById('dashboardGreeting');
-      
-      // ... other element selectors from previous version
-      const emailInput = document.getElementById('email'), passwordInput = document.getElementById('password');
+      const displayNameInput = document.getElementById('displayName'), emailInput = document.getElementById('email'), passwordInput = document.getElementById('password');
       const studyNameInput = document.getElementById('studyName'), cardsInput = document.getElementById('cardsInput'), instructionsInput = document.getElementById('instructionsInput');
       const enableDescriptions = document.getElementById('enableDescriptions'), excelUploadInput = document.getElementById('excelUpload');
       const builderWrap = document.getElementById('builderWrap'), builderRows = document.getElementById('builderRows'), addCardRowBtn = document.getElementById('addCardRowBtn'), simpleCardsWrap = document.getElementById('simpleCardsWrap');
       const studyLinkInput = document.getElementById('studyLink');
       const availableCards = document.getElementById('availableCards'), categoryColumns = participantView.querySelectorAll('.category-column');
-      const participantStudyName = document.getElementById('participantStudyName');
+      const participantStudyName = document.getElementById('participantStudyName'), cardDescriptionInfo = document.getElementById('cardDescriptionInfo'), participantInstructions = document.getElementById('participantInstructions'), participantStatus = document.getElementById('participantStatus');
+      const showInstructionsBtn = document.getElementById('showInstructionsBtn'), fullscreenBtn = document.getElementById('fullscreenBtn');
+      const resultsStudyName = document.getElementById('resultsStudyName'), participantsPieChartWrap = document.getElementById('participantsPieChartWrap'), participantsDetails = document.getElementById('participantsDetails');
+      const categoriesSummary = document.getElementById('categoriesSummary'), categoriesChart = document.getElementById('categoriesChart'), categoriesLabels = document.getElementById('categoriesLabels'), categoryFreqList = document.getElementById('categoryFreqList');
+      const matrixMeta = document.getElementById('matrixMeta'), matrixTableWrap = document.getElementById('matrixTableWrap'), matrixTooltip = document.getElementById('matrixTooltip');
+      const downloadCsvBtn = document.getElementById('downloadCsvBtn'), downloadMatrixBtn = document.getElementById('downloadMatrixBtn');
+      const shareSection = document.getElementById('shareSection'), toggleResultsPublic = document.getElementById('toggleResultsPublic'), publicResultsLinkRow = document.getElementById('publicResultsLinkRow'), publicResultsLink = document.getElementById('publicResultsLink'), copyPublicResultsBtn = document.getElementById('copyPublicResultsBtn');
+      const tabButtons = document.querySelectorAll('.tab-btn'), tabParticipants = document.getElementById('tabParticipants'), tabCategories = document.getElementById('tabCategories'), tabMatrix = document.getElementById('tabMatrix');
+      const participantModal = document.getElementById('participantModal'), instructionsModal = document.getElementById('instructionsModal');
       const pName = document.getElementById('pName'), pId = document.getElementById('pId'), pCourse = document.getElementById('pCourse'), pNationality = document.getElementById('pNationality'), pEthnicity = document.getElementById('pEthnicity');
-
-
-      const params = new URLSearchParams(location.search);
-      const pUid = params.get('uid'), pStudyId = params.get('study');
-      const hasParticipantLink = Boolean(pUid && pStudyId);
-
-      // --- New UI Logic ---
-      function showView(viewToShow) {
-        // Hide all containers and views first
-        researcherLayout.classList.add('hidden');
-        legacyContainer.classList.add('hidden');
-        participantContainer.classList.add('hidden');
-        allViews.forEach(v => v.classList.remove('active'));
-
-        if (viewToShow === participantView) {
-            participantContainer.classList.remove('hidden');
-            participantView.classList.add('active');
-        } else if (viewToShow === authView) {
-            legacyContainer.classList.remove('hidden');
-            authView.classList.add('active');
-        } else {
-            // All other views are for researchers
-            researcherLayout.classList.remove('hidden');
-            // If it's a legacy view like 'studyCreated' or 'results', move it into the main content
-            if (viewToShow === studyCreatedView || viewToShow === resultsView) {
-              document.querySelector('.main-content').appendChild(viewToShow);
-            }
-            viewToShow.classList.add('active');
-        }
-      }
-
-      // Setup view tabs
-      const setupTabs = setupView.querySelectorAll('.tab-btn');
-      const setupPanes = setupView.querySelectorAll('.tab-pane');
-      setupTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-          setupTabs.forEach(t => t.classList.remove('active'));
-          setupPanes.forEach(p => p.classList.remove('active'));
-          tab.classList.add('active');
-          document.getElementById(`tab${tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)}`).classList.add('active');
-        });
-      });
-
-
-      // --- Core App Logic (Adapted for new structure) ---
+      const startSortingBtn = document.getElementById('startSortingBtn'), beginSortingBtn = document.getElementById('beginSortingBtn');
+      const participantsToolbar = document.getElementById('participantsToolbar'), deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
       
+      const params = new URLSearchParams(location.search), pUid = params.get('uid'), pStudyId = params.get('study'), viewParam = params.get('view');
+      const hasParticipantLink = Boolean(pUid && pStudyId && !viewParam), isPublicResultsLink = Boolean(pUid && pStudyId && viewParam === 'results');
+      let participantMeta = null, lastResultsCache = null;
+
+      // Helpers
+      function show(v) { [authView, dashboardView, setupView, studyCreatedView, participantView, resultsView].forEach(x => x.classList.remove('active')); v.classList.add('active'); }
+      function sanitizeText(v) { return String(v ?? '').replace(/<[^>]*>/g, '').replace(/[\u0000-\u001F\u007F]/g, '').replace(/\s+/g, ' ').trimStart().slice(0, 500); }
+      function finalSanitize(v) { return sanitizeText(v).trim(); }
+      function formatDuration(ms) { if (typeof ms !== 'number' || !isFinite(ms) || ms < 0) return ''; let s = Math.floor(ms / 1000); const h = Math.floor(s / 3600); s %= 3600; const m = Math.floor(s / 60); s %= 60; return h ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`; }
+      function csvEscape(v) { const s = (v == null ? '' : String(v)); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+      function downloadCSV(filename, text) { const blob = new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8;" }); if (navigator.msSaveBlob) { navigator.msSaveBlob(blob, filename); } else { const a = document.createElement('a'); const url = URL.createObjectURL(blob); a.href = url; a.download = filename; a.style.visibility = 'hidden'; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 0); } }
+      function makeShareLink(uid, studyId) { const base = new URL(window.location.href); base.search = ''; base.hash = ''; return `${base.toString()}?uid=${uid}&study=${studyId}`; }
+      function makePublicResultsLink(uid, studyId) { const base = new URL(window.location.href); base.search = ''; base.hash = ''; return `${base.toString()}?uid=${uid}&study=${studyId}&view=results`; }
+
+      // Tabs
+      function activateTab(name) { tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name)); tabParticipants.classList.toggle('active', name === 'participants'); tabCategories.classList.toggle('active', name === 'categories'); tabMatrix.classList.toggle('active', name === 'matrix'); }
+      resultsView.addEventListener('click', (e) => { const btn = e.target.closest('.tab-btn'); if (btn) { e.preventDefault(); activateTab(btn.dataset.tab); } });
+
+      // Auth & Dashboard Logic
+      document.getElementById('loginBtn').onclick = async () => { try { await auth.signInWithEmailAndPassword(emailInput.value.trim(), passwordInput.value); } catch (e) { alert(e.message); } };
+      document.getElementById('signupBtn').onclick = async () => { try { const name = finalSanitize(displayNameInput.value); if (!name) { alert('Please enter your full name for sign-up.'); displayNameInput.focus(); return; } const cred = await auth.createUserWithEmailAndPassword(emailInput.value.trim(), passwordInput.value); await cred.user.updateProfile({ displayName: name }); await db.ref(`users/${cred.user.uid}/profile`).set({ name, email: cred.user.email, createdAt: new Date().toISOString() }); alert('Account created! You are now logged in.'); } catch (e) { alert(e.message); } };
+      document.getElementById('forgotPwdBtn').onclick = async () => { try { const email = prompt('Enter your registered email address:'); if (!email) return; await auth.sendPasswordResetEmail(email.trim()); alert('Password reset email sent. Please check your inbox.'); } catch (e) { alert(e.message); } };
+      document.getElementById('logoutBtn').onclick = () => auth.signOut();
+      
+      // CHANGE 1: Modified auth handler to clear banner for participant/public views
       auth.onAuthStateChanged(user => {
+        // First, handle non-researcher views to ensure banner is clear.
+        if (isPublicResultsLink) {
+          welcomeBanner.textContent = '';
+          show(resultsView);
+          loadPublicResults(pUid, pStudyId);
+          return;
+        }
         if (hasParticipantLink) {
-          showView(participantView);
+          welcomeBanner.textContent = '';
+          show(participantView);
           loadParticipantView(pUid, pStudyId);
           return;
         }
-
+        
+        // Then, handle researcher views.
         if (user) {
-          const displayName = user.displayName || user.email;
-          welcomeBanner.textContent = displayName;
-          dashboardGreeting.textContent = `Hello, ${user.displayName || 'Researcher'}`;
-          userAvatar.textContent = (user.displayName || 'U').charAt(0).toUpperCase();
-          showView(dashboardView);
+          welcomeBanner.textContent = user.displayName || user.email ? `Welcome, ${user.displayName || user.email} 👋` : '';
+          show(dashboardView);
           showDashboard(user.uid);
         } else {
-          showView(authView);
+          welcomeBanner.textContent = '';
+          show(authView);
+          document.getElementById('email').focus();
         }
       });
+      
+      function showDashboard(uid) { const list = document.getElementById('studiesList'); list.textContent = ''; db.ref(`users/${uid}/studies`).once('value').then(snap => { const data = snap.val() || {}; Object.entries(data).forEach(([studyId, study]) => addStudyToDashboard(uid, studyId, study)); }); }
+      function addStudyToDashboard(uid, studyId, study) { const list = document.getElementById('studiesList'); const div = document.createElement('div'); div.className = 'study-item'; const left = document.createElement('div'); const title = document.createElement('div'); title.textContent = study.name || '(Untitled study)'; const pub = document.createElement('div'); pub.className = 'muted'; pub.innerHTML = `<span class="badge">${study.isPublic ? 'Published' : 'Unpublished'}</span>`; left.appendChild(title); left.appendChild(pub); const actions = document.createElement('div'); actions.className = 'study-actions'; const shareBtn = document.createElement('button'); shareBtn.className = 'btn'; shareBtn.textContent = 'Share Link'; shareBtn.onclick = async () => { const link = makeShareLink(uid, studyId); try { await navigator.clipboard.writeText(link); alert('Link copied.'); } catch { prompt('Copy this link:', link); } }; const publishBtn = document.createElement('button'); publishBtn.className = 'btn'; publishBtn.textContent = study.isPublic ? 'Unpublish' : 'Publish'; publishBtn.onclick = async () => { const val = !Boolean(study.isPublic); await db.ref(`users/${uid}/studies/${studyId}/isPublic`).set(val); study.isPublic = val; publishBtn.textContent = val ? 'Unpublish' : 'Publish'; pub.innerHTML = `<span class="badge">${val ? 'Published' : 'Unpublished'}</span>`; }; const resultsBtn = document.createElement('button'); resultsBtn.className = 'btn btn-success'; resultsBtn.textContent = 'Results'; resultsBtn.onclick = () => viewResults(uid, studyId); const deleteBtn = document.createElement('button'); deleteBtn.className = 'btn btn-accent'; deleteBtn.textContent = 'Delete'; deleteBtn.onclick = async () => { if (!confirm(`Delete the study "${study.name || studyId}" and all of its results? This cannot be undone.`)) return; try { await db.ref().update({ [`users/${uid}/studies/${studyId}`]: null }); div.remove(); alert('Study deleted.'); } catch (e) { alert('Delete failed: ' + e.message); } }; actions.appendChild(shareBtn); actions.appendChild(publishBtn); actions.appendChild(resultsBtn); actions.appendChild(deleteBtn); div.appendChild(left); div.appendChild(actions); list.appendChild(div); }
+      
+      // Study Creation Logic
+      enableDescriptions.addEventListener('change', () => { const enabled = enableDescriptions.checked; builderWrap.classList.toggle('hidden', !enabled); simpleCardsWrap.classList.toggle('hidden', enabled); if (enabled && builderRows.children.length === 0) { const lines = (cardsInput.value || '').split('\n').map(s => finalSanitize(s)).filter(Boolean); if (lines.length === 0) lines.push(''); lines.forEach(name => addCardRow(name, '')); } });
+      addCardRowBtn.addEventListener('click', () => addCardRow('', ''));
+      excelUploadInput.addEventListener('change', (event) => { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, { type: 'array' }); const firstSheetName = workbook.SheetNames[0]; const worksheet = workbook.Sheets[firstSheetName]; const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }).filter(row => Array.isArray(row) && row.some(cell => cell != null && cell !== '')); if (rows.length === 0) { alert('The uploaded file is empty or could not be read.'); return; } if (enableDescriptions.checked) { builderRows.innerHTML = ''; rows.forEach(row => { const name = finalSanitize(row[0] || ''); const desc = finalSanitize(row[1] || ''); if (name) addCardRow(name, desc); }); alert(`${rows.length} cards imported into the advanced builder.`); } else { const cardNames = rows.map(row => finalSanitize(row[0] || '')).filter(Boolean); cardsInput.value = cardNames.join('\n'); alert(`${cardNames.length} cards imported into the textarea.`); } } catch (error) { console.error('Error processing Excel file:', error); alert('There was an error processing your file.'); } finally { event.target.value = ''; } }; reader.onerror = () => { alert('Failed to read the file.'); event.target.value = ''; }; reader.readAsArrayBuffer(file); });
+      function addCardRow(name = '', desc = '') { const row = document.createElement('div'); row.className = 'builder-row'; row.innerHTML = `<input type="text" class="row-name" placeholder="Card name" value="${name.replace(/"/g, '&quot;')}" /><input type="text" class="row-desc" placeholder="Description (shown on ℹ️)" value="${desc.replace(/"/g, '&quot;')}" /><button type="button" class="row-del" title="Remove">×</button>`; row.querySelector('.row-del').onclick = () => row.remove(); builderRows.appendChild(row); }
+      function collectCardsFromForm() { if (!enableDescriptions.checked) { const cards = (cardsInput.value || '').split('\n').map(s => finalSanitize(s)).filter(Boolean); return { hasDescriptions: false, cards }; } const list = Array.from(builderRows.querySelectorAll('.builder-row')).map(r => { const text = finalSanitize(r.querySelector('.row-name').value); const desc = finalSanitize(r.querySelector('.row-desc').value); return text ? { text, desc } : null; }).filter(Boolean); return { hasDescriptions: true, cards: list }; }
+      document.getElementById('createStudyBtn').onclick = () => { show(setupView); setTimeout(() => studyNameInput.focus(), 0); };
+      document.getElementById('cancelCreateBtn').onclick = () => show(dashboardView);
+      document.getElementById('saveStudyBtn').onclick = () => { const user = auth.currentUser; if (!user) { alert('You must be logged in to save a study.'); return; } const name = finalSanitize(studyNameInput.value); const { hasDescriptions, cards } = collectCardsFromForm(); if (!name || cards.length === 0) { alert('Enter name and at least one card'); return; } const studyId = 'study_' + Date.now(); const study = { id: studyId, name, cards, hasDescriptions: !!hasDescriptions, instructions: finalSanitize(instructionsInput.value), createdAt: new Date().toISOString(), ownerUid: user.uid, isPublic: true }; db.ref(`users/${user.uid}/studies/${studyId}`).set(study).then(() => { studyLinkInput.value = makeShareLink(user.uid, studyId); show(studyCreatedView); }).catch(err => alert(err.message)); };
+      document.getElementById('copyLinkBtn').onclick = async () => { try { await navigator.clipboard.writeText(studyLinkInput.value); alert('Link copied!'); } catch { studyLinkInput.select(); document.execCommand('copy'); alert('Link copied!'); } };
+      document.getElementById('backToDashboardBtn').onclick = () => show(dashboardView); document.getElementById('backToDashboardFromResultsBtn').onclick = () => show(dashboardView);
 
-      function showDashboard(uid) {
-        const list = document.getElementById('studiesList');
-        list.innerHTML = ''; // Clear previous
-        db.ref(`users/${uid}/studies`).once('value').then(snap => {
-          const data = snap.val() || {};
-          const studyIds = Object.keys(data);
-          if (studyIds.length === 0) {
-              list.innerHTML = '<p>No active studies found. Create one to get started!</p>';
-              return;
-          }
-          studyIds.forEach(studyId => addStudyToDashboard(uid, studyId, data[studyId]));
-        });
-      }
+      // Participant View Logic
+      function updateColumnPlaceholders() { categoryColumns.forEach(col => { const hasCategories = col.querySelector('.category'); let placeholder = col.querySelector('.drop-zone-placeholder'); if (!hasCategories && !placeholder) { placeholder = document.createElement('div'); placeholder.className = 'drop-zone-placeholder'; placeholder.textContent = 'Drop here to create a category'; col.appendChild(placeholder); } else if (hasCategories && placeholder) { placeholder.remove(); } }); }
+      function updateCategoryCount(cat) { const count = cat.querySelectorAll('.cat-body .card').length; cat.querySelector('.cat-footer').textContent = (count === 1 ? '1 CARD' : `${count} CARDS`); }
+      function deleteCategory(cat) { [...cat.querySelectorAll('.cat-body .card')].forEach(c => availableCards.appendChild(c)); cat.remove(); updateColumnPlaceholders(); }
+      function makeCategory(targetColumn) { const cat = document.createElement('div'); cat.className = 'category'; cat.innerHTML = `<div class="cat-header" tabindex="0" role="button"><button class="cat-icon-btn cat-delete" title="Delete">🗑</button><input class="cat-title-input" type="text" placeholder="Click to rename" value="" maxlength="80"/></div><div class="cat-body"></div><div class="cat-footer">0 CARDS</div>`; targetColumn.appendChild(cat); const header = cat.querySelector('.cat-header'); const input = cat.querySelector('.cat-title-input'); const delBtn = cat.querySelector('.cat-delete'); const body = cat.querySelector('.cat-body'); input.addEventListener('input', () => { input.value = sanitizeText(input.value); }); header.addEventListener('keydown', (e) => { if (e.target === input) return; if (e.key === 'Enter') { e.preventDefault(); input.focus(); } }); delBtn.onclick = () => deleteCategory(cat); new Sortable(body, { group: 'cards', animation: 150, onAdd: () => updateCategoryCount(cat), onRemove: () => { updateCategoryCount(cat); setTimeout(() => { if (body.children.length === 0) { cat.remove(); updateColumnPlaceholders(); } }, 0); } }); updateColumnPlaceholders(); return cat; }
+      function createCardEl(text, desc) { const card = document.createElement('div'); card.className = 'card'; card.dataset.cardText = text; const inner = document.createElement('div'); inner.className = 'card-text'; inner.textContent = text; card.appendChild(inner); if (desc) { const btn = document.createElement('button'); btn.className = 'info-icon'; btn.type = 'button'; btn.title = 'Show description'; btn.textContent = 'ℹ️'; const tip = document.createElement('div'); tip.className = 'card-desc'; tip.textContent = desc; btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); tip.classList.toggle('show'); }); card.appendChild(btn); card.appendChild(tip); } return card; }
+      function loadParticipantView(uid, studyId) { participantStatus.textContent = 'Loading study...'; db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => { const study = snap.val(); if (!study || !study.isPublic) { participantStudyName.textContent = 'Study unavailable'; participantStatus.textContent = 'This study is not public or does not exist.'; return; } participantStudyName.textContent = study.name || ''; if (study.instructions) { participantInstructions.textContent = study.instructions; participantInstructions.classList.remove('hidden'); } if (study.hasDescriptions) { cardDescriptionInfo.classList.remove('hidden'); } availableCards.innerHTML = ''; (study.cards || []).forEach(c => { const text = typeof c === 'string' ? c : finalSanitize(c?.text || ''); const desc = typeof c === 'string' ? '' : finalSanitize(c?.desc || ''); if (text) availableCards.appendChild(createCardEl(text, desc)); }); new Sortable(availableCards, { group: 'cards', animation: 150 }); categoryColumns.forEach(column => { new Sortable(column, { group: 'cards', animation: 150, onAdd: (evt) => { if (evt.item.classList.contains('card')) { const newCat = makeCategory(column); newCat.querySelector('.cat-body').appendChild(evt.item); updateCategoryCount(newCat); setTimeout(() => newCat.querySelector('.cat-title-input').focus(), 100); } } }); }); updateColumnPlaceholders(); participantView.dataset.uid = uid; participantView.dataset.studyId = studyId; participantStatus.textContent = ''; participantModal.classList.remove('hidden'); setTimeout(() => pName.focus(), 0); }); }
+      document.getElementById('startSortingBtn').onclick = () => { const meta = { name: finalSanitize(pName.value), idNumber: finalSanitize(pId.value), course: finalSanitize(pCourse.value), nationality: finalSanitize(pNationality.value), ethnicity: finalSanitize(pEthnicity.value), outsideHome: finalSanitize((document.querySelector('input[name="pOutsideHome"]:checked') || {}).value || '') }; if (Object.values(meta).some(v => !v)) { alert('Please complete all fields to begin.'); return; } participantMeta = meta; participantModal.classList.add('hidden'); instructionsModal.classList.remove('hidden'); setTimeout(() => beginSortingBtn.focus(), 0); };
+      document.getElementById('beginSortingBtn').onclick = async () => { const { uid, studyId } = participantView.dataset; if (!uid || !studyId) return; const startedAt = new Date().toISOString(); participantView.dataset.startedAt = startedAt; try { const ref = db.ref(`users/${uid}/studies/${studyId}/results`).push(); await ref.set({ timestamp: startedAt, participant: participantMeta, status: 'started' }); participantView.dataset.resultKey = ref.key; } catch (e) { console.warn('Could not create started result entry:', e); } instructionsModal.classList.add('hidden'); };
+      document.getElementById('submitSortingBtn').onclick = () => { const { uid, studyId, startedAt, resultKey } = participantView.dataset; if (!uid || !studyId || !participantMeta) { alert('Could not submit. Please refresh and try again.'); return; } if (availableCards.querySelectorAll('.card').length > 0) { alert(`Please sort all ${availableCards.querySelectorAll('.card').length} remaining cards.`); document.getElementById('availableCardsContainer').scrollIntoView({ behavior: 'smooth' }); return; } const allCategories = participantView.querySelectorAll('.category'); const cats = []; let firstInvalid = null; allCategories.forEach(cat => { const name = finalSanitize(cat.querySelector('.cat-title-input')?.value || ''); const cards = [...cat.querySelectorAll('.cat-body .card')].map(c => c.dataset.cardText); if (cards.length > 0) { if (!name && !firstInvalid) firstInvalid = cat.querySelector('.cat-title-input'); cats.push({ name: name || 'Unnamed', cards }); } }); if (firstInvalid) { alert('Please name all categories.'); firstInvalid.focus(); return; } if (cats.length === 0 && availableCards.children.length === 0 && !confirm("You haven't created any categories. Are you sure you want to finish?")) { return; } const now = new Date(); const data = { participant: participantMeta, categories: cats, status: 'completed', completedAt: now.toISOString(), durationMs: startedAt ? now.getTime() - new Date(startedAt).getTime() : null }; const resultsRef = db.ref(`users/${uid}/studies/${studyId}/results`); (resultKey ? resultsRef.child(resultKey).update(data) : resultsRef.push({ ...data, timestamp: now.toISOString() })).then(() => { participantView.innerHTML = '<h2>Thank you!</h2><p>Your responses have been recorded.</p>'; }).catch(e => alert(e.message)); };
+      showInstructionsBtn.onclick = () => { instructionsModal.classList.remove('hidden'); };
+      fullscreenBtn.onclick = () => { const doc = window.document; const docEl = doc.documentElement; const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen; const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen; if(!doc.fullscreenElement) { requestFullScreen.call(docEl); } else { cancelFullScreen.call(doc); } };
+      document.addEventListener('fullscreenchange', () => { fullscreenBtn.textContent = document.fullscreenElement ? 'Exit Full Screen' : 'Full Screen'; });
+      
+      // --- RESULTS LOGIC ---
+      function buildResultsUI(study, resultsObj) {
+        // CHANGE 2: Transform results to include the DB key
+        const arr = Object.entries(resultsObj || {})
+          .map(([key, value]) => ({ ...value, _key: key }))
+          .sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
 
-      function addStudyToDashboard(uid, studyId, study) {
-        const list = document.getElementById('studiesList');
-        const div = document.createElement('div');
-        div.className = 'study-card';
+        lastResultsCache = null; downloadCsvBtn.disabled = true; downloadMatrixBtn.disabled = true;
+        participantsPieChartWrap.innerHTML = ''; participantsDetails.innerHTML = ''; categoriesSummary.textContent = '';
+        categoriesChart.innerHTML = ''; categoriesLabels.innerHTML = ''; matrixMeta.textContent = ''; matrixTableWrap.innerHTML = '';
+        participantsToolbar.classList.add('hidden'); // CHANGE 2: Hide toolbar by default
         
-        const publishedStatus = study.isPublic 
-            ? '<span class="badge published">Published</span>' 
-            : '<span class="badge">Draft</span>';
+        // CHANGE 2: Store study details on the view for the delete button to access
+        resultsView.dataset.uid = study.ownerUid;
+        resultsView.dataset.studyId = study.id;
 
-        div.innerHTML = `
-          <div class="study-card-header">
-            <h3>${study.name || '(Untitled study)'}</h3>
-            ${publishedStatus}
-          </div>
-          <div class="study-card-actions">
-            <button class="btn btn-secondary share-btn">Share</button>
-            <button class="btn btn-secondary publish-btn">${study.isPublic ? 'Unpublish' : 'Publish'}</button>
-            <button class="btn btn-secondary results-btn">Results</button>
-            <button class="btn btn-danger delete-btn">Delete</button>
-          </div>
-        `;
+        if (arr.length === 0) {
+            participantsDetails.innerHTML = '<p>No results yet.</p>'; show(resultsView); activateTab('participants'); return;
+        }
 
-        // Add event listeners
-        div.querySelector('.share-btn').onclick = () => { /* ... share logic ... */ };
-        div.querySelector('.publish-btn').onclick = async () => { /* ... publish logic ... */ };
-        div.querySelector('.results-btn').onclick = () => { alert("Results view not yet restyled. It will load with the old UI."); showView(resultsView); /*... load results logic ... */ };
-        div.querySelector('.delete-btn').onclick = async () => { /* ... delete logic ... */ };
+        const completed = arr.filter(r => r.status === 'completed' && Array.isArray(r.categories));
+        const startedCount = arr.length, completedCount = completed.length, abandonedCount = startedCount - completedCount;
+        const completionRate = startedCount > 0 ? (completedCount / startedCount) * 100 : 0;
 
-        list.appendChild(div);
-      }
-      
-      document.getElementById('logoutBtn').onclick = () => auth.signOut();
-      document.getElementById('navDashboard').onclick = (e) => { e.preventDefault(); showView(dashboardView); };
-      document.getElementById('createStudyBtn').onclick = () => {
-        document.getElementById('setupViewTitle').textContent = "Create a New Study";
-        // Reset form fields
-        showView(setupView);
-      };
-      document.getElementById('cancelCreateBtn').onclick = () => showView(dashboardView);
-      document.getElementById('saveStudyBtn').onclick = () => { /* ... save logic ... */ };
-      document.getElementById('backToDashboardBtn').onclick = () => showView(dashboardView);
-      
-      // Placeholder for simplified logic that needs to be filled in from your previous version
-      document.getElementById('loginBtn').onclick = async (e) => { e.preventDefault(); try { await auth.signInWithEmailAndPassword(emailInput.value.trim(), passwordInput.value); } catch(err) { alert(err.message); }};
-      
-      function loadParticipantView(uid, studyId) {
-        db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => {
-          const study = snap.val();
-          if (!study || !study.isPublic) { /* handle error */ return; }
-          participantStudyName.textContent = study.name || '';
-          
-          availableCards.innerHTML = '';
-          (study.cards || []).forEach(c => {
-            const text = typeof c === 'string' ? c : (c?.text || '');
-            if(text) {
-                const cardEl = document.createElement('div');
-                cardEl.className = 'card';
-                cardEl.textContent = text;
-                availableCards.appendChild(cardEl);
-            }
-          });
-
-          new Sortable(availableCards, { group: 'cards', animation: 150 });
-          categoryColumns.forEach(column => {
-              new Sortable(column, { group: 'cards', animation: 150, onAdd: (evt) => {
-                  if (evt.item.classList.contains('card') && column.children.length === 1) {
-                      makeCategory(column).querySelector('.cat-body').appendChild(evt.item);
-                  }
-              }});
-          });
-
-          document.getElementById('participantModal').classList.remove('hidden');
+        // Participants Tab
+        const pieAngle = (completionRate / 100) * 360;
+        participantsPieChartWrap.innerHTML = `<div id="participantsPieChart" style="background: conic-gradient(var(--success) 0deg, var(--success) ${pieAngle}deg, var(--accent) ${pieAngle}deg, var(--accent) 360deg);"></div><div id="participantsPieSummary"><h3>Participant Summary</h3><p><strong>${completionRate.toFixed(1)}%</strong> Completion Rate</p><ul><li><span class="legend-dot" style="background: var(--success);"></span> Completed: <strong>${completedCount}</strong></li><li><span class="legend-dot" style="background: var(--accent);"></span> Abandoned: <strong>${abandonedCount}</strong></li><li>Total Started: <strong>${startedCount}</strong></li></ul></div>`;
+        
+        if (completedCount > 0) {
+            participantsToolbar.classList.remove('hidden'); // CHANGE 2: Show toolbar if there are results
+        }
+        
+        const pTable = document.createElement('table'); pTable.className = 'results-table';
+        // CHANGE 2: Add checkbox column header
+        pTable.innerHTML = `<thead><tr><th><input type="checkbox" id="selectAllCheckbox" title="Select All"></th><th>#</th><th>Name</th><th>ID</th><th>Course</th><th>Duration</th><th>Categories</th></tr></thead><tbody></tbody>`;
+        const pTbody = pTable.querySelector('tbody');
+        completed.forEach((res, i) => {
+            const pinfo = res.participant || {};
+            const tr = document.createElement('tr');
+            // CHANGE 2: Add checkbox with data-key for each row
+            tr.innerHTML = `
+              <td><input type="checkbox" class="participant-checkbox" data-key="${res._key}"></td>
+              <td>${i + 1}</td>
+              <td>${pinfo.name || 'N/A'}</td>
+              <td>${pinfo.idNumber || 'N/A'}</td>
+              <td>${pinfo.course || 'N/A'}</td>
+              <td>${typeof res.durationMs === 'number' ? formatDuration(res.durationMs) : 'N/A'}</td>
+              <td>${(res.categories || []).length}</td>`;
+            pTbody.appendChild(tr);
         });
+        participantsDetails.appendChild(pTable);
+        
+        // CHANGE 2: Add event listener for the 'Select All' checkbox
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', (e) => {
+                document.querySelectorAll('.participant-checkbox').forEach(cb => {
+                    cb.checked = e.target.checked;
+                });
+            });
+        }
+
+
+        // Categories Tab
+        const catsPer = completed.map(r => r.categories.length);
+        if (catsPer.length > 0) {
+            const avgCats = catsPer.reduce((a, b) => a + b, 0) / catsPer.length;
+            categoriesSummary.textContent = `Average categories created: ${avgCats.toFixed(2)} (n=${completedCount})`;
+            const dist = new Map(); catsPer.forEach(n => dist.set(n, (dist.get(n) || 0) + 1));
+            const maxBuckets = Math.max(...dist.keys());
+            const counts = Array.from({ length: maxBuckets }, (_, i) => dist.get(i + 1) || 0);
+            const peak = Math.max(...counts, 1);
+            counts.forEach((count, idx) => {
+                const bar = document.createElement('div'); bar.className = 'bar'; bar.style.height = `${Math.round((count / peak) * 100)}%`;
+                bar.innerHTML = `<span>${count}</span>`; categoriesChart.appendChild(bar);
+                const xl = document.createElement('div'); xl.className = 'xlabel'; xl.textContent = String(idx + 1); categoriesLabels.appendChild(xl);
+            });
+        }
+
+        // Similarity Matrix Tab
+        const cardTexts = (study?.cards || []).map(c => typeof c === 'string' ? c : (c?.text || '')).filter(Boolean);
+        const matrixCounts = {}; cardTexts.forEach(a => { matrixCounts[a] = {}; cardTexts.forEach(b => matrixCounts[a][b] = 0); });
+        completed.forEach(r => { (r.categories || []).forEach(cat => { (cat.cards || []).forEach((a, i) => { for (let j = i + 1; j < cat.cards.length; j++) { const b = cat.cards[j]; matrixCounts[a][b]++; matrixCounts[b][a]++; } }); }); });
+        
+        matrixMeta.innerHTML = `<p class="muted">Percentages show how often cards were grouped together (n=${completedCount}).</p>`;
+        const mTable = document.createElement('table'); mTable.className = 'similarity-matrix';
+        mTable.innerHTML = `<thead></thead><tbody></tbody>`;
+        const mThead = mTable.querySelector('thead'), mBody = mTable.querySelector('tbody');
+        const headerRow = document.createElement('tr');
+        headerRow.innerHTML = '<th></th>' + cardTexts.map(card => `<th>${card}</th>`).join('');
+        mThead.appendChild(headerRow);
+
+        cardTexts.forEach((card_i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<th class="label-cell">${card_i}</th>` + cardTexts.map(card_j => {
+                const pct = completedCount > 0 ? (matrixCounts[card_i][card_j] / completedCount * 100) : 0;
+                const alpha = 0.05 + (pct * 0.0095);
+                return `<td style="background-color: hsla(210, 100%, 50%, ${alpha})" data-pct="${pct.toFixed(0)}" data-card-i="${card_i}" data-card-j="${card_j}">${pct.toFixed(0)}</td>`;
+            }).join('');
+            mBody.appendChild(tr);
+        });
+        matrixTableWrap.appendChild(mTable);
+        
+        lastResultsCache = { arr, completed, completedCount, study, cards: cardTexts, matrixCounts };
+        downloadCsvBtn.disabled = false; downloadMatrixBtn.disabled = false;
+        show(resultsView); activateTab('participants');
       }
 
-      function makeCategory(targetColumn) { /* ... same as before ... */ return document.createElement('div'); }
-      document.getElementById('startSortingBtn').onclick = () => document.getElementById('participantModal').classList.add('hidden');
+      // Matrix Tooltip Logic
+      matrixTableWrap.addEventListener('mousemove', e => { const cell = e.target.closest('td'); if (!cell || !cell.dataset.cardI) { matrixTooltip.style.display = 'none'; return; } matrixTooltip.style.display = 'block'; matrixTooltip.style.left = `${e.pageX + 15}px`; matrixTooltip.style.top = `${e.pageY + 15}px`; matrixTooltip.innerHTML = `<div class="pair">${cell.dataset.cardI} &<br>${cell.dataset.cardJ}</div><div>Agreement: <strong>${cell.dataset.pct}%</strong></div>`; });
+      matrixTableWrap.addEventListener('mouseleave', () => matrixTooltip.style.display = 'none');
+      
+      // Share & Public View Logic
+      function setupShareControls(uid, studyId, study) { shareSection.classList.remove('hidden'); toggleResultsPublic.checked = !!study.resultsPublic; publicResultsLink.value = makePublicResultsLink(uid, studyId); publicResultsLinkRow.classList.toggle('hidden', !study.resultsPublic); toggleResultsPublic.onchange = async () => { const val = toggleResultsPublic.checked; publicResultsLinkRow.classList.toggle('hidden', !val); await db.ref(`users/${uid}/studies/${studyId}/resultsPublic`).set(val); }; copyPublicResultsBtn.onclick = async () => { await navigator.clipboard.writeText(publicResultsLink.value); alert('Public results link copied!'); }; }
+      function viewResults(uid, studyId) { db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => { const study = snap.val(); resultsStudyName.textContent = study?.name || ''; setupShareControls(uid, studyId, study || {}); db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => buildResultsUI(study || {}, snap2.val() || {})); }); }
+      function loadPublicResults(uid, studyId) { shareSection.classList.add('hidden'); db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => { const study = snap.val(); resultsStudyName.textContent = study?.name || ''; if (!study || !study.resultsPublic) { participantsDetails.innerHTML = '<p>These results are not publicly available.</p>'; activateTab('participants'); return; } db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => buildResultsUI(study, snap2.val() || {})); }); }
+      
+      // CSV Export Logic
+      downloadCsvBtn.onclick = () => { if (!lastResultsCache) return; const { arr, study } = lastResultsCache; const studyName = (study?.name || 'study').replace(/[^\w\-]+/g, '_'); const headers = ['Participant #','Timestamp','Name','ID Number','Course','Nationality','Ethnicity','HomeOutsideSuvaNausori','Category','Card']; const lines = [headers.join(',')]; let idx = 0; arr.filter(r => r.status === 'completed').forEach(res => { idx++; const p = res.participant || {}; const ts = res.timestamp || res.completedAt || ''; (res.categories || []).forEach(cat => { (cat.cards || []).forEach(card => lines.push([csvEscape(idx),csvEscape(ts),csvEscape(p.name),csvEscape(p.idNumber),csvEscape(p.course),csvEscape(p.nationality),csvEscape(p.ethnicity),csvEscape(p.outsideHome),csvEscape(cat.name),csvEscape(card)].join(','))); }); }); downloadCSV(`${studyName}_results.csv`, lines.join('\n')); };
+      downloadMatrixBtn.onclick = () => { if (!lastResultsCache) return; const { study, cards, matrixCounts, completedCount } = lastResultsCache; const studyName = (study?.name || 'study').replace(/[^\w\-]+/g, '_'); const head = [''].concat(cards).map(csvEscape).join(','); const lines = [head]; cards.forEach(a => { const row = [csvEscape(a)]; cards.forEach(b => { const pct = completedCount > 0 ? (matrixCounts[a][b] / completedCount * 100) : 0; row.push(csvEscape(`${pct.toFixed(0)}%`)); }); lines.push(row.join(',')); }); downloadCSV(`${studyName}_similarity_matrix.csv`, lines.join('\n')); };
 
-      // Initial check
-      if (hasParticipantLink) {
-        showView(participantView);
-        loadParticipantView(pUid, pStudyId);
-      } else {
-        // Auth state will handle showing login or dashboard
-      }
+      // CHANGE 2: Add event listener for the delete button
+      deleteSelectedBtn.addEventListener('click', async () => {
+        const { uid, studyId } = resultsView.dataset;
+        if (!uid || !studyId) return;
+
+        const checkedBoxes = document.querySelectorAll('.participant-checkbox:checked');
+        if (checkedBoxes.length === 0) {
+            alert('Please select at least one result to delete.');
+            return;
+        }
+
+        const confirmDelete = confirm(`Are you sure you want to delete ${checkedBoxes.length} selected result(s)? This action cannot be undone.`);
+        if (!confirmDelete) return;
+
+        const updates = {};
+        checkedBoxes.forEach(box => {
+            const key = box.dataset.key;
+            if (key) {
+                updates[`/users/${uid}/studies/${studyId}/results/${key}`] = null;
+            }
+        });
+
+        try {
+            await db.ref().update(updates);
+            alert(`${checkedBoxes.length} result(s) deleted successfully.`);
+            // Refresh the results view to show the changes
+            viewResults(uid, studyId);
+        } catch (error) {
+            alert(`An error occurred while deleting results: ${error.message}`);
+        }
+      });
+      
+      // Initial Routing (no changes here, but must be run after other logic is defined)
+      if (isPublicResultsLink) { /* handled by onAuthStateChanged */ }
+      else if (hasParticipantLink) { /* handled by onAuthStateChanged */ }
+
     });
   </script>
 </body>
