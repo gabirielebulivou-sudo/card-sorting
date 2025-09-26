@@ -539,10 +539,14 @@
         return String(v ?? '')
           .replace(/<[^>]*>/g, '')
           .replace(/[\u0000-\u001F\u007F]/g, '')
-          .replace(/\s+/g, ' ') // FIXED: Collapse multiple spaces to one, allows single spaces
-          .trim()
+          .replace(/\s+/g, ' ') // Collapse multiple spaces to one, allows single spaces
+          .trimStart() // Allow trailing space while typing
           .slice(0, 500);
       }
+      function finalSanitize(v) {
+        return sanitizeText(v).trim(); // Fully trim on final submission
+      }
+
       function formatDuration(ms) {
         if (typeof ms !== 'number' || !isFinite(ms) || ms < 0) return '';
         let s = Math.floor(ms / 1000);
@@ -583,7 +587,7 @@
       };
       document.getElementById('signupBtn').onclick = async () => {
         try {
-          const name = sanitizeText(displayNameInput.value);
+          const name = finalSanitize(displayNameInput.value);
           if (!name) { alert('Please enter your full name for sign-up.'); displayNameInput.focus(); return; }
           const cred = await auth.createUserWithEmailAndPassword(emailInput.value.trim(), passwordInput.value);
           await cred.user.updateProfile({ displayName: name });
@@ -661,7 +665,7 @@
         simpleCardsWrap.classList.toggle('hidden', enabled);
 
         if (enabled && builderRows.children.length === 0) {
-          const lines = (cardsInput.value || '').split('\n').map(s => sanitizeText(s)).filter(Boolean);
+          const lines = (cardsInput.value || '').split('\n').map(s => finalSanitize(s)).filter(Boolean);
           if (lines.length === 0) lines.push('');
           lines.forEach(name => addCardRow(name, ''));
         }
@@ -695,13 +699,13 @@
                   if (isAdvancedMode) {
                       builderRows.innerHTML = ''; 
                       rows.forEach(row => {
-                          const name = sanitizeText(row[0] || '');
-                          const desc = sanitizeText(row[1] || '');
+                          const name = finalSanitize(row[0] || '');
+                          const desc = finalSanitize(row[1] || '');
                           if (name) { addCardRow(name, desc); }
                       });
                       alert(`${rows.length} cards imported into the advanced builder.`);
                   } else {
-                      const cardNames = rows.map(row => sanitizeText(row[0] || '')).filter(Boolean);
+                      const cardNames = rows.map(row => finalSanitize(row[0] || '')).filter(Boolean);
                       cardsInput.value = cardNames.join('\n');
                       alert(`${cardNames.length} cards imported into the textarea.`);
                   }
@@ -732,13 +736,13 @@
 
       function collectCardsFromForm() {
         if (!enableDescriptions.checked) {
-          const cards = (cardsInput.value || '').split('\n').map(s => sanitizeText(s)).filter(Boolean);
+          const cards = (cardsInput.value || '').split('\n').map(s => finalSanitize(s)).filter(Boolean);
           return { hasDescriptions: false, cards };
         }
         const rows = Array.from(builderRows.querySelectorAll('.builder-row'));
         const list = rows.map(r => {
-          const text = sanitizeText(r.querySelector('.row-name').value);
-          const desc = sanitizeText(r.querySelector('.row-desc').value);
+          const text = finalSanitize(r.querySelector('.row-name').value);
+          const desc = finalSanitize(r.querySelector('.row-desc').value);
           return text ? { text, desc } : null;
         }).filter(Boolean);
         return { hasDescriptions: true, cards: list };
@@ -751,7 +755,7 @@
         const user = auth.currentUser;
         if (!user) { alert('You must be logged in to save a study.'); return; }
 
-        const name = sanitizeText(studyNameInput.value);
+        const name = finalSanitize(studyNameInput.value);
         const { hasDescriptions, cards } = collectCardsFromForm();
         if (!name || (cards.length === 0)) { alert('Enter name and at least one card'); return; }
 
@@ -761,7 +765,7 @@
           name,
           cards,
           hasDescriptions: !!hasDescriptions,
-          instructions: sanitizeText(instructionsInput.value),
+          instructions: finalSanitize(instructionsInput.value),
           createdAt: new Date().toISOString(),
           ownerUid: user.uid,
           isPublic: true
@@ -808,7 +812,7 @@
         updateColumnPlaceholders();
       }
 
-      function makeCategory(targetColumn, name = '') {
+      function makeCategory(targetColumn) {
         const cat = document.createElement('div');
         cat.className = 'category';
         cat.innerHTML = `
@@ -821,13 +825,23 @@
         `;
         targetColumn.appendChild(cat);
 
+        const header = cat.querySelector('.cat-header');
         const input = cat.querySelector('.cat-title-input');
         const delBtn = cat.querySelector('.cat-delete');
         const body = cat.querySelector('.cat-body');
 
         // Allow spaces in input and sanitize on the fly
         input.addEventListener('input', () => { 
-            input.value = sanitizeText(input.value).slice(0, 80); 
+            input.value = sanitizeText(input.value); 
+        });
+        
+        // **FIXED**: The spacebar conflict is resolved here.
+        header.addEventListener('keydown', (e) => {
+          if (e.target === input) return;
+          if (e.key === 'Enter') { // Only Enter focuses the input, not spacebar.
+            e.preventDefault(); 
+            input.focus(); 
+          }
         });
         
         delBtn.onclick = () => deleteCategory(cat);
@@ -838,7 +852,6 @@
           onAdd: () => updateCategoryCount(cat),
           onRemove: () => {
             updateCategoryCount(cat);
-            // Auto-delete category if it becomes empty
             setTimeout(() => {
                 if (body.children.length === 0) {
                     cat.remove();
@@ -894,7 +907,6 @@
           if (study.instructions) { participantInstructions.textContent = study.instructions; participantInstructions.classList.remove('hidden'); }
           else { participantInstructions.textContent = ''; participantInstructions.classList.add('hidden'); }
 
-          // NEW: Show info text if descriptions are enabled
           if (study.hasDescriptions) {
               cardDescriptionInfo.classList.remove('hidden');
           }
@@ -902,8 +914,8 @@
           availableCards.innerHTML = '';
           const cardsArr = Array.isArray(study.cards) ? study.cards : [];
           cardsArr.forEach(c => {
-            const text = typeof c === 'string' ? c : sanitizeText(c?.text || '');
-            const desc = typeof c === 'string' ? '' : sanitizeText(c?.desc || '');
+            const text = typeof c === 'string' ? c : finalSanitize(c?.text || '');
+            const desc = typeof c === 'string' ? '' : finalSanitize(c?.desc || '');
             if (!text) return;
             availableCards.appendChild(createCardEl(text, desc));
           });
@@ -939,12 +951,12 @@
 
       document.getElementById('startSortingBtn').onclick = () => {
         const meta = {
-          name: sanitizeText(pName.value),
-          idNumber: sanitizeText(pId.value),
-          course: sanitizeText(pCourse.value),
-          nationality: sanitizeText(pNationality.value),
-          ethnicity: sanitizeText(pEthnicity.value),
-          outsideHome: sanitizeText((document.querySelector('input[name="pOutsideHome"]:checked') || {}).value || '')
+          name: finalSanitize(pName.value),
+          idNumber: finalSanitize(pId.value),
+          course: finalSanitize(pCourse.value),
+          nationality: finalSanitize(pNationality.value),
+          ethnicity: finalSanitize(pEthnicity.value),
+          outsideHome: finalSanitize((document.querySelector('input[name="pOutsideHome"]:checked') || {}).value || '')
         };
         if (!meta.name || !meta.idNumber || !meta.course || !meta.nationality || !meta.ethnicity || !meta.outsideHome) {
           alert('Please complete all fields to begin.');
@@ -987,7 +999,7 @@
         const cats = [];
         let firstInvalid = null;
         allCategories.forEach(cat => {
-          const name = sanitizeText(cat.querySelector('.cat-title-input')?.value || '');
+          const name = finalSanitize(cat.querySelector('.cat-title-input')?.value || '');
           const cards = [...cat.querySelectorAll('.cat-body .card')].map(c => c.dataset.cardText);
           if (cards.length > 0) {
             if (!name && !firstInvalid) firstInvalid = cat.querySelector('.cat-title-input');
@@ -1207,7 +1219,7 @@
           if (!(res.status === 'completed' || Array.isArray(res.categories))) return;
           idx += 1; const p = res.participant || {}; const ts = res.timestamp || res.completedAt || '';
           (res.categories || []).forEach(cat => {
-            const catName = sanitizeText(cat.name || 'Unnamed') || 'Unnamed';
+            const catName = finalSanitize(cat.name || 'Unnamed') || 'Unnamed';
             (cat.cards || []).forEach(card => {
               lines.push([csvEscape(idx),csvEscape(ts),csvEscape(p.name || ''),csvEscape(p.idNumber || ''),csvEscape(p.course || ''),csvEscape(p.nationality || ''),csvEscape(p.ethnicity || ''),csvEscape(p.outsideHome || ''),csvEscape(catName),csvEscape(card)].join(','));
             });
