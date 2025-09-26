@@ -130,6 +130,18 @@
     .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; }
     .modal { background: #fff; border-radius: 10px; width: min(640px, 100%); padding: 1.25rem; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-height: 90vh; overflow: auto; overscroll-behavior: contain; }
     .modal .actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .25rem; }
+    /* FIXED: Style for radio button alignment */
+    .radio-row label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 400; /* Make label text normal weight */
+    }
+    .radio-row input[type="radio"] {
+      width: auto; /* Override default 100% width for inputs */
+      margin-bottom: 0;
+    }
     
     .tabs { display: flex; gap: .5rem; margin: .5rem 0 1rem; border-bottom: 1px solid var(--border); }
     .tab-btn { background: transparent; color: var(--dark); border: none; padding: .5rem .75rem; cursor: pointer; border-bottom: 3px solid transparent; }
@@ -263,7 +275,6 @@
       <!-- Participant view content is generated dynamically -->
     </div>
     
-    <!-- RESTORED STATIC HTML for Results View -->
     <div id="resultsView" class="view">
       <h2>Study Results: <span id="resultsStudyName"></span></h2>
       <div class="tabs">
@@ -466,25 +477,19 @@
       function updateColumnPlaceholders(categoryColumns) { categoryColumns.forEach(col => { const hasCategories = col.querySelector('.category'); let placeholder = col.querySelector('.drop-zone-placeholder'); if (!hasCategories && !placeholder) { placeholder = document.createElement('div'); placeholder.className = 'drop-zone-placeholder'; placeholder.textContent = 'Drop here to create a category'; col.appendChild(placeholder); } else if (hasCategories && placeholder) { placeholder.remove(); } }); }
       function updateCategoryCount(cat) { const count = cat.querySelectorAll('.cat-body .card').length; cat.querySelector('.cat-footer').textContent = (count === 1 ? '1 CARD' : `${count} CARDS`); }
       function makeCategory(targetColumn, availableCards) { const cat = document.createElement('div'); cat.className = 'category'; cat.innerHTML = `<div class="cat-header" tabindex="0" role="button"><button class="cat-icon-btn cat-delete" title="Delete">🗑</button><input class="cat-title-input" type="text" placeholder="Click to rename" value="" maxlength="80"/></div><div class="cat-body"></div><div class="cat-footer">0 CARDS</div>`; targetColumn.appendChild(cat); const body = cat.querySelector('.cat-body'); cat.querySelector('.cat-delete').onclick = () => { [...body.querySelectorAll('.card')].forEach(c => availableCards.appendChild(c)); cat.remove(); updateColumnPlaceholders(participantView.querySelectorAll('.category-column')); }; new Sortable(body, { group: 'cards', animation: 150, onAdd: () => updateCategoryCount(cat), onRemove: () => { updateCategoryCount(cat); setTimeout(() => { if (body.children.length === 0) { cat.remove(); updateColumnPlaceholders(participantView.querySelectorAll('.category-column')); } }, 0); } }); updateColumnPlaceholders(participantView.querySelectorAll('.category-column')); return cat; }
-      function loadParticipantModal() { participantModal.innerHTML = `<div class="modal"><h3 id="participantModalTitle">Before you begin</h3> <p>Please enter your details to proceed.</p> <label for="pName">Full name</label><input id="pName" type="text" placeholder="Your name" required/> <label for="pId">ID number</label><input id="pId" type="text" placeholder="Your ID number" required/> <label for="pCourse">Course</label><input id="pCourse" type="text" placeholder="Your course" required/> <label for="pNationality">Nationality</label><input id="pNationality" type="text" placeholder="Your nationality" required/> <label for="pEthnicity">Ethnicity</label><input id="pEthnicity" type="text" placeholder="Your ethnicity" required/> <fieldset> <legend>Is your family home outside of Suva/Nausori? (Yes/No)</legend> <div> <label><input type="radio" name="pOutsideHome" value="Yes" required/> Yes</label> <label><input type="radio" name="pOutsideHome" value="No" required/> No</label> </div> </fieldset> <div class="actions"><button id="startSortingBtn" class="btn btn-success">Continue</button></div> </div>`; document.getElementById('startSortingBtn').onclick = () => { const meta = { name: finalSanitize(document.getElementById('pName').value), idNumber: finalSanitize(document.getElementById('pId').value), course: finalSanitize(document.getElementById('pCourse').value), nationality: finalSanitize(document.getElementById('pNationality').value), ethnicity: finalSanitize(document.getElementById('pEthnicity').value), outsideHome: finalSanitize((document.querySelector('input[name="pOutsideHome"]:checked') || {}).value || '') }; if (Object.values(meta).some(v => !v)) { alert('Please complete all fields to begin.'); return; } participantMeta = meta; participantModal.classList.add('hidden'); loadInstructionsModal(true); }; participantModal.classList.remove('hidden'); document.getElementById('pName').focus(); }
+      function loadParticipantModal() { participantModal.innerHTML = `<div class="modal"><h3 id="participantModalTitle">Before you begin</h3> <p>Please enter your details to proceed.</p> <label for="pName">Full name</label><input id="pName" type="text" placeholder="Your name" required/> <label for="pId">ID number</label><input id="pId" type="text" placeholder="Your ID number" required/> <label for="pCourse">Course</label><input id="pCourse" type="text" placeholder="Your course" required/> <label for="pNationality">Nationality</label><input id="pNationality" type="text" placeholder="Your nationality" required/> <label for="pEthnicity">Ethnicity</label><input id="pEthnicity" type="text" placeholder="Your ethnicity" required/> <fieldset> <legend>Is your family home outside of Suva/Nausori? (Yes/No)</legend> <div class="radio-row"> <label><input type="radio" name="pOutsideHome" value="Yes" required/> Yes</label> <label><input type="radio" name="pOutsideHome" value="No" required/> No</label> </div> </fieldset> <div class="actions"><button id="startSortingBtn" class="btn btn-success">Continue</button></div> </div>`; document.getElementById('startSortingBtn').onclick = () => { const meta = { name: finalSanitize(document.getElementById('pName').value), idNumber: finalSanitize(document.getElementById('pId').value), course: finalSanitize(document.getElementById('pCourse').value), nationality: finalSanitize(document.getElementById('pNationality').value), ethnicity: finalSanitize(document.getElementById('pEthnicity').value), outsideHome: finalSanitize((document.querySelector('input[name="pOutsideHome"]:checked') || {}).value || '') }; if (Object.values(meta).some(v => !v)) { alert('Please complete all fields to begin.'); return; } participantMeta = meta; participantModal.classList.add('hidden'); loadInstructionsModal(true); }; participantModal.classList.remove('hidden'); document.getElementById('pName').focus(); }
       function loadInstructionsModal(isFirstTime) { instructionsModal.innerHTML = `<div class="modal"><h3>Instructions</h3><ol><li>Drag cards from the "Unsorted Cards" list on the left.</li><li>Drop a card into an empty column on the right to create a new category.</li><li>Give each category a name that makes sense to you.</li><li>Continue sorting all cards into the categories you've created.</li><li>You can move cards between categories at any time.</li><li>When you're finished, click the "Finish Sorting" button.</li></ol><div class="actions"><button id="beginSortingBtn" class="btn btn-success">Begin</button></div></div>`; document.getElementById('beginSortingBtn').onclick = () => { instructionsModal.classList.add('hidden'); if(isFirstTime) { const { uid, studyId } = participantView.dataset; if (!uid || !studyId) return; const startedAt = new Date().toISOString(); participantView.dataset.startedAt = startedAt; try { const ref = db.ref(`users/${uid}/studies/${studyId}/results`).push(); ref.set({ timestamp: startedAt, participant: participantMeta, status: 'started' }); participantView.dataset.resultKey = ref.key; } catch (e) { console.warn('Could not create started result entry:', e); } } }; instructionsModal.classList.remove('hidden'); }
 
       // --- RESULTS & TABS LOGIC ---
-      
-      // FIX: Use a delegated event listener for tabs, as they are created dynamically.
       resultsView.addEventListener('click', (e) => {
         const tabButton = e.target.closest('.tab-btn');
         if (tabButton) {
           e.preventDefault();
           const tabName = tabButton.dataset.tab;
-          
-          // Deactivate all tabs and panes within resultsView first
           resultsView.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
           resultsView.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
-
-          // Activate the clicked tab and corresponding pane
           tabButton.classList.add('active');
-          const targetPane = document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+          const targetPane = resultsView.querySelector(`#tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
           if (targetPane) {
             targetPane.classList.add('active');
           }
@@ -508,7 +513,6 @@
         const downloadCsvBtn = document.getElementById('downloadCsvBtn'), downloadMatrixBtn = document.getElementById('downloadMatrixBtn');
         const deleteBtn = document.getElementById('deleteSelectedBtn');
 
-        // Clear previous results content
         participantsPieChartWrap.innerHTML = ''; participantsDetails.innerHTML = ''; categoriesSummary.textContent = '';
         categoriesChart.innerHTML = ''; categoriesLabels.innerHTML = ''; categoryFreqList.innerHTML = '';
         matrixMeta.textContent = ''; matrixTableWrap.innerHTML = '';
@@ -544,8 +548,8 @@
             categoriesSummary.textContent = `Average categories created: ${avgCats.toFixed(2)} (n=${completedCount})`;
             const dist = new Map(); catsPer.forEach(n => dist.set(n, (dist.get(n) || 0) + 1));
             const maxBuckets = Math.max(...dist.keys());
-            const counts = Array.from({ length: maxBuckets + 1 }, (_, i) => dist.get(i) || 0); // Include 0 categories
-            const peak = Math.max(...counts, 1);
+            const counts = Array.from({ length: maxBuckets + 1 }, (_, i) => dist.get(i) || 0);
+            const peak = Math.max(...counts.slice(1), 1);
             counts.slice(1).forEach((count, idx) => {
                 const bar = document.createElement('div'); bar.className = 'bar'; bar.style.height = `${Math.round((count / peak) * 100)}%`;
                 bar.innerHTML = `<span>${count}</span>`; categoriesChart.appendChild(bar);
