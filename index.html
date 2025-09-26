@@ -15,46 +15,15 @@
       --border: #dee2e6;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif; }
     body { background: #f5f7fa; color: var(--dark); line-height: 1.5; }
-
     .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
 
-    header {
-      background: var(--primary);
-      color: white;
-      padding: 1rem;
-      text-align: center;
-      margin-bottom: 2rem;
-      border-radius: 5px;
-    }
-
-    .view {
-      display: none;
-      background: white;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,.1);
-      margin-bottom: 2rem;
-    }
+    header { background: var(--primary); color: white; padding: 1rem; text-align: center; margin-bottom: 2rem; border-radius: 5px; }
+    .view { display: none; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,.1); margin-bottom: 2rem; }
     .view.active { display: block; }
 
-    .btn {
-      padding: .5rem 1rem;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin: .25rem;
-      touch-action: manipulation;
-    }
+    .btn { padding: .5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; margin: .25rem; }
     .btn:hover { background: var(--secondary); }
     .btn:disabled { opacity: .6; cursor: not-allowed; }
     .btn-success { background: var(--success); }
@@ -62,98 +31,39 @@
     .btn-accent:hover { filter: brightness(0.95); }
 
     .hidden { display: none !important; }
+    .muted { color: #6c757d; }
+    .badge { display: inline-block; padding: .1rem .4rem; border-radius: .25rem; font-size: .8rem; background: #edf2ff; color: #2f4e8b; border: 1px solid #dbe4ff; }
 
     label { display: block; margin: .25rem 0 .25rem; font-weight: 600; }
-    input, textarea {
-      width: 100%;
-      padding: .5rem;
-      margin-bottom: 1rem;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-    }
+    input, textarea { width: 100%; padding: .5rem; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 4px; }
 
-    .study-item {
-      border: 1px solid var(--border);
-      padding: .75rem;
-      margin-bottom: .5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: .5rem;
-      flex-wrap: wrap;
-    }
-    .study-actions { display: flex; gap: .25rem; flex-wrap: wrap; }
+    /* Create Study builder */
+    .builder-wrap { border: 1px solid var(--border); border-radius: 8px; padding: .75rem; background: #fafafa; margin-top: .5rem; }
+    .builder-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem; }
+    .builder-rows { display: flex; flex-direction: column; gap: .5rem; }
+    .builder-row { display: grid; grid-template-columns: 1fr 2fr auto; gap: .5rem; align-items: center; }
+    .builder-row input { margin: 0; }
+    .row-del { background: transparent; border: none; color: #b23; font-weight: 700; cursor: pointer; padding: .25rem .5rem; }
+    .row-del:hover { color: #922; }
 
-    .instructions { background: #e9ecef; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
-
-    .category-card {
-      background: #eee;
-      padding: .25rem .5rem;
-      border-radius: 4px;
-      margin: .25rem;
-      display: inline-block;
-    }
-
-    .table-wrap { overflow: auto; margin-top: 1rem; border: 1px solid var(--border); border-radius: 6px; }
-    table { border-collapse: collapse; min-width: 600px; width: 100%; }
-    th, td { border: 1px solid var(--border); padding: .5rem; text-align: center; white-space: nowrap; }
-
-    .card {
-      background: white;
-      border: 1px solid var(--border);
-      padding: 1rem;
-      margin: .25rem;
-      border-radius: 6px;
-      cursor: grab;
-      user-select: none;
-      box-shadow: 0 1px 0 rgba(0,0,0,0.05);
-    }
+    /* Cards */
+    .card { background: white; border: 1px solid var(--border); padding: 1rem; margin: .25rem; border-radius: 6px; cursor: grab; user-select: none; box-shadow: 0 1px 0 rgba(0,0,0,0.05); position: relative; }
     .card:active { cursor: grabbing; }
-    .card:focus { outline: 3px solid #9ec5fe; outline-offset: 2px; }
-    .card[aria-selected="true"] { box-shadow: 0 0 0 3px #ffae42 inset; }
+    .card-text { padding-right: 24px; }
+    .info-icon { position: absolute; top: 6px; right: 6px; background: transparent; border: none; color: #6b7280; font-size: 16px; cursor: pointer; }
+    .info-icon:focus { outline: 2px solid #9ec5fe; border-radius: 4px; }
+    .card-desc { display: none; position: absolute; z-index: 10; right: 8px; top: 28px; background: #2c2c2c; color: #fff; padding: 8px 10px; border-radius: 6px; width: 260px; max-width: 70vw; box-shadow: 0 4px 16px rgba(0,0,0,.2); font-size: .9rem; }
+    .card-desc.show { display: block; }
 
-    .muted { color: #6c757d; }
-    .badge {
-      display: inline-block;
-      padding: .1rem .4rem;
-      border-radius: .25rem;
-      font-size: .8rem;
-      background: #edf2ff;
-      color: #2f4e8b;
-      border: 1px solid #dbe4ff;
-    }
-
-    /* Participant workspace layout (cards left, canvas right) */
-    .workspace {
-      display: grid;
-      grid-template-columns: 340px 1fr;
-      gap: 18px;
-      align-items: start;
-    }
-    .left-panel {
-      background: #d1d1cf;
-      border: 1px solid #c5c5c3;
-      border-radius: 10px;
-      padding: 12px;
-      position: sticky;
-      top: 12px;
-      max-height: calc(100vh - 180px);
-      overflow: auto;
-    }
+    /* Workspace */
+    .workspace { display: grid; grid-template-columns: 340px 1fr; gap: 18px; align-items: start; }
+    .left-panel { background: #d1d1cf; border: 1px solid #c5c5c3; border-radius: 10px; padding: 12px; position: sticky; top: 12px; max-height: calc(100vh - 180px); overflow: auto; }
     .left-panel h3 { margin: .25rem 0 .5rem; }
     .cards-list { display: flex; flex-direction: column; gap: .5rem; }
 
     .right-panel { min-height: 60vh; position: relative; }
-    .toolbar {
-      margin-bottom: .5rem;
-      display: flex;
-      gap: .5rem;
-      align-items: center;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
+    .toolbar { margin-bottom: .5rem; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 
-    /* Mobile responsiveness */
     @media (max-width: 900px) {
       .workspace { grid-template-columns: 1fr; }
       .left-panel { position: static; max-height: none; }
@@ -161,189 +71,55 @@
       .left-panel { order: 1; }
       .categories-wrap { grid-template-columns: 1fr; }
     }
-    @media (max-width: 520px) {
-      .card { padding: .8rem; }
-      .cat-header { font-size: .95rem; }
-    }
+    @media (max-width: 520px) { .card { padding: .8rem; } .cat-header { font-size: .95rem; } }
 
-    /* Steps shown until a category exists */
+    /* Steps */
     .steps { display: flex; flex-direction: column; gap: 18px; margin-bottom: 18px; }
-    .stepbox {
-      border: 2px dashed #ddd;
-      border-radius: 14px;
-      padding: 18px;
-      background: #fff;
-      box-shadow: 0 1px 0 rgba(0,0,0,0.02);
-    }
+    .stepbox { border: 2px dashed #ddd; border-radius: 14px; padding: 18px; background: #fff; box-shadow: 0 1px 0 rgba(0,0,0,0.02); }
     .stepbox h3 { font-size: 1.35rem; margin-bottom: .5rem; }
     .stepbox ol { margin-left: 1.25rem; }
     .stepbox li { margin: .25rem 0; }
-
-    /* Dropzone (visible until at least one category exists) */
-    .new-cat-dropzone {
-      border: 2px dashed #cfcfcf;
-      border-radius: 10px;
-      min-height: 110px;
-      padding: 14px;
-      background: #fafafa;
-      margin-top: .5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #666;
-      font-weight: 600;
-    }
+    .new-cat-dropzone { border: 2px dashed #cfcfcf; border-radius: 10px; min-height: 110px; padding: 14px; background: #fafafa; margin-top: .5rem; display: flex; align-items: center; justify-content: center; color: #666; font-weight: 600; }
 
     /* Categories canvas */
-    .categories-wrap {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 16px;
-      min-height: 200px;
-    }
+    .categories-wrap { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; min-height: 200px; }
 
     /* Category card */
-    .category {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,.06);
-      border: 1px solid var(--border);
-      overflow: hidden;
-    }
-    .cat-header {
-      background: #3d4038;
-      color: #fff;
-      padding: .5rem .75rem;
-      font-weight: 600;
-      text-align: center;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: .5rem;
-    }
-    .cat-title-input {
-      background: transparent;
-      border: none;
-      color: #fff;
-      font-weight: 600;
-      text-align: center;
-      width: 70%;
-      outline: none;
-      padding: .15rem .25rem;
-      border-bottom: 1px dashed rgba(255,255,255,.35);
-    }
+    .category { background: #fff; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.06); border: 1px solid var(--border); overflow: hidden; }
+    .cat-header { background: #3d4038; color: #fff; padding: .5rem .75rem; font-weight: 600; text-align: center; position: relative; display: flex; align-items: center; justify-content: center; gap: .5rem; }
+    .cat-title-input { background: transparent; border: none; color: #fff; font-weight: 600; text-align: center; width: 70%; outline: none; padding: .15rem .25rem; border-bottom: 1px dashed rgba(255,255,255,.35); }
     .cat-title-input::placeholder { color: #e7e7e7; opacity: .85; }
-    .cat-icon-btn {
-      background: transparent;
-      border: none;
-      color: #fff;
-      cursor: pointer;
-      padding: 0 .25rem;
-      font-size: 1rem;
-    }
+    .cat-icon-btn { background: transparent; border: none; color: #fff; cursor: pointer; padding: 0 .25rem; font-size: 1rem; }
     .cat-icon-btn:focus { outline: 2px solid #9ec5fe; border-radius: 4px; }
+    .cat-body { padding: .5rem; background: #fff; margin: .5rem; border: 1px solid var(--border); border-radius: 8px; min-height: 80px; }
+    .cat-footer { text-align: center; font-size: .75rem; color: #6b6b6b; padding: .25rem .5rem .6rem; text-transform: uppercase; letter-spacing: .02em; }
 
-    .cat-body {
-      padding: .5rem;
-      background: #fff;
-      margin: .5rem;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      min-height: 80px;
-    }
-    .cat-footer {
-      text-align: center;
-      font-size: .75rem;
-      color: #6b6b6b;
-      padding: .25rem .5rem .6rem;
-      text-transform: uppercase;
-      letter-spacing: .02em;
-    }
+    .new-cat-tile { border: 2px dashed #cfcfcf; border-radius: 10px; min-height: 90px; display: flex; align-items: center; justify-content: center; background: #fafafa; color: #666; font-weight: 600; margin-top: 12px; }
 
-    .new-cat-tile {
-      border: 2px dashed #cfcfcf;
-      border-radius: 10px;
-      min-height: 90px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #fafafa;
-      color: #666;
-      font-weight: 600;
-      margin-top: 12px;
-    }
-
-    /* Modal (participant info + instructions) */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      padding: 1rem;
-    }
-    .modal {
-      background: #fff;
-      border-radius: 10px;
-      width: min(640px, 100%);
-      padding: 1.25rem;
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
-      max-height: 90vh;
-      overflow: auto;
-      overscroll-behavior: contain;
-    }
+    /* Modals */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; }
+    .modal { background: #fff; border-radius: 10px; width: min(640px, 100%); padding: 1.25rem; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-height: 90vh; overflow: auto; overscroll-behavior: contain; }
     .modal .actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .25rem; }
 
-    /* Tabs (results) */
+    /* Tabs */
     .tabs { display: flex; gap: .5rem; margin: .5rem 0 1rem; border-bottom: 1px solid var(--border); }
-    .tab-btn {
-      background: transparent;
-      color: var(--dark);
-      border: none;
-      padding: .5rem .75rem;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-    }
+    .tab-btn { background: transparent; color: var(--dark); border: none; padding: .5rem .75rem; cursor: pointer; border-bottom: 3px solid transparent; }
     .tab-btn.active { border-bottom-color: var(--primary); color: var(--primary); font-weight: 600; }
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
 
     /* Simple bar chart */
     .chart-wrap { margin-top: .5rem; }
-    .chart {
-      display: flex;
-      align-items: flex-end;
-      gap: 8px;
-      height: 220px;
-      padding: 8px;
-      border-left: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-    }
-    .bar {
-      background: linear-gradient(180deg, var(--secondary), var(--primary));
-      flex: 1;
-      min-width: 24px;
-      border-radius: 4px 4px 0 0;
-      position: relative;
-    }
+    .chart { display: flex; align-items: flex-end; gap: 8px; height: 220px; padding: 8px; border-left: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .bar { background: linear-gradient(180deg, var(--secondary), var(--primary)); flex: 1; min-width: 24px; border-radius: 4px 4px 0 0; position: relative; }
     .bar span { position: absolute; bottom: 100%; transform: translateY(-4px); font-size: .8rem; color: var(--dark); }
     .xlabels { display: flex; gap: 8px; margin-top: 4px; }
     .xlabel { flex: 1; min-width: 24px; text-align: center; font-size: .8rem; color: var(--dark); }
-
-    /* Share results row */
-    .share-row input { width: 100%; }
-    .share-row { display: flex; gap: .5rem; margin-top: .5rem; align-items: center; }
   </style>
 
-  <!-- Firebase SDK (Compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-
-  <!-- SortableJS -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 </head>
 <body>
@@ -353,9 +129,9 @@
       <div id="welcomeBanner" class="muted" aria-live="polite"></div>
     </header>
 
-    <!-- Login / Signup -->
+    <!-- Auth -->
     <div id="authView" class="view active">
-      <h2 id="authHeading">Researcher Login</h2>
+      <h2>Researcher Login</h2>
       <form id="authForm" novalidate>
         <label for="displayName">Full name (for new sign-ups)</label>
         <input type="text" id="displayName" placeholder="e.g., John Doe" autocomplete="name"/>
@@ -382,7 +158,7 @@
         <button id="logoutBtn" class="btn btn-accent">Logout</button>
       </div>
       <h3>Your Studies</h3>
-      <div id="studiesList" aria-live="polite"></div>
+      <div id="studiesList"></div>
     </div>
 
     <!-- Create Study -->
@@ -392,8 +168,26 @@
       <label for="studyName">Study name</label>
       <input type="text" id="studyName" placeholder="e.g., Information Architecture Test" required/>
 
-      <label for="cardsInput">Cards (one per line)</label>
-      <textarea id="cardsInput" rows="8" placeholder="Card 1&#10;Card 2&#10;Card 3" required></textarea>
+      <label>
+        <input type="checkbox" id="enableDescriptions"/>
+        Add descriptions (tooltips) to cards
+      </label>
+
+      <!-- Simple mode (names only) -->
+      <div id="simpleCardsWrap">
+        <label for="cardsInput">Cards (one per line)</label>
+        <textarea id="cardsInput" rows="8" placeholder="Card 1&#10;Card 2&#10;Card 3"></textarea>
+      </div>
+
+      <!-- Builder mode (names + descriptions) -->
+      <div id="builderWrap" class="builder-wrap hidden">
+        <div class="builder-head">
+          <strong>Cards and descriptions</strong>
+          <button type="button" id="addCardRowBtn" class="btn">Add Card</button>
+        </div>
+        <div id="builderRows" class="builder-rows"></div>
+        <div class="muted" style="margin-top:.25rem">Tip: toggle the checkbox to import lines from the textarea.</div>
+      </div>
 
       <label for="instructionsInput">Instructions (optional)</label>
       <textarea id="instructionsInput" rows="4" placeholder="Describe what participants should do..."></textarea>
@@ -424,9 +218,7 @@
       <div class="workspace" role="region" aria-label="Card sorting workspace">
         <aside class="left-panel" role="region" aria-label="Card list">
           <h3>Cards</h3>
-          <div class="muted" style="margin-bottom:.5rem;">
-            Drag a card to the right to create or fill categories.
-          </div>
+          <div class="muted" style="margin-bottom:.5rem;">Drag a card to the right to create or fill categories.</div>
           <div id="availableCards" class="cards-list"></div>
         </aside>
 
@@ -443,9 +235,7 @@
             <div class="stepbox">
               <h3>Step 2</h3>
               <p>Drag a card from the left and drop it here or anywhere on the right to create a new category.</p>
-              <div id="newCategoryDropzone" class="new-cat-dropzone" aria-label="Drop here to create a new category">
-                Drop here to create a new category
-              </div>
+              <div id="newCategoryDropzone" class="new-cat-dropzone">Drop here to create a new category</div>
             </div>
           </div>
 
@@ -454,9 +244,7 @@
           </div>
 
           <div id="sortingArea" class="categories-wrap"></div>
-          <div id="newCategoryTile" class="new-cat-tile hidden" aria-label="Drop here to create a new category">
-            Drop here to create a new category
-          </div>
+          <div id="newCategoryTile" class="new-cat-tile hidden">Drop here to create a new category</div>
         </section>
       </div>
     </div>
@@ -526,7 +314,6 @@
         <button class="tab-btn" data-tab="matrix">Similarity Matrix</button>
       </div>
 
-      <!-- Share results controls -->
       <div id="shareSection" class="instructions hidden">
         <strong>Share results</strong>
         <div style="margin-top:.5rem">
@@ -541,13 +328,11 @@
         <div class="muted" style="margin-top:.25rem">Anyone with the link can view the results without logging in.</div>
       </div>
 
-      <!-- Participants Tab -->
       <div id="tabParticipants" class="tab-pane active">
         <div id="participantsSummary"></div>
         <div id="participantsDetails"></div>
       </div>
 
-      <!-- Categories Tab -->
       <div id="tabCategories" class="tab-pane">
         <div id="categoriesSummary"></div>
         <div class="chart-wrap">
@@ -560,7 +345,6 @@
         </div>
       </div>
 
-      <!-- Matrix Tab -->
       <div id="tabMatrix" class="tab-pane">
         <div id="matrixMeta"></div>
         <div id="matrixTableWrap" class="table-wrap"></div>
@@ -576,7 +360,6 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      // Firebase Config
       const firebaseConfig = {
         apiKey: "AIzaSyAu1hawycY2uQgzWolaHeTfCdWtSWux7XA",
         authDomain: "card-sorting-tool-762a3.firebaseapp.com",
@@ -607,6 +390,15 @@
       const studyNameInput = document.getElementById('studyName');
       const cardsInput = document.getElementById('cardsInput');
       const instructionsInput = document.getElementById('instructionsInput');
+      const enableDescriptions = document.getElementById('enableDescriptions');
+
+      // Builder
+      const builderWrap = document.getElementById('builderWrap');
+      const builderRows = document.getElementById('builderRows');
+      const addCardRowBtn = document.getElementById('addCardRowBtn');
+      const simpleCardsWrap = document.getElementById('simpleCardsWrap');
+
+      // Share link
       const studyLinkInput = document.getElementById('studyLink');
 
       // Participant DOM
@@ -631,38 +423,33 @@
       const matrixTableWrap = document.getElementById('matrixTableWrap');
       const downloadCsvBtn = document.getElementById('downloadCsvBtn');
       const downloadMatrixBtn = document.getElementById('downloadMatrixBtn');
+
+      // Share controls
       const shareSection = document.getElementById('shareSection');
       const toggleResultsPublic = document.getElementById('toggleResultsPublic');
       const publicResultsLinkRow = document.getElementById('publicResultsLinkRow');
       const publicResultsLink = document.getElementById('publicResultsLink');
       const copyPublicResultsBtn = document.getElementById('copyPublicResultsBtn');
 
-      // Tabs DOM refs
+      // Tabs
       const tabButtons = document.querySelectorAll('.tab-btn');
       const tabParticipants = document.getElementById('tabParticipants');
       const tabCategories = document.getElementById('tabCategories');
       const tabMatrix = document.getElementById('tabMatrix');
 
-      // Tab controls (robust: uses event delegation on the results view)
-function activateTab(name) {
-  // Toggle active state on buttons
-  tabButtons.forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === name);
-  });
-
-  // Toggle the panes
-  tabParticipants.classList.toggle('active', name === 'participants');
-  tabCategories.classList.toggle('active', name === 'categories');
-  tabMatrix.classList.toggle('active', name === 'matrix');
-}
-
-// Use event delegation so it still works if tabs rerender or listeners run early
-resultsView.addEventListener('click', (e) => {
-  const btn = e.target.closest('.tab-btn');
-  if (!btn) return;
-  e.preventDefault();
-  activateTab(btn.dataset.tab);
-});
+      // Event delegation for tabs
+      function activateTab(name) {
+        tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
+        tabParticipants.classList.toggle('active', name === 'participants');
+        tabCategories.classList.toggle('active', name === 'categories');
+        tabMatrix.classList.toggle('active', name === 'matrix');
+      }
+      resultsView.addEventListener('click', (e) => {
+        const btn = e.target.closest('.tab-btn');
+        if (!btn) return;
+        e.preventDefault();
+        activateTab(btn.dataset.tab);
+      });
 
       // Participant modals
       const participantModal = document.getElementById('participantModal');
@@ -689,9 +476,9 @@ resultsView.addEventListener('click', (e) => {
       let lastResultsCache = null;
 
       // Utils
-      function show(view) {
-        [authView, dashboardView, setupView, studyCreatedView, participantView, resultsView].forEach(v => v.classList.remove('active'));
-        view.classList.add('active');
+      function show(v) {
+        [authView, dashboardView, setupView, studyCreatedView, participantView, resultsView].forEach(x => x.classList.remove('active'));
+        v.classList.add('active');
       }
       function sanitizeText(v) {
         return String(v ?? '')
@@ -699,15 +486,13 @@ resultsView.addEventListener('click', (e) => {
           .replace(/[\u0000-\u001F\u007F]/g, '')
           .replace(/\s+/g, ' ')
           .trim()
-          .slice(0, 200);
+          .slice(0, 500);
       }
       function formatDuration(ms) {
         if (typeof ms !== 'number' || !isFinite(ms) || ms < 0) return '';
         let s = Math.floor(ms / 1000);
-        const h = Math.floor(s / 3600);
-        s %= 3600;
-        const m = Math.floor(s / 60);
-        s %= 60;
+        const h = Math.floor(s / 3600); s %= 3600;
+        const m = Math.floor(s / 60); s %= 60;
         return h ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`;
       }
       function csvEscape(v) {
@@ -716,17 +501,12 @@ resultsView.addEventListener('click', (e) => {
       }
       function downloadCSV(filename, text) {
         const blob = new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8;" });
-        if (navigator.msSaveBlob) {
-          navigator.msSaveBlob(blob, filename);
-        } else {
+        if (navigator.msSaveBlob) { navigator.msSaveBlob(blob, filename); }
+        else {
           const a = document.createElement('a');
           const url = URL.createObjectURL(blob);
-          a.href = url;
-          a.download = filename;
-          a.style.visibility = 'hidden';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
+          a.href = url; a.download = filename; a.style.visibility = 'hidden';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
           setTimeout(() => URL.revokeObjectURL(url), 0);
         }
       }
@@ -767,39 +547,30 @@ resultsView.addEventListener('click', (e) => {
       document.getElementById('logoutBtn').onclick = () => auth.signOut();
 
       auth.onAuthStateChanged(user => {
-        if (user && (user.displayName || user.email)) welcomeBanner.textContent = `Welcome, ${user.displayName || user.email} 👋`;
-        else welcomeBanner.textContent = '';
-
+        welcomeBanner.textContent = user && (user.displayName || user.email) ? `Welcome, ${user.displayName || user.email} 👋` : '';
         if (isPublicResultsLink) { show(resultsView); loadPublicResults(pUid, pStudyId); return; }
         if (hasParticipantLink) { show(participantView); loadParticipantView(pUid, pStudyId); return; }
-
         if (user) { show(dashboardView); showDashboard(user.uid); }
-        else { show(authView); emailInput.focus(); }
+        else { show(authView); document.getElementById('email').focus(); }
       });
 
       // Dashboard
       function showDashboard(uid) {
-        const studiesList = document.getElementById('studiesList');
-        studiesList.textContent = '';
-        const seen = new Set();
+        const list = document.getElementById('studiesList');
+        list.textContent = '';
         db.ref(`users/${uid}/studies`).once('value').then(snap => {
           const data = snap.val() || {};
-          Object.entries(data).forEach(([id, study]) => {
-            if (seen.has(id)) return;
-            addStudyToDashboard(uid, id, study);
-            seen.add(id);
-          });
+          Object.entries(data).forEach(([studyId, study]) => addStudyToDashboard(uid, studyId, study));
         });
       }
       function addStudyToDashboard(uid, studyId, study) {
         const list = document.getElementById('studiesList');
-        const div = document.createElement('div');
-        div.className = 'study-item';
+        const div = document.createElement('div'); div.className = 'study-item';
 
-        const info = document.createElement('div');
+        const left = document.createElement('div');
         const title = document.createElement('div'); title.textContent = study.name || '(Untitled study)';
         const pub = document.createElement('div'); pub.className = 'muted'; pub.innerHTML = `<span class="badge">${study.isPublic ? 'Published' : 'Unpublished'}</span>`;
-        info.appendChild(title); info.appendChild(pub);
+        left.appendChild(title); left.appendChild(pub);
 
         const actions = document.createElement('div'); actions.className = 'study-actions';
         const shareBtn = document.createElement('button'); shareBtn.className = 'btn'; shareBtn.textContent = 'Share Link';
@@ -813,55 +584,91 @@ resultsView.addEventListener('click', (e) => {
           pub.innerHTML = `<span class="badge">${val ? 'Published' : 'Unpublished'}</span>`;
         };
         const resultsBtn = document.createElement('button'); resultsBtn.className = 'btn btn-success'; resultsBtn.textContent = 'Results'; resultsBtn.onclick = () => viewResults(uid, studyId);
-        const deleteBtn = document.createElement('button'); deleteBtn.className = 'btn btn-accent'; deleteBtn.textContent = 'Delete'; deleteBtn.onclick = () => deleteStudy(uid, studyId, study.name, div);
+
+        const deleteBtn = document.createElement('button'); deleteBtn.className = 'btn btn-accent'; deleteBtn.textContent = 'Delete';
+        deleteBtn.onclick = async () => {
+          if (!confirm(`Delete the study "${study.name || studyId}" and all of its results? This cannot be undone.`)) return;
+          try { await db.ref().update({ [`users/${uid}/studies/${studyId}`]: null }); div.remove(); alert('Study deleted.'); }
+          catch (e) { alert('Delete failed: ' + e.message); }
+        };
 
         actions.appendChild(shareBtn);
         actions.appendChild(publishBtn);
         actions.appendChild(resultsBtn);
         actions.appendChild(deleteBtn);
-
-        div.appendChild(info);
-        div.appendChild(actions);
-        list.appendChild(div);
+        div.appendChild(left); div.appendChild(actions); list.appendChild(div);
       }
-      async function deleteStudy(uid, studyId, studyName, rowEl) {
-        if (!confirm(`Delete the study "${studyName || studyId}" and all of its results? This cannot be undone.`)) return;
-        const buttons = rowEl ? rowEl.querySelectorAll('button') : [];
-        buttons.forEach(b => b.disabled = true);
-        try {
-          await db.ref().update({ [`users/${uid}/studies/${studyId}`]: null });
-          if (rowEl && rowEl.parentNode) rowEl.parentNode.removeChild(rowEl);
-          alert('Study deleted.');
-        } catch (e) {
-          alert('Delete failed: ' + e.message);
-          buttons.forEach(b => b.disabled = false);
+
+      // Create Study (builder)
+      enableDescriptions.addEventListener('change', () => {
+        const enabled = enableDescriptions.checked;
+        builderWrap.classList.toggle('hidden', !enabled);
+        simpleCardsWrap.classList.toggle('hidden', enabled);
+
+        if (enabled && builderRows.children.length === 0) {
+          // Import lines from textarea as name rows
+          const lines = (cardsInput.value || '').split('\n').map(s => sanitizeText(s)).filter(Boolean);
+          if (lines.length === 0) lines.push('');
+          lines.forEach(name => addCardRow(name, ''));
         }
+      });
+
+      addCardRowBtn.addEventListener('click', () => addCardRow('', ''));
+
+      function addCardRow(name = '', desc = '') {
+        const row = document.createElement('div'); row.className = 'builder-row';
+        row.innerHTML = `
+          <input type="text" class="row-name" placeholder="Card name" value="${sanitizeText(name)}" />
+          <input type="text" class="row-desc" placeholder="Description (shown on ℹ️)" value="${sanitizeText(desc)}" />
+          <button type="button" class="row-del" title="Remove">×</button>
+        `;
+        row.querySelector('.row-del').onclick = () => row.remove();
+        builderRows.appendChild(row);
       }
 
-      // Create study
+      function collectCardsFromForm() {
+        if (!enableDescriptions.checked) {
+          const cards = (cardsInput.value || '').split('\n').map(s => sanitizeText(s)).filter(Boolean);
+          return { hasDescriptions: false, cards };
+        }
+        const rows = Array.from(builderRows.querySelectorAll('.builder-row'));
+        const list = rows.map(r => {
+          const text = sanitizeText(r.querySelector('.row-name').value);
+          const desc = sanitizeText(r.querySelector('.row-desc').value);
+          return text ? { text, desc } : null;
+        }).filter(Boolean);
+        return { hasDescriptions: true, cards: list };
+      }
+
       document.getElementById('createStudyBtn').onclick = () => { show(setupView); setTimeout(() => studyNameInput.focus(), 0); };
       document.getElementById('cancelCreateBtn').onclick = () => show(dashboardView);
+
       document.getElementById('saveStudyBtn').onclick = () => {
         const user = auth.currentUser;
         if (!user) { alert('You must be logged in to save a study.'); return; }
+
         const name = sanitizeText(studyNameInput.value);
-        const cards = cardsInput.value.split('\n').map(s => sanitizeText(s)).filter(Boolean);
-        if (!name || cards.length === 0) { alert('Enter name and at least one card'); return; }
+        const { hasDescriptions, cards } = collectCardsFromForm();
+        if (!name || (cards.length === 0)) { alert('Enter name and at least one card'); return; }
+
         const studyId = 'study_' + Date.now();
         const study = {
           id: studyId,
           name,
           cards,
+          hasDescriptions: !!hasDescriptions,
           instructions: sanitizeText(instructionsInput.value),
           createdAt: new Date().toISOString(),
           ownerUid: user.uid,
           isPublic: true
         };
+
         db.ref(`users/${user.uid}/studies/${studyId}`).set(study).then(() => {
           studyLinkInput.value = makeShareLink(user.uid, studyId);
           show(studyCreatedView);
-        });
+        }).catch(err => alert(err.message));
       };
+
       document.getElementById('copyLinkBtn').onclick = async () => {
         try { await navigator.clipboard.writeText(studyLinkInput.value); alert('Link copied!'); }
         catch { studyLinkInput.select(); document.execCommand('copy'); alert('Link copied!'); }
@@ -911,7 +718,6 @@ resultsView.addEventListener('click', (e) => {
         const delBtn = cat.querySelector('.cat-delete');
         const togBtn = cat.querySelector('.cat-toggle');
 
-        // Prevent Backspace from deleting the whole category while typing
         input.addEventListener('keydown', (e) => { e.stopPropagation(); });
         input.addEventListener('input', () => { input.value = sanitizeText(input.value).slice(0, 80); });
 
@@ -919,7 +725,7 @@ resultsView.addEventListener('click', (e) => {
           if (e.target === input) return;
           if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); input.focus(); }
           else if (e.key.toLowerCase() === 'c') { e.preventDefault(); toggleCollapse(cat); }
-          else if (e.key === 'Delete') { e.preventDefault(); deleteCategory(cat); } // Backspace no longer deletes
+          else if (e.key === 'Delete') { e.preventDefault(); deleteCategory(cat); }
         });
 
         delBtn.onclick = () => deleteCategory(cat);
@@ -935,10 +741,11 @@ resultsView.addEventListener('click', (e) => {
         updateStepsVisibility();
         return cat;
       }
+
       function attachCardKeyboard(el) {
         el.setAttribute('tabindex', '0');
         el.setAttribute('role', 'button');
-        el.setAttribute('aria-label', 'Card: ' + el.textContent);
+        el.setAttribute('aria-label', 'Card: ' + (el.querySelector('.card-text')?.textContent || el.textContent));
         el.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
@@ -953,8 +760,46 @@ resultsView.addEventListener('click', (e) => {
         });
       }
 
+      function createCardEl(text, desc) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.cardText = text;
+        const inner = document.createElement('div');
+        inner.className = 'card-text';
+        inner.textContent = text;
+        card.appendChild(inner);
+
+        if (desc) {
+          const btn = document.createElement('button');
+          btn.className = 'info-icon';
+          btn.type = 'button';
+          btn.title = 'Show description';
+          btn.textContent = 'ℹ️';
+          const tip = document.createElement('div');
+          tip.className = 'card-desc';
+          tip.textContent = desc;
+
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            tip.classList.toggle('show');
+          });
+
+          card.appendChild(btn);
+          card.appendChild(tip);
+        }
+        attachCardKeyboard(card);
+        return card;
+      }
+
       // Participant flow
-      startSortingBtn.onclick = () => {
+      const studyLinkParams = new URLSearchParams(location.search);
+      const linkUid = studyLinkParams.get('uid');
+      const linkStudyId = studyLinkParams.get('study');
+
+      document.getElementById('createStudyBtn').focus; // noop: keep
+
+      document.getElementById('startSortingBtn').onclick = () => {
         const meta = {
           name: sanitizeText(pName.value),
           idNumber: sanitizeText(pId.value),
@@ -974,24 +819,23 @@ resultsView.addEventListener('click', (e) => {
         setTimeout(() => beginSortingBtn.focus(), 0);
       };
 
-      beginSortingBtn.onclick = async () => {
+      document.getElementById('beginSortingBtn').onclick = async () => {
         const uid = participantView.dataset.uid;
         const studyId = participantView.dataset.studyId;
         if (!uid || !studyId) { alert('Study not loaded yet.'); return; }
-
         const startedAt = new Date().toISOString();
         participantView.dataset.startedAt = startedAt;
         try {
           const ref = db.ref(`users/${uid}/studies/${studyId}/results`).push();
           await ref.set({ timestamp: startedAt, participant: participantMeta, status: 'started' });
           participantView.dataset.resultKey = ref.key;
-        } catch (e) {
-          console.warn('Could not create started result entry:', e);
-        }
+        } catch (e) { console.warn('Could not create started result entry:', e); }
         instructionsModal.classList.add('hidden');
       };
 
-      async function loadParticipantView(uid, studyId) {
+      if (hasParticipantLink) { show(participantView); loadParticipantView(linkUid, linkStudyId); }
+
+      function loadParticipantView(uid, studyId) {
         participantStatus.textContent = 'Loading study...';
         db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => {
           const study = snap.val();
@@ -1003,23 +847,19 @@ resultsView.addEventListener('click', (e) => {
           else { participantInstructions.textContent = ''; participantInstructions.classList.add('hidden'); }
 
           availableCardsContainer.innerHTML = '';
-          (study.cards || []).forEach(card => {
-            const d = document.createElement('div');
-            d.className = 'card';
-            d.textContent = card;
-            d.dataset.cardText = card;
-            attachCardKeyboard(d);
-            availableCardsContainer.appendChild(d);
+          const cardsArr = Array.isArray(study.cards) ? study.cards : [];
+          cardsArr.forEach(c => {
+            const text = typeof c === 'string' ? c : sanitizeText(c?.text || '');
+            const desc = typeof c === 'string' ? '' : sanitizeText(c?.desc || '');
+            if (!text) return;
+            availableCardsContainer.appendChild(createCardEl(text, desc));
           });
 
-          // Left list Sortable
           new Sortable(availableCardsContainer, { group: 'cards', animation: 150 });
 
-          // Drop anywhere in the grid to create a category
+          // Drop anywhere on grid to create category at drop index
           new Sortable(sortingArea, {
-            group: 'cards',
-            animation: 150,
-            sort: false,
+            group: 'cards', animation: 150, sort: false,
             onAdd: (evt) => {
               const cardEl = evt.item;
               const idx = evt.newIndex;
@@ -1032,10 +872,9 @@ resultsView.addEventListener('click', (e) => {
             }
           });
 
-          // Optional helper dropzones
+          // Optional helper zones
           new Sortable(newCategoryDropzone, {
-            group: 'cards',
-            animation: 150,
+            group: 'cards', animation: 150,
             onAdd: (evt) => {
               const item = evt.item;
               const cat = makeCategory();
@@ -1044,8 +883,7 @@ resultsView.addEventListener('click', (e) => {
             }
           });
           new Sortable(newCategoryTile, {
-            group: 'cards',
-            animation: 150,
+            group: 'cards', animation: 150,
             onAdd: (evt) => {
               const item = evt.item;
               const cat = makeCategory();
@@ -1066,7 +904,6 @@ resultsView.addEventListener('click', (e) => {
         });
       }
 
-      // Submit sorting
       document.getElementById('submitSortingBtn').onclick = () => {
         const uid = participantView.dataset.uid;
         const studyId = participantView.dataset.studyId;
@@ -1101,20 +938,14 @@ resultsView.addEventListener('click', (e) => {
 
         const startedAt = participantView.dataset.startedAt || null;
         const now = new Date();
-        const data = {
-          participant: participantMeta,
-          categories: cats,
-          status: 'completed',
-          completedAt: now.toISOString()
-        };
+        const data = { participant: participantMeta, categories: cats, status: 'completed', completedAt: now.toISOString() };
         if (startedAt) data.durationMs = now.getTime() - new Date(startedAt).getTime();
 
         const resultsRef = db.ref(`users/${uid}/studies/${studyId}/results`);
         const key = participantView.dataset.resultKey;
-        const p = key ? resultsRef.child(key).update(data) : resultsRef.push({ timestamp: now.toISOString(), ...data });
-
-        p.then(() => { participantView.innerHTML = '<h2>Thank you!</h2><p>Your responses have been recorded.</p>'; })
-         .catch(e => alert(e.message));
+        (key ? resultsRef.child(key).update(data) : resultsRef.push({ timestamp: now.toISOString(), ...data }))
+          .then(() => { participantView.innerHTML = '<h2>Thank you!</h2><p>Your responses have been recorded.</p>'; })
+          .catch(e => alert(e.message));
       };
 
       // Results + sharing
@@ -1160,7 +991,6 @@ resultsView.addEventListener('click', (e) => {
             categoriesLabels.innerHTML = '';
             matrixMeta.textContent = '';
             matrixTableWrap.innerHTML = '';
-            // Ensure default tab is selected
             activateTab('participants');
             return;
           }
@@ -1186,7 +1016,7 @@ resultsView.addEventListener('click', (e) => {
           matrixMeta.textContent = '';
           matrixTableWrap.innerHTML = '';
           show(resultsView);
-          activateTab('participants'); // default tab
+          activateTab('participants');
           return;
         }
 
@@ -1276,12 +1106,12 @@ resultsView.addEventListener('click', (e) => {
           categoriesChart.appendChild(p);
         }
 
-        // Similarity matrix (percentages)
+        // Matrix tab
         matrixMeta.innerHTML = '';
         matrixTableWrap.innerHTML = '';
-        const cards = study?.cards || [];
+        const cardTexts = (study?.cards || []).map(c => typeof c === 'string' ? c : (c?.text || '')).filter(Boolean);
         const matrixCounts = {};
-        cards.forEach(a => { matrixCounts[a] = {}; cards.forEach(b => matrixCounts[a][b] = 0); });
+        cardTexts.forEach(a => { matrixCounts[a] = {}; cardTexts.forEach(b => matrixCounts[a][b] = 0); });
         completed.forEach(r => {
           (r.categories || []).forEach(cat => {
             const cs = cat.cards || [];
@@ -1293,16 +1123,16 @@ resultsView.addEventListener('click', (e) => {
         const thead = document.createElement('thead');
         const hr = document.createElement('tr');
         hr.appendChild(document.createElement('th'));
-        cards.forEach(c => { const th = document.createElement('th'); th.textContent = c; hr.appendChild(th); });
+        cardTexts.forEach(c => { const th = document.createElement('th'); th.textContent = c; hr.appendChild(th); });
         thead.appendChild(hr);
         table.appendChild(thead);
 
         const tbody = document.createElement('tbody');
-        cards.forEach(a => {
+        cardTexts.forEach(a => {
           const tr = document.createElement('tr');
           const rh = document.createElement('th'); rh.textContent = a;
           tr.appendChild(rh);
-          cards.forEach(b => {
+          cardTexts.forEach(b => {
             const td = document.createElement('td');
             if (a === b) td.textContent = '—';
             else {
@@ -1321,11 +1151,12 @@ resultsView.addEventListener('click', (e) => {
         mm.textContent = `Percentages are of completed participants (n=${completedCount}).`;
         matrixMeta.appendChild(mm);
 
-        lastResultsCache = { arr, completed, completedCount, study, uid, studyId, cards, matrixCounts };
-        if (!opts.publicViewer) { downloadCsvBtn.disabled = false; downloadMatrixBtn.disabled = false; }
+        lastResultsCache = { arr, completed, completedCount, study, uid, studyId, cards: cardTexts, matrixCounts };
+        downloadCsvBtn.disabled = false;
+        downloadMatrixBtn.disabled = false;
 
         show(resultsView);
-        activateTab('participants'); // default tab on open
+        activateTab('participants');
       }
 
       // CSV exports
@@ -1371,11 +1202,10 @@ resultsView.addEventListener('click', (e) => {
         downloadCSV(`${studyName}_similarity_matrix.csv`, lines.join('\n'));
       };
 
-      // Initial route fallback
+      // Routing fallback
       if (isPublicResultsLink) { show(resultsView); loadPublicResults(pUid, pStudyId); }
       else if (hasParticipantLink) { show(participantView); loadParticipantView(pUid, pStudyId); }
     });
   </script>
 </body>
 </html>
-
