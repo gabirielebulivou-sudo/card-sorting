@@ -180,6 +180,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <!-- SheetJS for Excel import -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -226,6 +228,16 @@
 
       <label for="studyName">Study name</label>
       <input type="text" id="studyName" placeholder="e.g., Information Architecture Test" required/>
+
+      <!-- NEW: Bulk Import Section -->
+      <div class="bulk-import-wrap" style="margin: 1.5rem 0 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; background: #fdfaf6;">
+          <label for="excelUpload">Bulk import cards from Excel (.xlsx)</label>
+          <input type="file" id="excelUpload" accept=".xlsx, .xls, .csv" style="padding: .25rem; border: 1px solid var(--border); border-radius: 4px;"/>
+          <div class="muted" style="font-size: .9rem; margin-top: .5rem;">
+              For simple mode, use one column (card names). For advanced mode, use two columns (card name, description). The first row is treated as data, not a header.
+          </div>
+      </div>
+      <!-- END: Bulk Import Section -->
 
       <label>
         <input type="checkbox" id="enableDescriptions"/>
@@ -447,6 +459,7 @@
       const cardsInput = document.getElementById('cardsInput');
       const instructionsInput = document.getElementById('instructionsInput');
       const enableDescriptions = document.getElementById('enableDescriptions');
+      const excelUploadInput = document.getElementById('excelUpload'); // New
 
       // Builder
       const builderWrap = document.getElementById('builderWrap');
@@ -669,6 +682,60 @@
 
       addCardRowBtn.addEventListener('click', () => addCardRow('', ''));
 
+      // NEW: Excel file upload handler
+      excelUploadInput.addEventListener('change', handleFileUpload);
+      function handleFileUpload(event) {
+          const file = event.target.files[0];
+          if (!file) { return; }
+
+          const reader = new FileReader();
+          reader.onload = function(e) {
+              try {
+                  const data = new Uint8Array(e.target.result);
+                  const workbook = XLSX.read(data, { type: 'array' });
+                  const firstSheetName = workbook.SheetNames[0];
+                  const worksheet = workbook.Sheets[firstSheetName];
+                  
+                  const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
+                      .filter(row => Array.isArray(row) && row.some(cell => cell != null && cell !== ''));
+
+                  if (rows.length === 0) {
+                      alert('The uploaded file is empty or could not be read.');
+                      return;
+                  }
+
+                  const isAdvancedMode = enableDescriptions.checked;
+
+                  if (isAdvancedMode) {
+                      builderRows.innerHTML = ''; // Clear existing rows
+                      rows.forEach(row => {
+                          const name = sanitizeText(row[0] || '');
+                          const desc = sanitizeText(row[1] || '');
+                          if (name) {
+                              addCardRow(name, desc);
+                          }
+                      });
+                      alert(`${rows.length} cards imported into the advanced builder.`);
+                  } else {
+                      const cardNames = rows.map(row => sanitizeText(row[0] || '')).filter(Boolean);
+                      cardsInput.value = cardNames.join('\n');
+                      alert(`${cardNames.length} cards imported into the textarea.`);
+                  }
+
+              } catch (error) {
+                  console.error('Error processing Excel file:', error);
+                  alert('There was an error processing your file. Please ensure it is a valid Excel (.xlsx) file.');
+              } finally {
+                  event.target.value = ''; // Reset input to allow re-uploading the same file
+              }
+          };
+          reader.onerror = function() {
+              alert('Failed to read the file.');
+              event.target.value = ''; 
+          };
+          reader.readAsArrayBuffer(file);
+      }
+
       function addCardRow(name = '', desc = '') {
         const row = document.createElement('div'); row.className = 'builder-row';
         row.innerHTML = `
@@ -692,7 +759,7 @@
           return text ? { text, desc } : null;
         }).filter(Boolean);
         return { hasDescriptions: true, cards: list };
-        }
+      }
 
       document.getElementById('createStudyBtn').onclick = () => { show(setupView); setTimeout(() => studyNameInput.focus(), 0); };
       document.getElementById('cancelCreateBtn').onclick = () => show(dashboardView);
@@ -1270,4 +1337,3 @@
   </script>
 </body>
 </html>
-
