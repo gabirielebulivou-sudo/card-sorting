@@ -104,19 +104,14 @@
     .xlabels { display: flex; gap: 8px; margin-top: 4px; }
     .xlabel { flex: 1; min-width: 24px; text-align: center; font-size: .8rem; color: var(--dark); }
 
-    /* Radios alignment */
-    .radio-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
-    .radio-row label { display: inline-flex; align-items: center; gap: .4rem; margin: 0; line-height: 1.2; }
-    input[type="radio"] { margin: 0; }
-    
-    /* NEW: Participants Pie Chart */
+    /* Participants Pie Chart */
     #participantsPieChartWrap { display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; padding: 1rem; background: #fafafa; border-radius: 8px; border: 1px solid var(--border); }
     #participantsPieChart { width: 100px; height: 100px; border-radius: 50%; }
     #participantsPieSummary ul { list-style: none; padding: 0; }
     #participantsPieSummary li { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
     .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
 
-    /* NEW: Similarity Matrix */
+    /* Similarity Matrix */
     .matrix-table-wrap { overflow-x: auto; padding: 1rem; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef; }
     .similarity-matrix { border-collapse: collapse; width: 100%; font-size: 0.9rem; color: var(--dark); }
     .similarity-matrix th, .similarity-matrix td { border: 1px solid #dee2e6; padding: 0.5rem; text-align: center; min-width: 60px; height: 36px; }
@@ -124,15 +119,18 @@
     .similarity-matrix .diag-cell { font-weight: bold; }
     .similarity-matrix thead th { position: sticky; top: 0; background-color: #f8f9fa; z-index: 10; }
     
-    /* NEW: Matrix Tooltip */
+    /* Matrix Tooltip */
     #matrixTooltip { position: absolute; display: none; background: rgba(10,20,30,0.9); color: white; padding: 8px 12px; border-radius: 6px; z-index: 10000; pointer-events: none; font-size: 0.9rem; white-space: nowrap; }
     #matrixTooltip .pair { font-weight: 600; margin-bottom: 4px; }
 
-    /* NEW: General Table styles */
+    /* General Table styles */
     .results-table { width: 100%; border-collapse: collapse; margin-top: 1rem; table-layout: fixed; font-size: 0.95rem; }
     .results-table th, .results-table td { border: 1px solid var(--border); padding: 0.75rem; text-align: left; }
     .results-table th { background-color: #f8f9fa; }
     .results-table td { word-break: break-word; }
+
+    /* NEW: Loading Indicator */
+    #loadingIndicator { display: none; text-align: center; padding: 2rem; font-weight: 600; color: var(--dark); }
 
     /* ===== Pacific Theme Override ===== */
     :root {
@@ -323,7 +321,7 @@
       <div class="tabs">
         <button class="tab-btn active" data-tab="participants">Participants</button>
         <button class="tab-btn" data-tab="categories">Categories</button>
-        <button class="tab-btn" data-tab="matrix">Similarity Matrix</button>
+        <button class="tab-btn" data-tab="matrix" data-rendered="false">Similarity Matrix</button>
       </div>
       <div id="shareSection" class="instructions hidden">
         <strong>Share results</strong>
@@ -337,6 +335,8 @@
         </div>
         <div class="muted" style="margin-top:.25rem">Anyone with the link can view the results without logging in.</div>
       </div>
+
+      <div id="loadingIndicator">Calculating Matrix...</div>
 
       <div id="tabParticipants" class="tab-pane active">
         <div id="participantsPieChartWrap"></div>
@@ -407,6 +407,7 @@
       const participantModal = document.getElementById('participantModal'), instructionsModal = document.getElementById('instructionsModal');
       const pName = document.getElementById('pName'), pId = document.getElementById('pId'), pCourse = document.getElementById('pCourse'), pNationality = document.getElementById('pNationality'), pEthnicity = document.getElementById('pEthnicity');
       const startSortingBtn = document.getElementById('startSortingBtn'), beginSortingBtn = document.getElementById('beginSortingBtn');
+      const loadingIndicator = document.getElementById('loadingIndicator');
       
       const params = new URLSearchParams(location.search), pUid = params.get('uid'), pStudyId = params.get('study'), viewParam = params.get('view');
       const hasParticipantLink = Boolean(pUid && pStudyId && !viewParam), isPublicResultsLink = Boolean(pUid && pStudyId && viewParam === 'results');
@@ -421,12 +422,10 @@
       function downloadCSV(filename, text) { const blob = new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8;" }); if (navigator.msSaveBlob) { navigator.msSaveBlob(blob, filename); } else { const a = document.createElement('a'); const url = URL.createObjectURL(blob); a.href = url; a.download = filename; a.style.visibility = 'hidden'; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 0); } }
       function makeShareLink(uid, studyId) { const base = new URL(window.location.href); base.search = ''; base.hash = ''; return `${base.toString()}?uid=${uid}&study=${studyId}`; }
       function makePublicResultsLink(uid, studyId) { const base = new URL(window.location.href); base.search = ''; base.hash = ''; return `${base.toString()}?uid=${uid}&study=${studyId}&view=results`; }
+      const showLoader = () => loadingIndicator.style.display = 'block';
+      const hideLoader = () => loadingIndicator.style.display = 'none';
 
-      // Tabs
-      function activateTab(name) { tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name)); tabParticipants.classList.toggle('active', name === 'participants'); tabCategories.classList.toggle('active', name === 'categories'); tabMatrix.classList.toggle('active', name === 'matrix'); }
-      resultsView.addEventListener('click', (e) => { const btn = e.target.closest('.tab-btn'); if (btn) { e.preventDefault(); activateTab(btn.dataset.tab); } });
-
-      // Auth & Dashboard Logic (Unchanged)
+      // --- AUTH & DASHBOARD LOGIC (UNCHANGED) ---
       document.getElementById('loginBtn').onclick = async () => { try { await auth.signInWithEmailAndPassword(emailInput.value.trim(), passwordInput.value); } catch (e) { alert(e.message); } };
       document.getElementById('signupBtn').onclick = async () => { try { const name = finalSanitize(displayNameInput.value); if (!name) { alert('Please enter your full name for sign-up.'); displayNameInput.focus(); return; } const cred = await auth.createUserWithEmailAndPassword(emailInput.value.trim(), passwordInput.value); await cred.user.updateProfile({ displayName: name }); await db.ref(`users/${cred.user.uid}/profile`).set({ name, email: cred.user.email, createdAt: new Date().toISOString() }); alert('Account created! You are now logged in.'); } catch (e) { alert(e.message); } };
       document.getElementById('forgotPwdBtn').onclick = async () => { try { const email = prompt('Enter your registered email address:'); if (!email) return; await auth.sendPasswordResetEmail(email.trim()); alert('Password reset email sent. Please check your inbox.'); } catch (e) { alert(e.message); } };
@@ -456,53 +455,73 @@
       function loadParticipantView(uid, studyId) { participantStatus.textContent = 'Loading study...'; db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => { const study = snap.val(); if (!study || !study.isPublic) { participantStudyName.textContent = 'Study unavailable'; participantStatus.textContent = 'This study is not public or does not exist.'; return; } participantStudyName.textContent = study.name || ''; if (study.instructions) { participantInstructions.textContent = study.instructions; participantInstructions.classList.remove('hidden'); } if (study.hasDescriptions) { cardDescriptionInfo.classList.remove('hidden'); } availableCards.innerHTML = ''; (study.cards || []).forEach(c => { const text = typeof c === 'string' ? c : finalSanitize(c?.text || ''); const desc = typeof c === 'string' ? '' : finalSanitize(c?.desc || ''); if (text) availableCards.appendChild(createCardEl(text, desc)); }); new Sortable(availableCards, { group: 'cards', animation: 150 }); categoryColumns.forEach(column => { new Sortable(column, { group: 'cards', animation: 150, onAdd: (evt) => { if (evt.item.classList.contains('card')) { const newCat = makeCategory(column); newCat.querySelector('.cat-body').appendChild(evt.item); updateCategoryCount(newCat); setTimeout(() => newCat.querySelector('.cat-title-input').focus(), 100); } } }); }); updateColumnPlaceholders(); participantView.dataset.uid = uid; participantView.dataset.studyId = studyId; participantStatus.textContent = ''; participantModal.classList.remove('hidden'); setTimeout(() => pName.focus(), 0); }); }
       document.getElementById('startSortingBtn').onclick = () => { const meta = { name: finalSanitize(pName.value), idNumber: finalSanitize(pId.value), course: finalSanitize(pCourse.value), nationality: finalSanitize(pNationality.value), ethnicity: finalSanitize(pEthnicity.value), outsideHome: finalSanitize((document.querySelector('input[name="pOutsideHome"]:checked') || {}).value || '') }; if (Object.values(meta).some(v => !v)) { alert('Please complete all fields to begin.'); return; } participantMeta = meta; participantModal.classList.add('hidden'); instructionsModal.classList.remove('hidden'); setTimeout(() => beginSortingBtn.focus(), 0); };
       document.getElementById('beginSortingBtn').onclick = async () => { const { uid, studyId } = participantView.dataset; if (!uid || !studyId) return; const startedAt = new Date().toISOString(); participantView.dataset.startedAt = startedAt; try { const ref = db.ref(`users/${uid}/studies/${studyId}/results`).push(); await ref.set({ timestamp: startedAt, participant: participantMeta, status: 'started' }); participantView.dataset.resultKey = ref.key; } catch (e) { console.warn('Could not create started result entry:', e); } instructionsModal.classList.add('hidden'); };
-      document.getElementById('submitSortingBtn').onclick = () => { const { uid, studyId, startedAt, resultKey } = participantView.dataset; if (!uid || !studyId || !participantMeta) { alert('Could not submit. Please refresh and try again.'); return; } if (availableCards.querySelectorAll('.card').length > 0) { alert(`Please sort all ${availableCards.querySelectorAll('.card').length} remaining cards.`); document.getElementById('availableCardsContainer').scrollIntoView({ behavior: 'smooth' }); return; } const allCategories = participantView.querySelectorAll('.category'); const cats = []; let firstInvalid = null; allCategories.forEach(cat => { const name = finalSanitize(cat.querySelector('.cat-title-input')?.value || ''); const cards = [...cat.querySelectorAll('.cat-body .card')].map(c => c.dataset.cardText); if (cards.length > 0) { if (!name && !firstInvalid) firstInvalid = cat.querySelector('.cat-title-input'); cats.push({ name: name || 'Unnamed', cards }); } }); if (firstInvalid) { alert('Please name all categories.'); firstInvalid.focus(); return; } if (cats.length === 0 && availableCards.children.length === 0 && !confirm("You haven't created any categories. Are you sure you want to finish?")) { return; } const now = new Date(); const data = { participant: participantMeta, categories: cats, status: 'completed', completedAt: now.toISOString(), durationMs: startedAt ? now.getTime() - new Date(startedAt).getTime() : null }; const resultsRef = db.ref(`users/${uid}/studies/${studyId}/results`); (resultKey ? resultsRef.child(resultKey).update(data) : resultsRef.push({ ...data, timestamp: now.toISOString() })).then(() => { participantView.innerHTML = '<h2>Thank you!</h2><p>Your responses have been recorded.</p>'; }).catch(e => alert(e.message)); };
+      document.getElementById('submitSortingBtn').onclick = () => { const { uid, studyId, startedAt, resultKey } = participantView.dataset; if (!uid || !studyId || !participantMeta) { alert('Could not submit. Please refresh and try again.'); return; } if (availableCards.querySelectorAll('.card').length > 0) { alert(`Please sort all ${availableCards.querySelectorAll('.card').length} remaining cards.`); document.getElementById('availableCardsContainer').scrollIntoView({ behavior: 'smooth' }); return; } const allCategories = participantView.querySelectorAll('.category'); const cats = []; let firstInvalid = null; allCategories.forEach(cat => { const name = finalSanitize(cat.querySelector('.cat-title-input')?.value || ''); const cards = [...cat.querySelectorAll('.cat-body .card')].map(c => c.dataset.cardText); if (cards.length > 0) { if (!name && !firstInvalid) firstInvalid = cat.querySelector('.cat-title-input'); cats.push({ name: name || 'Unnamed', cards }); } }); if (firstInvalid) { alert('Please name all categories.'); firstInvalid.focus(); return; } if (cats.length === 0 && availableCards.children.length === 0 && !confirm("You haven't created any categories. Are you sure you want to finish?")) { return; } const now = new Date(); const data = { participant: participantMeta, categories: cats, status: 'completed', completedAt: now.toISOString(), durationMs: startedAt ? now.getTime() - new Date(startedAt).getTime() : null }; const resultsRef = db.ref(`users/${uid}/studies/${studyId}/results`); (resultKey ? resultsRef.child(key).update(data) : resultsRef.push({ ...data, timestamp: now.toISOString() })).then(() => { participantView.innerHTML = '<h2>Thank you!</h2><p>Your responses have been recorded.</p>'; }).catch(e => alert(e.message)); };
       showInstructionsBtn.onclick = () => { instructionsModal.classList.remove('hidden'); };
       fullscreenBtn.onclick = () => { const doc = window.document; const docEl = doc.documentElement; const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen; const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen; if(!doc.fullscreenElement) { requestFullScreen.call(docEl); } else { cancelFullScreen.call(doc); } };
       document.addEventListener('fullscreenchange', () => { fullscreenBtn.textContent = document.fullscreenElement ? 'Exit Full Screen' : 'Full Screen'; });
       
-      // --- RESULTS LOGIC (UPDATED) ---
+      // --- RESULTS LOGIC (HEAVILY UPDATED FOR PERFORMANCE) ---
 
       function performHierarchicalClustering(cardTexts, matrix) {
           if (cardTexts.length < 2) return cardTexts;
           let clusters = cardTexts.map(card => [card]);
-
           const getSimilarity = (c1, c2) => {
               let totalSim = 0, pairCount = 0;
-              for (const card1 of c1) {
-                  for (const card2 of c2) {
-                      totalSim += matrix[card1][card2] || 0;
-                      pairCount++;
-                  }
-              }
+              for (const card1 of c1) for (const card2 of c2) { totalSim += matrix[card1][card2] || 0; pairCount++; }
               return pairCount > 0 ? totalSim / pairCount : 0;
           };
-
           while (clusters.length > 1) {
               let maxSim = -1, bestPair = [0, 1];
-              for (let i = 0; i < clusters.length; i++) {
-                  for (let j = i + 1; j < clusters.length; j++) {
-                      const sim = getSimilarity(clusters[i], clusters[j]);
-                      if (sim > maxSim) {
-                          maxSim = sim;
-                          bestPair = [i, j];
-                      }
-                  }
+              for (let i = 0; i < clusters.length; i++) for (let j = i + 1; j < clusters.length; j++) {
+                  const sim = getSimilarity(clusters[i], clusters[j]);
+                  if (sim > maxSim) { maxSim = sim; bestPair = [i, j]; }
               }
-              const [i, j] = bestPair.sort((a,b) => b-a); // Sort descending to splice correctly
+              const [i, j] = bestPair.sort((a,b) => b-a);
               const newCluster = clusters[i].concat(clusters[j]);
-              clusters.splice(j, 1);
-              clusters.splice(i, 1);
-              clusters.push(newCluster);
+              clusters.splice(j, 1); clusters.splice(i, 1); clusters.push(newCluster);
           }
-          return clusters[0];
+          return clusters[0].reverse();
       }
+      
+      function buildAndRenderSimilarityMatrix() {
+          if (!lastResultsCache) return;
+          const { study, completedCount } = lastResultsCache;
+          const cardTexts = (study?.cards || []).map(c => typeof c === 'string' ? c : (c?.text || '')).filter(Boolean);
+          const matrixCounts = {}; cardTexts.forEach(a => { matrixCounts[a] = {}; cardTexts.forEach(b => matrixCounts[a][b] = 0); });
+          lastResultsCache.completed.forEach(r => { (r.categories || []).forEach(cat => { (cat.cards || []).forEach((a, i) => { for (let j = i + 1; j < cat.cards.length; j++) { const b = cat.cards[j]; matrixCounts[a][b]++; matrixCounts[b][a]++; } }); }); });
+          
+          const sortedCardTexts = performHierarchicalClustering(cardTexts, matrixCounts);
+          matrixMeta.innerHTML = `<p class="muted">Matrix is sorted by similarity. Percentages show how often cards were grouped together (n=${completedCount}).</p>`;
+          const mTable = document.createElement('table'); mTable.className = 'similarity-matrix';
+          mTable.innerHTML = `<thead></thead><tbody></tbody>`;
+          const mThead = mTable.querySelector('thead'), mBody = mTable.querySelector('tbody');
+          const headerRow = document.createElement('tr');
+          headerRow.innerHTML = '<th></th>' + sortedCardTexts.map(card => `<th>${card}</th>`).join('');
+          mThead.appendChild(headerRow);
 
+          sortedCardTexts.forEach((card_i) => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `<th class="label-cell">${card_i}</th>` + sortedCardTexts.map(card_j => {
+                  const pct = completedCount > 0 ? (matrixCounts[card_i][card_j] / completedCount * 100) : 0;
+                  const alpha = 0.05 + (pct * 0.0095);
+                  return `<td style="background-color: hsla(210, 100%, 50%, ${alpha})" data-pct="${pct.toFixed(0)}" data-card-i="${card_i}" data-card-j="${card_j}">${pct.toFixed(0)}</td>`;
+              }).join('');
+              mBody.appendChild(tr);
+          });
+          matrixTableWrap.innerHTML = ''; // Clear previous
+          matrixTableWrap.appendChild(mTable);
+          
+          // Update cache for CSV export
+          lastResultsCache.matrixCounts = matrixCounts;
+          lastResultsCache.sortedCards = sortedCardTexts;
+      }
+      
       function buildResultsUI(study, resultsObj) {
         const arr = Object.values(resultsObj || {}).sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
         lastResultsCache = null; downloadCsvBtn.disabled = true; downloadMatrixBtn.disabled = true;
         participantsPieChartWrap.innerHTML = ''; participantsDetails.innerHTML = ''; categoriesSummary.textContent = '';
         categoriesChart.innerHTML = ''; categoriesLabels.innerHTML = ''; matrixMeta.textContent = ''; matrixTableWrap.innerHTML = '';
+        document.querySelector('.tab-btn[data-tab="matrix"]').dataset.rendered = "false"; // Reset matrix rendered state
 
         if (arr.length === 0) {
             participantsDetails.innerHTML = '<p>No results yet.</p>'; show(resultsView); activateTab('participants'); return;
@@ -541,38 +560,31 @@
                 const xl = document.createElement('div'); xl.className = 'xlabel'; xl.textContent = String(idx + 1); categoriesLabels.appendChild(xl);
             });
         }
-
-        // Similarity Matrix Tab
-        const cardTexts = (study?.cards || []).map(c => typeof c === 'string' ? c : (c?.text || '')).filter(Boolean);
-        const matrixCounts = {}; cardTexts.forEach(a => { matrixCounts[a] = {}; cardTexts.forEach(b => matrixCounts[a][b] = 0); });
-        completed.forEach(r => { (r.categories || []).forEach(cat => { (cat.cards || []).forEach((a, i) => { for (let j = i + 1; j < cat.cards.length; j++) { const b = cat.cards[j]; matrixCounts[a][b]++; matrixCounts[b][a]++; } }); }); });
         
-        const sortedCardTexts = performHierarchicalClustering(cardTexts, matrixCounts);
-        matrixMeta.innerHTML = `<p class="muted">Matrix is sorted by similarity. Percentages show how often cards were grouped together (n=${completedCount}).</p>`;
-        const mTable = document.createElement('table'); mTable.className = 'similarity-matrix';
-        mTable.innerHTML = `<thead></thead><tbody></tbody>`;
-        const mThead = mTable.querySelector('thead'), mBody = mTable.querySelector('tbody');
-        const headerRow = document.createElement('tr');
-        headerRow.innerHTML = '<th></th>' + sortedCardTexts.map(card => `<th>${card}</th>`).join('');
-        mThead.appendChild(headerRow);
-
-        sortedCardTexts.forEach((card_i) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<th class="label-cell">${card_i}</th>` + sortedCardTexts.map(card_j => {
-                const pct = completedCount > 0 ? (matrixCounts[card_i][card_j] / completedCount * 100) : 0;
-                const alpha = 0.05 + (pct * 0.0095);
-                return `<td style="background-color: hsla(210, 100%, 50%, ${alpha})" data-pct="${pct.toFixed(0)}" data-card-i="${card_i}" data-card-j="${card_j}">${pct.toFixed(0)}</td>`;
-            }).join('');
-            mBody.appendChild(tr);
-        });
-        matrixTableWrap.appendChild(mTable);
-        
-        lastResultsCache = { arr, completed, completedCount, study, uid: study.ownerUid, studyId: study.id, cards: cardTexts, matrixCounts, sortedCards: sortedCardTexts };
+        lastResultsCache = { arr, completed, completedCount, study, uid: study.ownerUid, studyId: study.id };
         downloadCsvBtn.disabled = false; downloadMatrixBtn.disabled = false;
         show(resultsView); activateTab('participants');
       }
 
-      // Matrix Tooltip Logic
+      // Updated Tab click listener for on-demand matrix calculation
+      resultsView.addEventListener('click', (e) => {
+          const btn = e.target.closest('.tab-btn');
+          if (!btn) return;
+          e.preventDefault();
+          const tabName = btn.dataset.tab;
+          activateTab(tabName);
+          
+          if (tabName === 'matrix' && btn.dataset.rendered === 'false') {
+              btn.dataset.rendered = 'true'; // Prevent re-rendering
+              showLoader();
+              // Use setTimeout to allow the UI to update with the loader
+              setTimeout(() => {
+                  buildAndRenderSimilarityMatrix();
+                  hideLoader();
+              }, 50); // A small delay is enough
+          }
+      });
+      
       matrixTableWrap.addEventListener('mousemove', e => {
           const cell = e.target.closest('td');
           if (!cell || !cell.dataset.cardI) { matrixTooltip.style.display = 'none'; return; }
@@ -582,15 +594,15 @@
           matrixTooltip.innerHTML = `<div class="pair">${cell.dataset.cardI} &<br>${cell.dataset.cardJ}</div><div>Agreement: <strong>${cell.dataset.pct}%</strong></div>`;
       });
       matrixTableWrap.addEventListener('mouseleave', () => matrixTooltip.style.display = 'none');
-
+      
       // Share & Public View Logic
       function setupShareControls(uid, studyId, study) { shareSection.classList.remove('hidden'); toggleResultsPublic.checked = !!study.resultsPublic; publicResultsLink.value = makePublicResultsLink(uid, studyId); publicResultsLinkRow.classList.toggle('hidden', !study.resultsPublic); toggleResultsPublic.onchange = async () => { const val = toggleResultsPublic.checked; publicResultsLinkRow.classList.toggle('hidden', !val); await db.ref(`users/${uid}/studies/${studyId}/resultsPublic`).set(val); }; copyPublicResultsBtn.onclick = async () => { await navigator.clipboard.writeText(publicResultsLink.value); alert('Public results link copied!'); }; }
       function viewResults(uid, studyId) { db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => { const study = snap.val(); resultsStudyName.textContent = study?.name || ''; setupShareControls(uid, studyId, study || {}); db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => buildResultsUI(study || {}, snap2.val() || {})); }); }
       function loadPublicResults(uid, studyId) { shareSection.classList.add('hidden'); db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => { const study = snap.val(); resultsStudyName.textContent = study?.name || ''; if (!study || !study.resultsPublic) { participantsDetails.innerHTML = '<p>These results are not publicly available.</p>'; activateTab('participants'); return; } db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => buildResultsUI(study, snap2.val() || {})); }); }
       
-      // CSV Export Logic (Updated to use sorted matrix)
+      // CSV Export Logic
       downloadCsvBtn.onclick = () => { if (!lastResultsCache) return; const { arr, study } = lastResultsCache; const studyName = (study?.name || 'study').replace(/[^\w\-]+/g, '_'); const headers = ['Participant #','Timestamp','Name','ID Number','Course','Nationality','Ethnicity','HomeOutsideSuvaNausori','Category','Card']; const lines = [headers.join(',')]; let idx = 0; arr.filter(r => r.status === 'completed').forEach(res => { idx++; const p = res.participant || {}; const ts = res.timestamp || res.completedAt || ''; (res.categories || []).forEach(cat => { (cat.cards || []).forEach(card => lines.push([csvEscape(idx),csvEscape(ts),csvEscape(p.name),csvEscape(p.idNumber),csvEscape(p.course),csvEscape(p.nationality),csvEscape(p.ethnicity),csvEscape(p.outsideHome),csvEscape(cat.name),csvEscape(card)].join(','))); }); }); downloadCSV(`${studyName}_results.csv`, lines.join('\n')); };
-      downloadMatrixBtn.onclick = () => { if (!lastResultsCache) return; const { study, matrixCounts, completedCount, sortedCards } = lastResultsCache; const studyName = (study?.name || 'study').replace(/[^\w\-]+/g, '_'); const head = [''].concat(sortedCards).map(csvEscape).join(','); const lines = [head]; sortedCards.forEach(a => { const row = [csvEscape(a)]; sortedCards.forEach(b => { const pct = completedCount > 0 ? (matrixCounts[a][b] / completedCount * 100) : 0; row.push(csvEscape(`${pct.toFixed(0)}%`)); }); lines.push(row.join(',')); }); downloadCSV(`${studyName}_similarity_matrix.csv`, lines.join('\n')); };
+      downloadMatrixBtn.onclick = () => { if (!lastResultsCache || !lastResultsCache.sortedCards) { alert('Please view the Similarity Matrix tab first to generate the data for export.'); return; } const { study, matrixCounts, completedCount, sortedCards } = lastResultsCache; const studyName = (study?.name || 'study').replace(/[^\w\-]+/g, '_'); const head = [''].concat(sortedCards).map(csvEscape).join(','); const lines = [head]; sortedCards.forEach(a => { const row = [csvEscape(a)]; sortedCards.forEach(b => { const pct = completedCount > 0 ? (matrixCounts[a][b] / completedCount * 100) : 0; row.push(csvEscape(`${pct.toFixed(0)}%`)); }); lines.push(row.join(',')); }); downloadCSV(`${studyName}_similarity_matrix.csv`, lines.join('\n')); };
       
       // Initial Routing
       if (isPublicResultsLink) { show(resultsView); loadPublicResults(pUid, pStudyId); }
