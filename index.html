@@ -130,18 +130,8 @@
     .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; }
     .modal { background: #fff; border-radius: 10px; width: min(640px, 100%); padding: 1.25rem; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-height: 90vh; overflow: auto; overscroll-behavior: contain; }
     .modal .actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .25rem; }
-    /* FIXED: Style for radio button alignment */
-    .radio-row label {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-      font-weight: 400; /* Make label text normal weight */
-    }
-    .radio-row input[type="radio"] {
-      width: auto; /* Override default 100% width for inputs */
-      margin-bottom: 0;
-    }
+    .radio-row label { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-weight: 400; }
+    .radio-row input[type="radio"] { width: auto; margin-bottom: 0; }
     
     .tabs { display: flex; gap: .5rem; margin: .5rem 0 1rem; border-bottom: 1px solid var(--border); }
     .tab-btn { background: transparent; color: var(--dark); border: none; padding: .5rem .75rem; cursor: pointer; border-bottom: 3px solid transparent; }
@@ -176,7 +166,9 @@
     .results-table th { background-color: #f8f9fa; }
     .instructions { background: #f4ead7; border: 1px solid #eadfca; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
     #matrixTooltip { position: absolute; display: none; background: rgba(10,20,30,0.9); color: white; padding: 8px 12px; border-radius: 6px; z-index: 10000; pointer-events: none; font-size: 0.9rem; white-space: nowrap; }
-
+    
+    #publicResultsLinkRow { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; }
+    
     /* ===== Pasifika Theme Override ===== */
     :root {
       --ocean: #1177bb; --lagoon: #2a9d8f; --palm: #2e7d32; --sand: #f6efdf; --coconut:#3b3128; --coral: #ef6c57;
@@ -289,7 +281,7 @@
             <input type="checkbox" id="toggleResultsPublic"/> Enable public results link
           </label>
         </div>
-        <div id="publicResultsLinkRow" class="share-row hidden">
+        <div id="publicResultsLinkRow" class="hidden">
           <input type="text" id="publicResultsLink" readonly/><button id="copyPublicResultsBtn" class="btn">Copy Public Link</button>
         </div>
         <div class="muted" style="margin-top:.25rem">Anyone with the link can view the results without logging in.</div>
@@ -409,7 +401,7 @@
       
       function showDashboard(uid) {
         const list = document.getElementById('studiesList');
-        list.innerHTML = ''; // Clear previous entries
+        list.innerHTML = '';
         db.ref(`users/${uid}/studies`).once('value', snap => {
           const studies = snap.val() || {};
           if (Object.keys(studies).length === 0) {
@@ -490,9 +482,7 @@
           resultsView.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
           tabButton.classList.add('active');
           const targetPane = resultsView.querySelector(`#tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
-          if (targetPane) {
-            targetPane.classList.add('active');
-          }
+          if (targetPane) { targetPane.classList.add('active'); }
         }
       });
       
@@ -501,12 +491,12 @@
           const study = snap.val();
           if (!study) { alert("Study not found."); return; }
           document.getElementById('resultsStudyName').textContent = study.name || '';
-          setupShareControls(uid, studyId, study);
-          db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => buildResultsUI(study, snap2.val() || {}));
+          setupShareControls(uid, studyId, study); // Setup sharing UI
+          db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => buildResultsUI(study, snap2.val() || {}, false)); // isPublicView = false
         });
       }
 
-      function buildResultsUI(study, resultsObj) {
+      function buildResultsUI(study, resultsObj, isPublicView) {
         const participantsPieChartWrap = document.getElementById('participantsPieChartWrap'), participantsDetails = document.getElementById('participantsDetails'), participantsToolbar = document.getElementById('participantsToolbar');
         const categoriesSummary = document.getElementById('categoriesSummary'), categoriesChart = document.getElementById('categoriesChart'), categoriesLabels = document.getElementById('categoriesLabels'), categoryFreqList = document.getElementById('categoryFreqList');
         const matrixMeta = document.getElementById('matrixMeta'), matrixTableWrap = document.getElementById('matrixTableWrap');
@@ -529,19 +519,18 @@
         const startedCount = arr.length, completedCount = completed.length, abandonedCount = startedCount - completedCount;
         const completionRate = startedCount > 0 ? (completedCount / startedCount) * 100 : 0;
 
-        // Participants Tab
         const pieAngle = (completionRate / 100) * 360;
         participantsPieChartWrap.innerHTML = `<div id="participantsPieChart" style="background: conic-gradient(var(--success) 0deg, var(--success) ${pieAngle}deg, var(--accent) ${pieAngle}deg, var(--accent) 360deg);"></div><div id="participantsPieSummary"><h3>Participant Summary</h3><p><strong>${completionRate.toFixed(1)}%</strong> Completion Rate</p><ul><li><span class="legend-dot" style="background: var(--success);"></span> Completed: <strong>${completedCount}</strong></li><li><span class="legend-dot" style="background: var(--accent);"></span> Abandoned: <strong>${abandonedCount}</strong></li><li>Total Started: <strong>${startedCount}</strong></li></ul></div>`;
-        if (completedCount > 0) { participantsToolbar.classList.remove('hidden'); }
+        if (completedCount > 0 && !isPublicView) { participantsToolbar.classList.remove('hidden'); }
         const pTable = document.createElement('table'); pTable.className = 'results-table';
-        pTable.innerHTML = `<thead><tr><th><input type="checkbox" id="selectAllCheckbox" title="Select All"></th><th>#</th><th>Name</th><th>ID</th><th>Course</th><th>Duration</th><th>Categories</th></tr></thead><tbody></tbody>`;
+        const checkboxHeader = isPublicView ? '' : '<th><input type="checkbox" id="selectAllCheckbox" title="Select All"></th>';
+        pTable.innerHTML = `<thead><tr>${checkboxHeader}<th>#</th><th>Name</th><th>ID</th><th>Course</th><th>Duration</th><th>Categories</th></tr></thead><tbody></tbody>`;
         const pTbody = pTable.querySelector('tbody');
-        completed.forEach((res, i) => { const pinfo = res.participant || {}; const tr = document.createElement('tr'); tr.innerHTML = `<td><input type="checkbox" class="participant-checkbox" data-key="${res._key}"></td><td>${i + 1}</td><td>${pinfo.name || 'N/A'}</td><td>${pinfo.idNumber || 'N/A'}</td><td>${pinfo.course || 'N/A'}</td><td>${typeof res.durationMs === 'number' ? formatDuration(res.durationMs) : 'N/A'}</td><td>${(res.categories || []).length}</td>`; pTbody.appendChild(tr); });
+        completed.forEach((res, i) => { const pinfo = res.participant || {}; const tr = document.createElement('tr'); const checkboxCell = isPublicView ? '' : `<td><input type="checkbox" class="participant-checkbox" data-key="${res._key}"></td>`; tr.innerHTML = `${checkboxCell}<td>${i + 1}</td><td>${pinfo.name || 'N/A'}</td><td>${pinfo.idNumber || 'N/A'}</td><td>${pinfo.course || 'N/A'}</td><td>${typeof res.durationMs === 'number' ? formatDuration(res.durationMs) : 'N/A'}</td><td>${(res.categories || []).length}</td>`; pTbody.appendChild(tr); });
         participantsDetails.appendChild(pTable);
         const selectAllCheckbox = document.getElementById('selectAllCheckbox');
         if (selectAllCheckbox) { selectAllCheckbox.onchange = (e) => { document.querySelectorAll('.participant-checkbox').forEach(cb => { cb.checked = e.target.checked; }); }; }
 
-        // Categories Tab
         const catsPer = completed.map(r => r.categories.length);
         if (catsPer.length > 0) {
             const avgCats = catsPer.reduce((a, b) => a + b, 0) / catsPer.length;
@@ -551,13 +540,11 @@
             const counts = Array.from({ length: maxBuckets + 1 }, (_, i) => dist.get(i) || 0);
             const peak = Math.max(...counts.slice(1), 1);
             counts.slice(1).forEach((count, idx) => {
-                const bar = document.createElement('div'); bar.className = 'bar'; bar.style.height = `${Math.round((count / peak) * 100)}%`;
-                bar.innerHTML = `<span>${count}</span>`; categoriesChart.appendChild(bar);
+                const bar = document.createElement('div'); bar.className = 'bar'; bar.style.height = `${Math.round((count / peak) * 100)}%`; bar.innerHTML = `<span>${count}</span>`; categoriesChart.appendChild(bar);
                 const xl = document.createElement('div'); xl.className = 'xlabel'; xl.textContent = String(idx + 1); categoriesLabels.appendChild(xl);
             });
         }
-
-        // Similarity Matrix Tab
+        
         const cardTexts = (study?.cards || []).map(c => typeof c === 'string' ? c : (c?.text || '')).filter(Boolean);
         const matrixCounts = {}; cardTexts.forEach(a => { matrixCounts[a] = {}; cardTexts.forEach(b => matrixCounts[a][b] = 0); });
         completed.forEach(r => { (r.categories || []).forEach(cat => { (cat.cards || []).forEach((a, i) => { for (let j = i + 1; j < cat.cards.length; j++) { const b = cat.cards[j]; if (matrixCounts[a] && matrixCounts[b]) { matrixCounts[a][b]++; matrixCounts[b][a]++; } } }); }); });
@@ -594,10 +581,32 @@
         showView(resultsView);
       }
 
-      function setupShareControls(uid, studyId, study) { /* Share controls logic */ }
-      function loadPublicResults(uid, studyId) { /* Public results logic */ }
+      function setupShareControls(uid, studyId, study) {
+        const shareSection = document.getElementById('shareSection'), toggleResultsPublic = document.getElementById('toggleResultsPublic'), publicResultsLinkRow = document.getElementById('publicResultsLinkRow'), publicResultsLink = document.getElementById('publicResultsLink'), copyPublicResultsBtn = document.getElementById('copyPublicResultsBtn');
+        shareSection.classList.remove('hidden');
+        toggleResultsPublic.checked = !!study.resultsPublic;
+        publicResultsLink.value = makePublicResultsLink(uid, studyId);
+        publicResultsLinkRow.classList.toggle('hidden', !study.resultsPublic);
+        toggleResultsPublic.onchange = async () => { const val = toggleResultsPublic.checked; publicResultsLinkRow.classList.toggle('hidden', !val); await db.ref(`users/${uid}/studies/${studyId}/resultsPublic`).set(val); };
+        copyPublicResultsBtn.onclick = async () => { await navigator.clipboard.writeText(publicResultsLink.value); alert('Public results link copied!'); };
+      }
+      
+      function loadPublicResults(uid, studyId) {
+        document.getElementById('shareSection').classList.add('hidden');
+        db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => {
+          const study = snap.val();
+          if (!study || !study.resultsPublic) {
+            resultsView.innerHTML = `<h2>Results Not Public</h2><p>The owner of this study has not made the results publicly available.</p><button id="backToDashboardFromResultsBtn" class="btn btn-secondary">Back to Dashboard</button>`;
+            document.getElementById('backToDashboardFromResultsBtn').onclick = () => showView(dashboardView); // This might not be ideal for a non-logged in user
+            showView(resultsView);
+            return;
+          }
+          document.getElementById('resultsStudyName').textContent = study.name || '';
+          db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => buildResultsUI(study, snap2.val() || {}, true));
+        });
+      }
 
-      // Button listeners that need to be always active
+      // Button listeners
       document.getElementById('backToDashboardFromResultsBtn').onclick = () => showView(dashboardView);
       document.getElementById('downloadCsvBtn').onclick = () => { if (!lastResultsCache) return; const { arr, study } = lastResultsCache; const studyName = (study?.name || 'study').replace(/[^\w\-]+/g, '_'); const headers = ['Participant #','Timestamp','Name','ID Number','Course','Nationality','Ethnicity','HomeOutsideSuvaNausori','Category','Card']; const lines = [headers.join(',')]; let idx = 0; arr.filter(r => r.status === 'completed').forEach(res => { idx++; const p = res.participant || {}; const ts = res.timestamp || res.completedAt || ''; (res.categories || []).forEach(cat => { (cat.cards || []).forEach(card => lines.push([csvEscape(idx),csvEscape(ts),csvEscape(p.name),csvEscape(p.idNumber),csvEscape(p.course),csvEscape(p.nationality),csvEscape(p.ethnicity),csvEscape(p.outsideHome),csvEscape(cat.name),csvEscape(card)].join(','))); }); }); downloadCSV(`${studyName}_results.csv`, lines.join('\n')); };
       document.getElementById('downloadMatrixBtn').onclick = () => { if (!lastResultsCache) return; const { study, cards, matrixCounts, completedCount } = lastResultsCache; const studyName = (study?.name || 'study').replace(/[^\w\-]+/g, '_'); const head = [''].concat(cards).map(csvEscape).join(','); const lines = [head]; cards.forEach(a => { const row = [csvEscape(a)]; cards.forEach(b => { const pct = completedCount > 0 ? ((matrixCounts[a]?.[b] || 0) / completedCount * 100) : 0; row.push(csvEscape(`${pct.toFixed(0)}%`)); }); lines.push(row.join(',')); }); downloadCSV(`${studyName}_similarity_matrix.csv`, lines.join('\n')); };
