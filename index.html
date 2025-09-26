@@ -115,6 +115,25 @@
     .bar span { position: absolute; bottom: 100%; transform: translateY(-4px); font-size: .8rem; color: var(--dark); }
     .xlabels { display: flex; gap: 8px; margin-top: 4px; }
     .xlabel { flex: 1; min-width: 24px; text-align: center; font-size: .8rem; color: var(--dark); }
+  
+  /* Fix alignment of Yes/No radios in the participant modal */
+.radio-row {
+  display: flex;         /* lay out Yes and No horizontally */
+  gap: 1rem;             /* space between options */
+  align-items: center;   /* vertically center radio + text */
+  flex-wrap: wrap;       /* wrap nicely on small screens */
+}
+.radio-row label {
+  display: inline-flex;  /* keep radio and text on one line */
+  align-items: center;
+  gap: .4rem;
+  margin: 0;             /* override any global margins */
+  line-height: 1.2;
+}
+/* Override the global input margin that also affects radios */
+input[type="radio"] {
+  margin: 0;
+}
   </style>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -261,8 +280,6 @@
         <label for="pId">ID number</label>
         <input id="pId" type="text" placeholder="Your ID number" required/>
 
-        <label for="pAddress">Address</label>
-        <textarea id="pAddress" rows="3" placeholder="Your address" required></textarea>
 
         <label for="pCourse">Course</label>
         <input id="pCourse" type="text" placeholder="Your course" required/>
@@ -456,7 +473,6 @@
       const instructionsModal = document.getElementById('instructionsModal');
       const pName = document.getElementById('pName');
       const pId = document.getElementById('pId');
-      const pAddress = document.getElementById('pAddress');
       const pCourse = document.getElementById('pCourse');
       const pNationality = document.getElementById('pNationality');
       const pEthnicity = document.getElementById('pEthnicity');
@@ -803,13 +819,12 @@
         const meta = {
           name: sanitizeText(pName.value),
           idNumber: sanitizeText(pId.value),
-          address: sanitizeText(pAddress.value),
           course: sanitizeText(pCourse.value),
           nationality: sanitizeText(pNationality.value),
           ethnicity: sanitizeText(pEthnicity.value),
           outsideHome: sanitizeText((document.querySelector('input[name="pOutsideHome"]:checked') || {}).value || '')
         };
-        if (!meta.name || !meta.idNumber || !meta.address || !meta.course || !meta.nationality || !meta.ethnicity || !meta.outsideHome) {
+        if (!meta.name || !meta.idNumber || !meta.course || !meta.nationality || !meta.ethnicity || !meta.outsideHome) {
           alert('Please complete all fields to begin.');
           return;
         }
@@ -1164,7 +1179,7 @@
         if (!lastResultsCache) { alert('No results to export.'); return; }
         const { arr, study } = lastResultsCache;
         const studyName = (study?.name || 'study').replace(/[^\w\-]+/g, '_');
-        const headers = ['Participant #','Timestamp','Name','ID Number','Address','Course','Nationality','Ethnicity','HomeOutsideSuvaNausori','Category','Card'];
+        const headers = ['Participant #','Timestamp','Name','ID Number','Course','Nationality','Ethnicity','HomeOutsideSuvaNausori','Category','Card'];
         const lines = [headers.join(',')];
         let idx = 0;
         arr.forEach(res => {
@@ -1175,7 +1190,7 @@
           (res.categories || []).forEach(cat => {
             const catName = sanitizeText(cat.name || 'Unnamed') || 'Unnamed';
             (cat.cards || []).forEach(card => {
-              lines.push([csvEscape(idx),csvEscape(ts),csvEscape(p.name || ''),csvEscape(p.idNumber || ''),csvEscape(p.address || ''),csvEscape(p.course || ''),csvEscape(p.nationality || ''),csvEscape(p.ethnicity || ''),csvEscape(p.outsideHome || ''),csvEscape(catName),csvEscape(card)].join(','));
+              lines.push([csvEscape(idx),csvEscape(ts),csvEscape(p.name || ''),csvEscape(p.idNumber || ''),csvEscape(p.course || ''),csvEscape(p.nationality || ''),csvEscape(p.ethnicity || ''),csvEscape(p.outsideHome || ''),csvEscape(catName),csvEscape(card)].join(','));
             });
           });
         });
@@ -1209,3 +1224,4 @@
   </script>
 </body>
 </html>
+
