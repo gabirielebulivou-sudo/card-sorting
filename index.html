@@ -137,6 +137,28 @@
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
     
+    /* Charts */
+    .chart-wrap { margin-top: .5rem; }
+    .chart { display: flex; align-items: flex-end; gap: 8px; height: 220px; padding: 8px; border-left: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .bar { background: linear-gradient(180deg, var(--secondary), var(--primary)); flex: 1; min-width: 24px; border-radius: 4px 4px 0 0; position: relative; }
+    .bar span { position: absolute; bottom: 100%; transform: translateY(-4px); font-size: .8rem; color: var(--dark); }
+    .xlabels { display: flex; gap: 8px; margin-top: 4px; }
+    .xlabel { flex: 1; min-width: 24px; text-align: center; font-size: .8rem; color: var(--dark); }
+
+    /* Participants Pie Chart */
+    #participantsPieChartWrap { display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; padding: 1rem; background: #fafafa; border-radius: 8px; border: 1px solid var(--border); }
+    #participantsPieChart { width: 100px; height: 100px; border-radius: 50%; }
+    #participantsPieSummary ul { list-style: none; padding: 0; }
+    #participantsPieSummary li { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+    /* Similarity Matrix */
+    .matrix-table-wrap { overflow-x: auto; padding: 1rem; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef; }
+    .similarity-matrix { border-collapse: collapse; width: 100%; font-size: 0.9rem; color: var(--dark); }
+    .similarity-matrix th, .similarity-matrix td { border: 1px solid #dee2e6; padding: 0.5rem; text-align: center; min-width: 60px; height: 36px; }
+    .similarity-matrix .label-cell { text-align: left; font-weight: 600; background-color: #e9ecef; padding-left: 1rem; }
+    .similarity-matrix thead th { position: sticky; top: 0; background-color: #f8f9fa; z-index: 10; }
+
     .results-table { width: 100%; border-collapse: collapse; margin-top: 1rem; table-layout: fixed; font-size: 0.95rem; }
     .results-table th, .results-table td { border: 1px solid var(--border); padding: 0.75rem; text-align: left; }
     .results-table th { background-color: #f8f9fa; }
@@ -241,8 +263,57 @@
       <!-- Participant view content is generated dynamically -->
     </div>
     
+    <!-- RESTORED STATIC HTML for Results View -->
     <div id="resultsView" class="view">
-      <!-- Results view content is generated dynamically -->
+      <h2>Study Results: <span id="resultsStudyName"></span></h2>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="participants">Participants</button>
+        <button class="tab-btn" data-tab="categories">Categories</button>
+        <button class="tab-btn" data-tab="matrix">Similarity Matrix</button>
+      </div>
+      <div id="shareSection" class="instructions hidden">
+        <strong>Share results</strong>
+        <div style="margin-top:.5rem">
+          <label style="display:inline-flex; align-items:center; gap:.5rem">
+            <input type="checkbox" id="toggleResultsPublic"/> Enable public results link
+          </label>
+        </div>
+        <div id="publicResultsLinkRow" class="share-row hidden">
+          <input type="text" id="publicResultsLink" readonly/><button id="copyPublicResultsBtn" class="btn">Copy Public Link</button>
+        </div>
+        <div class="muted" style="margin-top:.25rem">Anyone with the link can view the results without logging in.</div>
+      </div>
+
+      <div id="tabParticipants" class="tab-pane active">
+        <div id="participantsPieChartWrap"></div>
+        <div id="participantsToolbar" class="hidden" style="margin-bottom: 1rem;">
+          <button id="deleteSelectedBtn" class="btn btn-accent">Delete Selected</button>
+        </div>
+        <div id="participantsDetails"></div>
+      </div>
+
+      <div id="tabCategories" class="tab-pane">
+        <div id="categoriesSummary"></div>
+        <div class="chart-wrap">
+          <div class="chart" id="categoriesChart"></div>
+          <div class="xlabels" id="categoriesLabels"></div>
+        </div>
+        <div id="categoryFreq" style="margin-top:.75rem">
+          <h3 style="margin:.75rem 0 .25rem">Most common category names</h3>
+          <ul id="categoryFreqList" class="list"></ul>
+        </div>
+      </div>
+
+      <div id="tabMatrix" class="tab-pane">
+        <div id="matrixMeta"></div>
+        <div id="matrixTableWrap" class="matrix-table-wrap"></div>
+      </div>
+
+      <div style="margin-top: 1rem">
+        <button id="downloadCsvBtn" class="btn">Download CSV</button>
+        <button id="downloadMatrixBtn" class="btn">Download Matrix CSV</button>
+        <button id="backToDashboardFromResultsBtn" class="btn btn-secondary">Back to Dashboard</button>
+      </div>
     </div>
 
     <div id="participantModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="participantModalTitle">
@@ -295,10 +366,7 @@
         const isResearcherLoggedIn = !isResearcherAuth && !hasParticipantLink && !isPublicResultsLink;
         logoutBtn.classList.toggle('hidden', !isResearcherLoggedIn);
         welcomeBanner.classList.toggle('hidden', !isResearcherLoggedIn);
-        // Ensure participant or results links don't show the researcher header
-        if (hasParticipantLink || isPublicResultsLink) {
-          welcomeBanner.textContent = '';
-        }
+        if (hasParticipantLink || isPublicResultsLink) { welcomeBanner.textContent = ''; }
       }
       function sanitizeText(v) { return String(v ?? '').replace(/<[^>]*>/g, '').replace(/[\u0000-\u001F\u007F]/g, '').replace(/\s+/g, ' ').trimStart().slice(0, 500); }
       function finalSanitize(v) { return sanitizeText(v).trim(); }
@@ -309,7 +377,7 @@
       function makePublicResultsLink(uid, studyId) { const base = new URL(window.location.href); base.search = ''; base.hash = ''; return `${base.toString()}?uid=${uid}&study=${studyId}&view=results`; }
 
       // Auth & Dashboard Logic
-      document.getElementById('loginBtn').onclick = async () => { try { await auth.signInWithEmailAndPassword(emailInput.value.trim(), passwordInput.value); } catch (e) { alert(e.message); } };
+      document.getElementById('loginBtn').onclick = async (e) => { e.preventDefault(); try { await auth.signInWithEmailAndPassword(emailInput.value.trim(), passwordInput.value); } catch (err) { alert(err.message); } };
       document.getElementById('signupBtn').onclick = async () => { try { const name = finalSanitize(displayNameInput.value); if (!name) { alert('Please enter your full name for sign-up.'); displayNameInput.focus(); return; } const cred = await auth.createUserWithEmailAndPassword(emailInput.value.trim(), passwordInput.value); await cred.user.updateProfile({ displayName: name }); await db.ref(`users/${cred.user.uid}/profile`).set({ name, email: cred.user.email, createdAt: new Date().toISOString() }); alert('Account created! You are now logged in.'); } catch (e) { alert(e.message); } };
       document.getElementById('forgotPwdBtn').onclick = async () => { try { const email = prompt('Enter your registered email address:'); if (!email) return; await auth.sendPasswordResetEmail(email.trim()); alert('Password reset email sent. Please check your inbox.'); } catch (e) { alert(e.message); } };
       logoutBtn.onclick = () => auth.signOut();
@@ -347,41 +415,12 @@
         const list = document.getElementById('studiesList');
         const card = document.createElement('div');
         card.className = 'study-card';
-        
-        const statusBadge = study.isPublic
-            ? '<span class="badge badge-published">Published</span>'
-            : '<span class="badge badge-unpublished">Unpublished</span>';
-
-        card.innerHTML = `
-            <div class="study-card-header">
-                <h3>${sanitizeText(study.name) || '(Untitled study)'}</h3>
-                ${statusBadge}
-            </div>
-            <div class="study-card-actions">
-                <button class="btn share-btn">Share Link</button>
-                <button class="btn btn-secondary publish-btn">${study.isPublic ? 'Unpublish' : 'Publish'}</button>
-                <button class="btn btn-success results-btn">Results</button>
-                <button class="btn btn-accent delete-btn">Delete</button>
-            </div>
-        `;
-        
-        card.querySelector('.share-btn').onclick = async () => { 
-            const link = makeShareLink(uid, studyId);
-            try { await navigator.clipboard.writeText(link); alert('Participant link copied to clipboard.'); } 
-            catch { prompt('Could not copy automatically. Please copy this link:', link); }
-        };
-        card.querySelector('.publish-btn').onclick = async () => {
-            const newVal = !study.isPublic;
-            await db.ref(`users/${uid}/studies/${studyId}/isPublic`).set(newVal);
-            showDashboard(uid);
-        };
+        const statusBadge = study.isPublic ? '<span class="badge badge-published">Published</span>' : '<span class="badge badge-unpublished">Unpublished</span>';
+        card.innerHTML = `<div class="study-card-header"><h3>${sanitizeText(study.name) || '(Untitled study)'}</h3>${statusBadge}</div><div class="study-card-actions"><button class="btn share-btn">Share Link</button><button class="btn btn-secondary publish-btn">${study.isPublic ? 'Unpublish' : 'Publish'}</button><button class="btn btn-success results-btn">Results</button><button class="btn btn-accent delete-btn">Delete</button></div>`;
+        card.querySelector('.share-btn').onclick = async () => { const link = makeShareLink(uid, studyId); try { await navigator.clipboard.writeText(link); alert('Participant link copied to clipboard.'); } catch { prompt('Could not copy automatically. Please copy this link:', link); } };
+        card.querySelector('.publish-btn').onclick = async () => { const newVal = !study.isPublic; await db.ref(`users/${uid}/studies/${studyId}/isPublic`).set(newVal); showDashboard(uid); };
         card.querySelector('.results-btn').onclick = () => { viewResults(uid, studyId); };
-        card.querySelector('.delete-btn').onclick = async () => { 
-            if (confirm(`Are you sure you want to delete the study "${sanitizeText(study.name)}" and all its results? This cannot be undone.`)) {
-                await db.ref(`users/${uid}/studies/${studyId}`).remove();
-                card.remove();
-            }
-        };
+        card.querySelector('.delete-btn').onclick = async () => { if (confirm(`Are you sure you want to delete the study "${sanitizeText(study.name)}" and all its results? This cannot be undone.`)) { await db.ref(`users/${uid}/studies/${studyId}`).remove(); card.remove(); } };
         list.appendChild(card);
       }
 
@@ -399,7 +438,7 @@
 
       // Participant View Logic
       function loadParticipantView(uid, studyId) {
-        participantView.innerHTML = ` <h2 id="participantStudyName"></h2> <p id="cardDescriptionInfo" class="muted hidden" style="text-align: center; margin-bottom: 1rem;">Click the <span style="font-size: 1.2em; vertical-align: middle;">ℹ️</span> icon on a card to see its description.</p> <div id="participantInstructions" class="instructions hidden"></div> <div id="participantStatus" class="muted" aria-live="polite"></div> <div class="workspace" role="region" aria-label="Card sorting workspace"> <div class="toolbar"> <button id="showInstructionsBtn" class="btn">Instructions</button> <button id="fullscreenBtn" class="btn">Full Screen</button> <button id="submitSortingBtn" class="btn btn-success">Finish Sorting</button> </div> <aside id="availableCardsContainer" role="region" aria-label="Unsorted cards"> <h3>Unsorted Cards</h3> <div id="availableCards" class="cards-list"></div> </aside> <div class="category-columns-wrap"> <div class="category-column"></div> <div class="category-column"></div> <div class="category-column"></div> </div> </div>`;
+        participantView.innerHTML = `<h2 id="participantStudyName"></h2> <p id="cardDescriptionInfo" class="muted hidden" style="text-align: center; margin-bottom: 1rem;">Click the <span style="font-size: 1.2em; vertical-align: middle;">ℹ️</span> icon on a card to see its description.</p> <div id="participantInstructions" class="instructions hidden"></div> <div id="participantStatus" class="muted" aria-live="polite"></div> <div class="workspace" role="region" aria-label="Card sorting workspace"> <div class="toolbar"> <button id="showInstructionsBtn" class="btn">Instructions</button> <button id="fullscreenBtn" class="btn">Full Screen</button> <button id="submitSortingBtn" class="btn btn-success">Finish Sorting</button> </div> <aside id="availableCardsContainer" role="region" aria-label="Unsorted cards"> <h3>Unsorted Cards</h3> <div id="availableCards" class="cards-list"></div> </aside> <div class="category-columns-wrap"> <div class="category-column"></div> <div class="category-column"></div> <div class="category-column"></div> </div> </div>`;
         const pStudyName = document.getElementById('participantStudyName'), cardDescInfo = document.getElementById('cardDescriptionInfo'), pInstructions = document.getElementById('participantInstructions'), pStatus = document.getElementById('participantStatus'), availableCards = document.getElementById('availableCards'), categoryColumns = participantView.querySelectorAll('.category-column'), showInstBtn = document.getElementById('showInstructionsBtn'), fsBtn = document.getElementById('fullscreenBtn'), submitBtn = document.getElementById('submitSortingBtn');
         
         pStatus.textContent = 'Loading study...';
@@ -412,76 +451,141 @@
           availableCards.innerHTML = '';
           (study.cards || []).forEach(c => { const text = typeof c === 'string' ? c : finalSanitize(c?.text || ''); const desc = typeof c === 'string' ? '' : finalSanitize(c?.desc || ''); if (text) availableCards.appendChild(createCardEl(text, desc)); });
           new Sortable(availableCards, { group: 'cards', animation: 150 });
-          categoryColumns.forEach(column => { new Sortable(column, { group: 'cards', animation: 150, onAdd: (evt) => { if (evt.item.classList.contains('card')) { const newCat = makeCategory(column); newCat.querySelector('.cat-body').appendChild(evt.item); updateCategoryCount(newCat); setTimeout(() => newCat.querySelector('.cat-title-input').focus(), 100); } } }); });
-          updateColumnPlaceholders();
+          categoryColumns.forEach(column => { new Sortable(column, { group: 'cards', animation: 150, onAdd: (evt) => { if (evt.item.classList.contains('card')) { const newCat = makeCategory(column, availableCards); newCat.querySelector('.cat-body').appendChild(evt.item); updateCategoryCount(newCat); setTimeout(() => newCat.querySelector('.cat-title-input').focus(), 100); } } }); });
+          updateColumnPlaceholders(categoryColumns);
           participantView.dataset.uid = uid; participantView.dataset.studyId = studyId;
           pStatus.textContent = '';
           loadParticipantModal();
         });
 
-        function updateColumnPlaceholders() { categoryColumns.forEach(col => { const hasCategories = col.querySelector('.category'); let placeholder = col.querySelector('.drop-zone-placeholder'); if (!hasCategories && !placeholder) { placeholder = document.createElement('div'); placeholder.className = 'drop-zone-placeholder'; placeholder.textContent = 'Drop here to create a category'; col.appendChild(placeholder); } else if (hasCategories && placeholder) { placeholder.remove(); } }); }
-        function updateCategoryCount(cat) { const count = cat.querySelectorAll('.cat-body .card').length; cat.querySelector('.cat-footer').textContent = (count === 1 ? '1 CARD' : `${count} CARDS`); }
-        function makeCategory(targetColumn) { const cat = document.createElement('div'); cat.className = 'category'; cat.innerHTML = `<div class="cat-header" tabindex="0" role="button"><button class="cat-icon-btn cat-delete" title="Delete">🗑</button><input class="cat-title-input" type="text" placeholder="Click to rename" value="" maxlength="80"/></div><div class="cat-body"></div><div class="cat-footer">0 CARDS</div>`; targetColumn.appendChild(cat); const input = cat.querySelector('.cat-title-input'); const body = cat.querySelector('.cat-body'); cat.querySelector('.cat-delete').onclick = () => { [...body.querySelectorAll('.card')].forEach(c => availableCards.appendChild(c)); cat.remove(); updateColumnPlaceholders(); }; new Sortable(body, { group: 'cards', animation: 150, onAdd: () => updateCategoryCount(cat), onRemove: () => { updateCategoryCount(cat); setTimeout(() => { if (body.children.length === 0) { cat.remove(); updateColumnPlaceholders(); } }, 0); } }); updateColumnPlaceholders(); return cat; }
-        submitBtn.onclick = () => { /* Submission logic as before */ };
-        showInstBtn.onclick = () => { loadInstructionsModal(); };
-        fsBtn.onclick = () => { /* Fullscreen logic */ };
+        submitBtn.onclick = () => { const { uid, studyId, startedAt, resultKey } = participantView.dataset; if (!uid || !studyId || !participantMeta) { alert('Could not submit. Please refresh and try again.'); return; } if (availableCards.querySelectorAll('.card').length > 0) { alert(`Please sort all ${availableCards.querySelectorAll('.card').length} remaining cards.`); document.getElementById('availableCardsContainer').scrollIntoView({ behavior: 'smooth' }); return; } const allCategories = participantView.querySelectorAll('.category'); const cats = []; let firstInvalid = null; allCategories.forEach(cat => { const name = finalSanitize(cat.querySelector('.cat-title-input')?.value || ''); const cards = [...cat.querySelectorAll('.cat-body .card')].map(c => c.dataset.cardText); if (cards.length > 0) { if (!name && !firstInvalid) firstInvalid = cat.querySelector('.cat-title-input'); cats.push({ name: name || 'Unnamed', cards }); } }); if (firstInvalid) { alert('Please name all categories.'); firstInvalid.focus(); return; } if (cats.length === 0 && availableCards.children.length === 0 && !confirm("You haven't created any categories. Are you sure you want to finish?")) { return; } const now = new Date(); const data = { participant: participantMeta, categories: cats, status: 'completed', completedAt: now.toISOString(), durationMs: startedAt ? now.getTime() - new Date(startedAt).getTime() : null }; const resultsRef = db.ref(`users/${uid}/studies/${studyId}/results`); (resultKey ? resultsRef.child(resultKey).update(data) : resultsRef.push({ ...data, timestamp: now.toISOString() })).then(() => { participantView.innerHTML = '<h2>Thank you!</h2><p>Your responses have been recorded.</p>'; }).catch(e => alert(e.message)); };
+        showInstBtn.onclick = () => { loadInstructionsModal(false); };
+        fsBtn.onclick = () => { const doc = window.document, docEl = doc.documentElement; const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen; const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen; if(!doc.fullscreenElement) { requestFullScreen.call(docEl); } else { cancelFullScreen.call(doc); } };
+        document.addEventListener('fullscreenchange', () => { fsBtn.textContent = document.fullscreenElement ? 'Exit Full Screen' : 'Full Screen'; });
       }
       function createCardEl(text, desc) { const card = document.createElement('div'); card.className = 'card'; card.dataset.cardText = text; const inner = document.createElement('div'); inner.className = 'card-text'; inner.textContent = text; card.appendChild(inner); if (desc) { const btn = document.createElement('button'); btn.className = 'info-icon'; btn.type = 'button'; btn.title = 'Show description'; btn.textContent = 'ℹ️'; const tip = document.createElement('div'); tip.className = 'card-desc'; tip.textContent = desc; btn.addEventListener('click', (e) => { e.stopPropagation(); tip.classList.toggle('show'); }); card.appendChild(btn); card.appendChild(tip); } return card; }
-      function loadParticipantModal() { participantModal.innerHTML = `<div class="modal"><h3 id="participantModalTitle">Before you begin</h3> <p>Please enter your details to proceed.</p> <label for="pName">Full name</label><input id="pName" type="text" placeholder="Your name" required/> <label for="pId">ID number</label><input id="pId" type="text" placeholder="Your ID number" required/> <label for="pCourse">Course</label><input id="pCourse" type="text" placeholder="Your course" required/> <label for="pNationality">Nationality</label><input id="pNationality" type="text" placeholder="Your nationality" required/> <label for="pEthnicity">Ethnicity</label><input id="pEthnicity" type="text" placeholder="Your ethnicity" required/> <fieldset> <legend>Is your family home outside of Suva/Nausori? (Yes/No)</legend> <div class="radio-row"> <label><input type="radio" name="pOutsideHome" value="Yes" required/> Yes</label> <label><input type="radio" name="pOutsideHome" value="No" required/> No</label> </div> </fieldset> <div class="actions"><button id="startSortingBtn" class="btn btn-success">Continue</button></div> </div>`; document.getElementById('startSortingBtn').onclick = () => { /* Start sorting logic */ }; participantModal.classList.remove('hidden'); }
-      function loadInstructionsModal() { instructionsModal.innerHTML = `<div class="modal"><h3>Instructions</h3><ol><li>Drag cards from the "Unsorted Cards" list.</li><li>Drop a card into an empty column to create a new category.</li><li>Give each category a name.</li><li>Sort all cards into categories.</li><li>Click "Finish Sorting" when done.</li></ol><div class="actions"><button id="beginSortingBtn" class="btn btn-success">Begin</button></div></div>`; document.getElementById('beginSortingBtn').onclick = () => instructionsModal.classList.add('hidden'); instructionsModal.classList.remove('hidden'); }
+      function updateColumnPlaceholders(categoryColumns) { categoryColumns.forEach(col => { const hasCategories = col.querySelector('.category'); let placeholder = col.querySelector('.drop-zone-placeholder'); if (!hasCategories && !placeholder) { placeholder = document.createElement('div'); placeholder.className = 'drop-zone-placeholder'; placeholder.textContent = 'Drop here to create a category'; col.appendChild(placeholder); } else if (hasCategories && placeholder) { placeholder.remove(); } }); }
+      function updateCategoryCount(cat) { const count = cat.querySelectorAll('.cat-body .card').length; cat.querySelector('.cat-footer').textContent = (count === 1 ? '1 CARD' : `${count} CARDS`); }
+      function makeCategory(targetColumn, availableCards) { const cat = document.createElement('div'); cat.className = 'category'; cat.innerHTML = `<div class="cat-header" tabindex="0" role="button"><button class="cat-icon-btn cat-delete" title="Delete">🗑</button><input class="cat-title-input" type="text" placeholder="Click to rename" value="" maxlength="80"/></div><div class="cat-body"></div><div class="cat-footer">0 CARDS</div>`; targetColumn.appendChild(cat); const body = cat.querySelector('.cat-body'); cat.querySelector('.cat-delete').onclick = () => { [...body.querySelectorAll('.card')].forEach(c => availableCards.appendChild(c)); cat.remove(); updateColumnPlaceholders(participantView.querySelectorAll('.category-column')); }; new Sortable(body, { group: 'cards', animation: 150, onAdd: () => updateCategoryCount(cat), onRemove: () => { updateCategoryCount(cat); setTimeout(() => { if (body.children.length === 0) { cat.remove(); updateColumnPlaceholders(participantView.querySelectorAll('.category-column')); } }, 0); } }); updateColumnPlaceholders(participantView.querySelectorAll('.category-column')); return cat; }
+      function loadParticipantModal() { participantModal.innerHTML = `<div class="modal"><h3 id="participantModalTitle">Before you begin</h3> <p>Please enter your details to proceed.</p> <label for="pName">Full name</label><input id="pName" type="text" placeholder="Your name" required/> <label for="pId">ID number</label><input id="pId" type="text" placeholder="Your ID number" required/> <label for="pCourse">Course</label><input id="pCourse" type="text" placeholder="Your course" required/> <label for="pNationality">Nationality</label><input id="pNationality" type="text" placeholder="Your nationality" required/> <label for="pEthnicity">Ethnicity</label><input id="pEthnicity" type="text" placeholder="Your ethnicity" required/> <fieldset> <legend>Is your family home outside of Suva/Nausori? (Yes/No)</legend> <div> <label><input type="radio" name="pOutsideHome" value="Yes" required/> Yes</label> <label><input type="radio" name="pOutsideHome" value="No" required/> No</label> </div> </fieldset> <div class="actions"><button id="startSortingBtn" class="btn btn-success">Continue</button></div> </div>`; document.getElementById('startSortingBtn').onclick = () => { const meta = { name: finalSanitize(document.getElementById('pName').value), idNumber: finalSanitize(document.getElementById('pId').value), course: finalSanitize(document.getElementById('pCourse').value), nationality: finalSanitize(document.getElementById('pNationality').value), ethnicity: finalSanitize(document.getElementById('pEthnicity').value), outsideHome: finalSanitize((document.querySelector('input[name="pOutsideHome"]:checked') || {}).value || '') }; if (Object.values(meta).some(v => !v)) { alert('Please complete all fields to begin.'); return; } participantMeta = meta; participantModal.classList.add('hidden'); loadInstructionsModal(true); }; participantModal.classList.remove('hidden'); document.getElementById('pName').focus(); }
+      function loadInstructionsModal(isFirstTime) { instructionsModal.innerHTML = `<div class="modal"><h3>Instructions</h3><ol><li>Drag cards from the "Unsorted Cards" list on the left.</li><li>Drop a card into an empty column on the right to create a new category.</li><li>Give each category a name that makes sense to you.</li><li>Continue sorting all cards into the categories you've created.</li><li>You can move cards between categories at any time.</li><li>When you're finished, click the "Finish Sorting" button.</li></ol><div class="actions"><button id="beginSortingBtn" class="btn btn-success">Begin</button></div></div>`; document.getElementById('beginSortingBtn').onclick = () => { instructionsModal.classList.add('hidden'); if(isFirstTime) { const { uid, studyId } = participantView.dataset; if (!uid || !studyId) return; const startedAt = new Date().toISOString(); participantView.dataset.startedAt = startedAt; try { const ref = db.ref(`users/${uid}/studies/${studyId}/results`).push(); ref.set({ timestamp: startedAt, participant: participantMeta, status: 'started' }); participantView.dataset.resultKey = ref.key; } catch (e) { console.warn('Could not create started result entry:', e); } } }; instructionsModal.classList.remove('hidden'); }
 
-      // Results View & Deletion Logic
+      // --- REVISED viewResults and buildResultsUI functions ---
       function viewResults(uid, studyId) {
-        resultsView.innerHTML = `<h2>Study Results: <span id="resultsStudyName"></span></h2> <div class="tabs"> <button class="tab-btn active" data-tab="participants">Participants</button> <button class="tab-btn" data-tab="categories">Categories</button> <button class="tab-btn" data-tab="matrix">Similarity Matrix</button> </div> <div id="shareSection" class="instructions hidden"><strong>Share results</strong>...</div> <div id="tabParticipants" class="tab-pane active"> <div id="participantsPieChartWrap"></div> <div id="participantsToolbar" class="hidden" style="margin-bottom: 1rem;"><button id="deleteSelectedBtn" class="btn btn-accent">Delete Selected</button></div> <div id="participantsDetails"></div> </div> <div id="tabCategories" class="tab-pane">...</div> <div id="tabMatrix" class="tab-pane">...</div> <div style="margin-top: 1rem"> <button id="downloadCsvBtn" class="btn">Download CSV</button> <button id="downloadMatrixBtn" class="btn">Download Matrix CSV</button> <button id="backToDashboardFromResultsBtn" class="btn btn-secondary">Back to Dashboard</button> </div>`;
-        document.getElementById('backToDashboardFromResultsBtn').onclick = () => showView(dashboardView);
-        
         db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => {
-            const study = snap.val();
-            document.getElementById('resultsStudyName').textContent = study?.name || '';
-            db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => buildResultsUI(study || {}, snap2.val() || {}));
+          const study = snap.val();
+          if (!study) { alert("Study not found."); return; }
+          document.getElementById('resultsStudyName').textContent = study.name || '';
+          setupShareControls(uid, studyId, study);
+          db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => buildResultsUI(study, snap2.val() || {}));
         });
       }
+
       function buildResultsUI(study, resultsObj) {
-        const resultsUid = study.ownerUid;
-        const resultsStudyId = study.id;
-        const arr = Object.entries(resultsObj || {}).map(([key, value]) => ({ ...value, _key: key })).sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+        // Get all static element references
+        const participantsPieChartWrap = document.getElementById('participantsPieChartWrap'), participantsDetails = document.getElementById('participantsDetails'), participantsToolbar = document.getElementById('participantsToolbar');
+        const categoriesSummary = document.getElementById('categoriesSummary'), categoriesChart = document.getElementById('categoriesChart'), categoriesLabels = document.getElementById('categoriesLabels');
+        const matrixMeta = document.getElementById('matrixMeta'), matrixTableWrap = document.getElementById('matrixTableWrap');
+        const downloadCsvBtn = document.getElementById('downloadCsvBtn'), downloadMatrixBtn = document.getElementById('downloadMatrixBtn');
+        const backBtn = document.getElementById('backToDashboardFromResultsBtn');
+        const deleteBtn = document.getElementById('deleteSelectedBtn');
+
+        // Clear previous results content
+        participantsPieChartWrap.innerHTML = ''; participantsDetails.innerHTML = ''; categoriesSummary.textContent = '';
+        categoriesChart.innerHTML = ''; categoriesLabels.innerHTML = ''; matrixMeta.textContent = ''; matrixTableWrap.innerHTML = '';
+        participantsToolbar.classList.add('hidden');
+        lastResultsCache = null; downloadCsvBtn.disabled = true; downloadMatrixBtn.disabled = true;
         
-        const participantsDetails = document.getElementById('participantsDetails');
-        participantsDetails.innerHTML = '';
-        if (arr.length === 0) { participantsDetails.innerHTML = '<p>No results yet.</p>'; showView(resultsView); return; }
+        const arr = Object.entries(resultsObj || {}).map(([key, value]) => ({ ...value, _key: key })).sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+
+        if (arr.length === 0) {
+            participantsDetails.innerHTML = '<p>No results yet.</p>'; showView(resultsView); activateTab('participants'); return;
+        }
 
         const completed = arr.filter(r => r.status === 'completed' && Array.isArray(r.categories));
-        document.getElementById('participantsToolbar').classList.toggle('hidden', completed.length === 0);
-        
-        const pTable = document.createElement('table');
-        pTable.className = 'results-table';
+        const startedCount = arr.length, completedCount = completed.length, abandonedCount = startedCount - completedCount;
+        const completionRate = startedCount > 0 ? (completedCount / startedCount) * 100 : 0;
+
+        // Participants Tab
+        const pieAngle = (completionRate / 100) * 360;
+        participantsPieChartWrap.innerHTML = `<div id="participantsPieChart" style="background: conic-gradient(var(--success) 0deg, var(--success) ${pieAngle}deg, var(--accent) ${pieAngle}deg, var(--accent) 360deg);"></div><div id="participantsPieSummary"><h3>Participant Summary</h3><p><strong>${completionRate.toFixed(1)}%</strong> Completion Rate</p><ul><li><span class="legend-dot" style="background: var(--success);"></span> Completed: <strong>${completedCount}</strong></li><li><span class="legend-dot" style="background: var(--accent);"></span> Abandoned: <strong>${abandonedCount}</strong></li><li>Total Started: <strong>${startedCount}</strong></li></ul></div>`;
+        if (completedCount > 0) { participantsToolbar.classList.remove('hidden'); }
+        const pTable = document.createElement('table'); pTable.className = 'results-table';
         pTable.innerHTML = `<thead><tr><th><input type="checkbox" id="selectAllCheckbox" title="Select All"></th><th>#</th><th>Name</th><th>ID</th><th>Course</th><th>Duration</th><th>Categories</th></tr></thead><tbody></tbody>`;
         const pTbody = pTable.querySelector('tbody');
         completed.forEach((res, i) => {
             const pinfo = res.participant || {};
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td><input type="checkbox" class="participant-checkbox" data-key="${res._key}"></td> <td>${i + 1}</td> <td>${pinfo.name || 'N/A'}</td> <td>${pinfo.idNumber || 'N/A'}</td> <td>${pinfo.course || 'N/A'}</td> <td>${formatDuration(res.durationMs)}</td> <td>${(res.categories || []).length}</td>`;
+            tr.innerHTML = `<td><input type="checkbox" class="participant-checkbox" data-key="${res._key}"></td><td>${i + 1}</td><td>${pinfo.name || 'N/A'}</td><td>${pinfo.idNumber || 'N/A'}</td><td>${pinfo.course || 'N/A'}</td><td>${typeof res.durationMs === 'number' ? formatDuration(res.durationMs) : 'N/A'}</td><td>${(res.categories || []).length}</td>`;
             pTbody.appendChild(tr);
         });
         participantsDetails.appendChild(pTable);
-        
-        document.getElementById('selectAllCheckbox').onchange = (e) => { document.querySelectorAll('.participant-checkbox').forEach(cb => cb.checked = e.target.checked); };
-        document.getElementById('deleteSelectedBtn').onclick = async () => {
-          const checkedBoxes = document.querySelectorAll('.participant-checkbox:checked');
-          if (checkedBoxes.length === 0) { alert('Please select at least one result to delete.'); return; }
-          if (!confirm(`Delete ${checkedBoxes.length} result(s)? This cannot be undone.`)) return;
-          const updates = {};
-          checkedBoxes.forEach(box => { updates[`/users/${resultsUid}/studies/${resultsStudyId}/results/${box.dataset.key}`] = null; });
-          try { await db.ref().update(updates); alert('Result(s) deleted.'); viewResults(resultsUid, resultsStudyId); } 
-          catch (error) { alert(`Delete failed: ${error.message}`); }
-        };
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        if (selectAllCheckbox) { selectAllCheckbox.addEventListener('change', (e) => { document.querySelectorAll('.participant-checkbox').forEach(cb => { cb.checked = e.target.checked; }); }); }
 
-        // ... logic for other tabs (Categories, Matrix)
+        // Categories Tab
+        const catsPer = completed.map(r => r.categories.length);
+        if (catsPer.length > 0) {
+            const avgCats = catsPer.reduce((a, b) => a + b, 0) / catsPer.length;
+            categoriesSummary.textContent = `Average categories created: ${avgCats.toFixed(2)} (n=${completedCount})`;
+            const dist = new Map(); catsPer.forEach(n => dist.set(n, (dist.get(n) || 0) + 1));
+            const maxBuckets = Math.max(...dist.keys());
+            const counts = Array.from({ length: maxBuckets }, (_, i) => dist.get(i + 1) || 0);
+            const peak = Math.max(...counts, 1);
+            counts.forEach((count, idx) => {
+                const bar = document.createElement('div'); bar.className = 'bar'; bar.style.height = `${Math.round((count / peak) * 100)}%`;
+                bar.innerHTML = `<span>${count}</span>`; categoriesChart.appendChild(bar);
+                const xl = document.createElement('div'); xl.className = 'xlabel'; xl.textContent = String(idx + 1); categoriesLabels.appendChild(xl);
+            });
+        }
+
+        // Similarity Matrix Tab
+        const cardTexts = (study?.cards || []).map(c => typeof c === 'string' ? c : (c?.text || '')).filter(Boolean);
+        const matrixCounts = {}; cardTexts.forEach(a => { matrixCounts[a] = {}; cardTexts.forEach(b => matrixCounts[a][b] = 0); });
+        completed.forEach(r => { (r.categories || []).forEach(cat => { (cat.cards || []).forEach((a, i) => { for (let j = i + 1; j < cat.cards.length; j++) { const b = cat.cards[j]; matrixCounts[a][b]++; matrixCounts[b][a]++; } }); }); });
+        matrixMeta.innerHTML = `<p class="muted">Percentages show how often cards were grouped together (n=${completedCount}).</p>`;
+        const mTable = document.createElement('table'); mTable.className = 'similarity-matrix';
+        mTable.innerHTML = `<thead></thead><tbody></tbody>`;
+        const mThead = mTable.querySelector('thead'), mBody = mTable.querySelector('tbody');
+        const headerRow = document.createElement('tr');
+        headerRow.innerHTML = '<th></th>' + cardTexts.map(card => `<th>${sanitizeText(card)}</th>`).join('');
+        mThead.appendChild(headerRow);
+        cardTexts.forEach((card_i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<th class="label-cell">${sanitizeText(card_i)}</th>` + cardTexts.map(card_j => {
+                const pct = completedCount > 0 ? (matrixCounts[card_i]?.[card_j] / completedCount * 100) : 0;
+                const alpha = 0.05 + (pct * 0.0095);
+                return `<td style="background-color: hsla(210, 100%, 50%, ${alpha})" data-pct="${pct.toFixed(0)}" data-card-i="${sanitizeText(card_i)}" data-card-j="${sanitizeText(card_j)}">${pct.toFixed(0)}</td>`;
+            }).join('');
+            mBody.appendChild(tr);
+        });
+        matrixTableWrap.appendChild(mTable);
+        
+        lastResultsCache = { arr, completed, completedCount, study, cards: cardTexts, matrixCounts };
+        downloadCsvBtn.disabled = false; downloadMatrixBtn.disabled = false;
+
+        deleteBtn.onclick = async () => {
+            const checkedBoxes = document.querySelectorAll('.participant-checkbox:checked');
+            if (checkedBoxes.length === 0) { alert('Please select at least one result to delete.'); return; }
+            if (!confirm(`Are you sure you want to delete ${checkedBoxes.length} selected result(s)? This action cannot be undone.`)) return;
+            const updates = {};
+            checkedBoxes.forEach(box => { const key = box.dataset.key; if (key) { updates[`/users/${study.ownerUid}/studies/${study.id}/results/${key}`] = null; } });
+            try { await db.ref().update(updates); alert(`${checkedBoxes.length} result(s) deleted successfully.`); viewResults(study.ownerUid, study.id); } catch (error) { alert(`An error occurred while deleting results: ${error.message}`); }
+        };
+        
         showView(resultsView);
+        activateTab('participants');
       }
-      function loadPublicResults(uid, studyId) {
-        // Public results logic...
-      }
+
+      function setupShareControls(uid, studyId, study) { /* Share controls logic */ }
+      function loadPublicResults(uid, studyId) { /* Public results logic */ }
+
+      // Button listeners that need to be always active
+      document.getElementById('backToDashboardFromResultsBtn').onclick = () => showView(dashboardView);
+      document.getElementById('downloadCsvBtn').onclick = () => { /* Download CSV logic */ };
+      document.getElementById('downloadMatrixBtn').onclick = () => { /* Download Matrix logic */ };
+      matrixTableWrap.addEventListener('mousemove', e => { const cell = e.target.closest('td'); if (!cell || !cell.dataset.cardI) { matrixTooltip.style.display = 'none'; return; } matrixTooltip.style.display = 'block'; matrixTooltip.style.left = `${e.pageX + 15}px`; matrixTooltip.style.top = `${e.pageY + 15}px`; matrixTooltip.innerHTML = `<div class="pair">${cell.dataset.cardI} &<br>${cell.dataset.cardJ}</div><div>Agreement: <strong>${cell.dataset.pct}%</strong></div>`; });
+      matrixTableWrap.addEventListener('mouseleave', () => matrixTooltip.style.display = 'none');
 
       // Initial routing
       if (isPublicResultsLink) { showView(resultsView); loadPublicResults(pUid, pStudyId); }
