@@ -476,11 +476,58 @@
           catch (error) { alert(`Delete failed: ${error.message}`); }
         };
 
-        // ... logic for other tabs (Categories, Matrix)
+               // Categories Tab
+        const catsPer = completed.map(r => r.categories.length);
+        if (catsPer.length > 0) {
+            const avgCats = catsPer.reduce((a, b) => a + b, 0) / catsPer.length;
+            categoriesSummary.textContent = `Average categories created: ${avgCats.toFixed(2)} (n=${completedCount})`;
+            const dist = new Map(); catsPer.forEach(n => dist.set(n, (dist.get(n) || 0) + 1));
+            const maxBuckets = Math.max(...dist.keys());
+            const counts = Array.from({ length: maxBuckets }, (_, i) => dist.get(i + 1) || 0);
+            const peak = Math.max(...counts, 1);
+            counts.forEach((count, idx) => {
+                const bar = document.createElement('div'); bar.className = 'bar'; bar.style.height = `${Math.round((count / peak) * 100)}%`;
+                bar.innerHTML = `<span>${count}</span>`; categoriesChart.appendChild(bar);
+                const xl = document.createElement('div'); xl.className = 'xlabel'; xl.textContent = String(idx + 1); categoriesLabels.appendChild(xl);
+            });
+        }
+
+        // Similarity Matrix Tab
+        const cardTexts = (study?.cards || []).map(c => typeof c === 'string' ? c : (c?.text || '')).filter(Boolean);
+        const matrixCounts = {}; cardTexts.forEach(a => { matrixCounts[a] = {}; cardTexts.forEach(b => matrixCounts[a][b] = 0); });
+        completed.forEach(r => { (r.categories || []).forEach(cat => { (cat.cards || []).forEach((a, i) => { for (let j = i + 1; j < cat.cards.length; j++) { const b = cat.cards[j]; matrixCounts[a][b]++; matrixCounts[b][a]++; } }); }); });
+        
+        matrixMeta.innerHTML = `<p class="muted">Percentages show how often cards were grouped together (n=${completedCount}).</p>`;
+        const mTable = document.createElement('table'); mTable.className = 'similarity-matrix';
+        mTable.innerHTML = `<thead></thead><tbody></tbody>`;
+        const mThead = mTable.querySelector('thead'), mBody = mTable.querySelector('tbody');
+        const headerRow = document.createElement('tr');
+        headerRow.innerHTML = '<th></th>' + cardTexts.map(card => `<th>${card}</th>`).join('');
+        mThead.appendChild(headerRow);
+
+        cardTexts.forEach((card_i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<th class="label-cell">${card_i}</th>` + cardTexts.map(card_j => {
+                const pct = completedCount > 0 ? (matrixCounts[card_i][card_j] / completedCount * 100) : 0;
+                const alpha = 0.05 + (pct * 0.0095);
+                return `<td style="background-color: hsla(210, 100%, 50%, ${alpha})" data-pct="${pct.toFixed(0)}" data-card-i="${card_i}" data-card-j="${card_j}">${pct.toFixed(0)}</td>`;
+            }).join('');
+            mBody.appendChild(tr);
+        });
+        matrixTableWrap.appendChild(mTable);
+        
+        lastResultsCache = { arr, completed, completedCount, study, cards: cardTexts, matrixCounts };
+        downloadCsvBtn.disabled = false; downloadMatrixBtn.disabled = false;
+        show(resultsView); activateTab('participants');
+      }
+
+      // Matrix Tooltip Logic
+      matrixTableWrap.addEventListener('mousemove', e => { const cell = e.target.closest('td'); if (!cell || !cell.dataset.cardI) { matrixTooltip.style.display = 'none'; return; } matrixTooltip.style.display = 'block'; matrixTooltip.style.left = `${e.pageX + 15}px`; matrixTooltip.style.top = `${e.pageY + 15}px`; matrixTooltip.innerHTML = `<div class="pair">${cell.dataset.cardI} &<br>${cell.dataset.cardJ}</div><div>Agreement: <strong>${cell.dataset.pct}%</strong></div>`; });
+      matrixTableWrap.addEventListener('mouseleave', () => matrixTooltip.style.display = 'none');
         showView(resultsView);
       }
       function loadPublicResults(uid, studyId) {
-        // Public results logic...
+        shareSection.classList.add('hidden'); db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => { const study = snap.val(); resultsStudyName.textContent = study?.name || ''; if (!study || !study.resultsPublic) { participantsDetails.innerHTML = '<p>These results are not publicly available.</p>'; activateTab('participants'); return; } db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => buildResultsUI(study, snap2.val() || {})); });
       }
 
       // Initial routing
@@ -490,3 +537,4 @@
   </script>
 </body>
 </html>
+
