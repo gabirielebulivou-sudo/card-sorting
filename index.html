@@ -643,14 +643,26 @@
       const tabCategories = document.getElementById('tabCategories');
       const tabMatrix = document.getElementById('tabMatrix');
 
-      // Tab controls (added)
-      function activateTab(name) {
-        tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
-        tabParticipants.classList.toggle('active', name === 'participants');
-        tabCategories.classList.toggle('active', name === 'categories');
-        tabMatrix.classList.toggle('active', name === 'matrix');
-      }
-      tabButtons.forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
+      // Tab controls (robust: uses event delegation on the results view)
+function activateTab(name) {
+  // Toggle active state on buttons
+  tabButtons.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === name);
+  });
+
+  // Toggle the panes
+  tabParticipants.classList.toggle('active', name === 'participants');
+  tabCategories.classList.toggle('active', name === 'categories');
+  tabMatrix.classList.toggle('active', name === 'matrix');
+}
+
+// Use event delegation so it still works if tabs rerender or listeners run early
+resultsView.addEventListener('click', (e) => {
+  const btn = e.target.closest('.tab-btn');
+  if (!btn) return;
+  e.preventDefault();
+  activateTab(btn.dataset.tab);
+});
 
       // Participant modals
       const participantModal = document.getElementById('participantModal');
@@ -1366,3 +1378,4 @@
   </script>
 </body>
 </html>
+
