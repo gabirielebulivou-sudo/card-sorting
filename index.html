@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pasifika Open Card Sorting Tool - Researcher Accounts</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  
   <style>
     :root {
       --primary: #4a6fa5;
@@ -15,15 +21,15 @@
       --border: #dee2e6;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif; }
-    body { background: #f5f7fa; color: var(--dark); line-height: 1.5; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif; }
+    body { background: #f5f7fa; color: var(--dark); line-height: 1.6; font-size: 16px; }
     .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
 
     header { background: var(--primary); color: white; padding: 1rem; text-align: center; margin-bottom: 2rem; border-radius: 5px; }
     .view { display: none; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,.1); margin-bottom: 2rem; }
     .view.active { display: block; }
 
-    .btn { padding: .5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; margin: .25rem; }
+    .btn { padding: .5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; margin: .25rem; font-size: 0.95rem; }
     .btn:hover { background: var(--secondary); }
     .btn:disabled { opacity: .6; cursor: not-allowed; }
     .btn-success { background: var(--success); }
@@ -35,7 +41,7 @@
     .badge { display: inline-block; padding: .1rem .4rem; border-radius: .25rem; font-size: .8rem; background: #edf2ff; color: #2f4e8b; border: 1px solid #dbe4ff; }
 
     label { display: block; margin: .25rem 0 .25rem; font-weight: 600; }
-    input, textarea { width: 100%; padding: .5rem; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 4px; }
+    input, textarea { width: 100%; padding: .5rem; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; }
 
     /* Create Study builder */
     .builder-wrap { border: 1px solid var(--border); border-radius: 8px; padding: .75rem; background: #fafafa; margin-top: .5rem; }
@@ -43,14 +49,14 @@
     .builder-rows { display: flex; flex-direction: column; gap: .5rem; }
     .builder-row { display: grid; grid-template-columns: 1fr 2fr auto; gap: .5rem; align-items: center; }
     .builder-row input { margin: 0; }
-    .row-del { background: transparent; border: none; color: #b23; font-weight: 700; cursor: pointer; padding: .25rem .5rem; }
+    .row-del { background: transparent; border: none; color: #b23; font-weight: 700; cursor: pointer; padding: .25rem .5rem; font-size: 1.2rem; }
     .row-del:hover { color: #922; }
 
     /* Cards */
-    .card { background: white; border: 1px solid var(--border); padding: 1rem; margin: .25rem; border-radius: 6px; cursor: grab; user-select: none; box-shadow: 0 1px 0 rgba(0,0,0,0.05); position: relative; }
+    .card { background: white; border: 1px solid var(--border); padding: 1rem; margin: .25rem; border-radius: 6px; cursor: grab; user-select: none; box-shadow: 0 1px 0 rgba(0,0,0,0.05); position: relative; font-size: 1rem; }
     .card:active { cursor: grabbing; }
     .card-text { padding-right: 24px; }
-    .info-icon { position: absolute; top: 6px; right: 6px; background: transparent; border: none; color: #6b7280; font-size: 16px; cursor: pointer; }
+    .info-icon { position: absolute; top: 6px; right: 6px; background: transparent; border: none; color: #6b7280; font-size: 18px; cursor: pointer; }
     .info-icon:focus { outline: 2px solid #9ec5fe; border-radius: 4px; }
     .card-desc { display: none; position: absolute; z-index: 10; right: 8px; top: 28px; background: #2c2c2c; color: #fff; padding: 8px 10px; border-radius: 6px; width: 260px; max-width: 70vw; box-shadow: 0 4px 16px rgba(0,0,0,.2); font-size: .9rem; }
     .card-desc.show { display: block; }
@@ -81,7 +87,7 @@
     /* Category card */
     .category { background: #fff; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.06); border: 1px solid var(--border); overflow: hidden; }
     .cat-header { background: #3d4038; color: #fff; padding: .5rem .75rem; font-weight: 600; text-align: center; position: relative; display: flex; align-items: center; justify-content: center; gap: .5rem; }
-    .cat-title-input { background: transparent; border: none; color: #fff; font-weight: 600; text-align: center; width: 70%; outline: none; padding: .15rem .25rem; border-bottom: 1px dashed rgba(255,255,255,.35); }
+    .cat-title-input { background: transparent; border: none; color: #fff; font-weight: 600; text-align: center; width: 70%; outline: none; padding: .15rem .25rem; border-bottom: 1px dashed rgba(255,255,255,.35); font-size: 1.05rem; }
     .cat-title-input::placeholder { color: #e7e7e7; opacity: .85; }
     .cat-icon-btn { background: transparent; border: none; color: #fff; cursor: pointer; padding: 0 .25rem; font-size: 1rem; }
     .cat-icon-btn:focus { outline: 2px solid #9ec5fe; border-radius: 4px; }
@@ -270,6 +276,9 @@
     <!-- Participant -->
     <div id="participantView" class="view" aria-live="polite">
       <h2 id="participantStudyName"></h2>
+      <p id="cardDescriptionInfo" class="muted hidden" style="text-align: center; margin-bottom: 1rem;">
+        Click the <span style="font-size: 1.2em; vertical-align: middle;">ℹ️</span> icon on a card to see its description.
+      </p>
       <div id="participantInstructions" class="instructions hidden"></div>
       <div id="participantStatus" class="muted" aria-live="polite"></div>
 
@@ -452,6 +461,7 @@
       const availableCards = document.getElementById('availableCards');
       const categoryColumns = participantView.querySelectorAll('.category-column');
       const participantStudyName = document.getElementById('participantStudyName');
+      const cardDescriptionInfo = document.getElementById('cardDescriptionInfo');
       const participantInstructions = document.getElementById('participantInstructions');
       const participantStatus = document.getElementById('participantStatus');
       const showInstructionsBtn = document.getElementById('showInstructionsBtn');
@@ -529,6 +539,7 @@
         return String(v ?? '')
           .replace(/<[^>]*>/g, '')
           .replace(/[\u0000-\u001F\u007F]/g, '')
+          .replace(/\s+/g, ' ') // FIXED: Collapse multiple spaces to one, allows single spaces
           .trim()
           .slice(0, 500);
       }
@@ -711,8 +722,8 @@
       function addCardRow(name = '', desc = '') {
         const row = document.createElement('div'); row.className = 'builder-row';
         row.innerHTML = `
-          <input type="text" class="row-name" placeholder="Card name" value="${sanitizeText(name).replace(/"/g, '&quot;')}" />
-          <input type="text" class="row-desc" placeholder="Description (shown on ℹ️)" value="${sanitizeText(desc).replace(/"/g, '&quot;')}" />
+          <input type="text" class="row-name" placeholder="Card name" value="${name.replace(/"/g, '&quot;')}" />
+          <input type="text" class="row-desc" placeholder="Description (shown on ℹ️)" value="${desc.replace(/"/g, '&quot;')}" />
           <button type="button" class="row-del" title="Remove">×</button>
         `;
         row.querySelector('.row-del').onclick = () => row.remove();
@@ -803,29 +814,22 @@
         cat.innerHTML = `
           <div class="cat-header" tabindex="0" role="button" aria-expanded="true">
             <button class="cat-icon-btn cat-delete" title="Delete" aria-label="Delete category">🗑</button>
-            <input class="cat-title-input" type="text" placeholder="Click to rename" value="${sanitizeText(name)}" maxlength="80" aria-label="Category name" />
+            <input class="cat-title-input" type="text" placeholder="Click to rename" value="" maxlength="80" aria-label="Category name" />
           </div>
           <div class="cat-body"></div>
           <div class="cat-footer">0 CARDS</div>
         `;
         targetColumn.appendChild(cat);
 
-        const header = cat.querySelector('.cat-header');
         const input = cat.querySelector('.cat-title-input');
         const delBtn = cat.querySelector('.cat-delete');
         const body = cat.querySelector('.cat-body');
 
-        // Allow spaces in input
-        input.addEventListener('keydown', (e) => e.stopPropagation());
-        input.addEventListener('input', () => { input.value = sanitizeText(input.value).slice(0, 80); });
-
-        // Fixed: Removed spacebar from this event to allow typing spaces
-        header.addEventListener('keydown', (e) => {
-          if (e.target === input) return;
-          if (e.key === 'Enter') { e.preventDefault(); input.focus(); }
-          else if (e.key === 'Delete') { e.preventDefault(); deleteCategory(cat); }
+        // Allow spaces in input and sanitize on the fly
+        input.addEventListener('input', () => { 
+            input.value = sanitizeText(input.value).slice(0, 80); 
         });
-
+        
         delBtn.onclick = () => deleteCategory(cat);
         
         new Sortable(body, {
@@ -846,12 +850,6 @@
         
         updateColumnPlaceholders();
         return cat;
-      }
-
-      function attachCardKeyboard(el) {
-        el.setAttribute('tabindex', '0');
-        el.setAttribute('role', 'button');
-        el.setAttribute('aria-label', 'Card: ' + (el.querySelector('.card-text')?.textContent || el.textContent));
       }
 
       function createCardEl(text, desc) {
@@ -882,7 +880,6 @@
           card.appendChild(btn);
           card.appendChild(tip);
         }
-        attachCardKeyboard(card);
         return card;
       }
 
@@ -896,6 +893,11 @@
           participantStudyName.textContent = study.name || '';
           if (study.instructions) { participantInstructions.textContent = study.instructions; participantInstructions.classList.remove('hidden'); }
           else { participantInstructions.textContent = ''; participantInstructions.classList.add('hidden'); }
+
+          // NEW: Show info text if descriptions are enabled
+          if (study.hasDescriptions) {
+              cardDescriptionInfo.classList.remove('hidden');
+          }
 
           availableCards.innerHTML = '';
           const cardsArr = Array.isArray(study.cards) ? study.cards : [];
@@ -1000,7 +1002,6 @@
           return;
         }
         if (cats.length === 0 && availableCards.children.length === 0) {
-            // All cards are sorted but maybe categories were deleted. Let's check.
             if (!confirm("You haven't created any categories. Are you sure you want to finish?")) { return; }
         }
 
