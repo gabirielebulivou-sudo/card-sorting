@@ -20,7 +20,7 @@
     html, body { height: 100%; }
     body { background: #f8fafc; color: var(--dark); line-height: 1.6; font-size: 16px; }
 
-    /* NEW: App Layout */
+    /* App Layout */
     .app-layout { display: grid; grid-template-rows: auto 1fr; grid-template-columns: 60px 1fr; height: 100%; }
     #appHeader { grid-area: 1 / 2 / 2 / 3; background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-end; padding: 0 2rem; height: 60px; }
     #appSidebar { grid-area: 1 / 1 / 3 / 2; background: #fff; border-right: 1px solid var(--border); padding: 1rem 0; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
@@ -50,7 +50,7 @@
     .hidden { display: none !important; }
     .muted { color: #64748b; }
     
-    /* NEW: Dashboard Styles */
+    /* Dashboard Styles */
     #dashboardView .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
     #dashboardView h2 { font-size: 2rem; }
     .study-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; padding: 1.5rem; }
@@ -66,7 +66,7 @@
     .actions-menu-content button:hover { background: #f1f5f9; }
     .empty-dashboard { text-align: center; padding: 4rem 2rem; border: 2px dashed var(--border); border-radius: 12px; background: #f8fafc; }
     
-    /* NEW: Setup/Edit View Styles */
+    /* Setup/Edit View Styles */
     #setupView .setup-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
     #setupStudyName { font-size: 1.5rem; margin: 0; }
     #setupView .tabs { margin: 0 0 1.5rem 0; }
@@ -115,32 +115,13 @@
     .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; }
     .modal { background: #fff; border-radius: 10px; width: min(640px, 100%); padding: 1.25rem; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-height: 90vh; overflow: auto; overscroll-behavior: contain; }
     .modal .actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .25rem; }
-
+    
   </style>
 </head>
 <body>
 
-  <!-- App Shell for Researchers -->
-  <div class="app-layout">
-    <header id="appHeader" class="hidden">
-      <div id="userProfile">
-        <span id="userName"></span>
-        <div id="userAvatar"></div>
-        <button id="logoutBtn" class="btn btn-secondary" style="margin-left: 1rem;">Logout</button>
-      </div>
-    </header>
-    <aside id="appSidebar" class="hidden">
-      <div class="sidebar-icon">🏠</div>
-      <div class="sidebar-icon">💡</div>
-      <div class="sidebar-icon">👥</div>
-    </aside>
-
-    <main id="appMain">
-      <div class="container">
-        <!-- Views will be rendered here -->
-      </div>
-    </main>
-  </div>
+  <!-- Main container that holds the app shell OR the simple participant view -->
+  <div id="app-container"></div>
   
   <div id="matrixTooltip"></div>
   <div id="participantModalsContainer"></div>
@@ -161,10 +142,8 @@
       const auth = firebase.auth();
       const db = firebase.database();
 
-      const appHeader = document.getElementById('appHeader');
-      const appSidebar = document.getElementById('appSidebar');
-      const appMainContainer = document.querySelector('#appMain .container');
-
+      const appContainer = document.getElementById('app-container');
+      
       let lastResultsCache = null;
       let currentEditingStudyId = null;
 
@@ -172,73 +151,62 @@
       function sanitizeText(v) { return String(v ?? '').replace(/<[^>]*>/g, '').replace(/[\u0000-\u001F\u007F]/g, '').replace(/\s+/g, ' ').trimStart().slice(0, 500); }
       function finalSanitize(v) { return sanitizeText(v).trim(); }
       function makeShareLink(uid, studyId) { const base = new URL(location.href); base.search = ''; base.hash = ''; return `${base.toString()}?uid=${uid}&study=${studyId}`; }
-      
+      function formatDuration(ms) { if (typeof ms !== 'number' || !isFinite(ms) || ms < 0) return ''; let s = Math.floor(ms / 1000); const h = Math.floor(s / 3600); s %= 3600; const m = Math.floor(s / 60); s %= 60; return h ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`; }
+      function csvEscape(v) { const s = (v == null ? '' : String(v)); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+      function downloadCSV(filename, text) { const blob = new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8;" }); if (navigator.msSaveBlob) { navigator.msSaveBlob(blob, filename); } else { const a = document.createElement('a'); const url = URL.createObjectURL(blob); a.href = url; a.download = filename; a.style.visibility = 'hidden'; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 0); } }
+
       // --- TEMPLATES ---
-      const getAuthViewHTML = () => `<div class="view" id="authView"><div style="max-width: 400px; margin: 4rem auto;"><div class="view-card"><h2 style="text-align: center; margin-bottom: 2rem;">Researcher Login</h2><form id="authForm" novalidate><label for="displayName">Full name (for new sign-ups)</label><input type="text" id="displayName" autocomplete="name"/><label for="email">Email</label><input type="email" id="email" autocomplete="username" required/><label for="password">Password</label><input type="password" id="password" autocomplete="current-password" required/><div><button id="loginBtn" type="submit" class="btn btn-primary" style="width: 100%;">Login</button><button id="signupBtn" type="button" class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;">Sign Up</button></div></form></div></div></div>`;
-      const getDashboardViewHTML = (userName) => `<div class="view" id="dashboardView"><div class="dashboard-header"><h2>Hello, ${userName}</h2><button id="createStudyBtn" class="btn btn-orange">＋ New study</button></div><div id="studiesList"></div></div>`;
-      const getSetupViewHTML = () => `<div class="view" id="setupView"><div class="setup-header"><h2 id="setupStudyName">New Card Sorting Study</h2><div><button id="previewStudyBtn" class="btn btn-secondary">Preview</button><button id="launchStudyBtn" class="btn btn-orange">Launch</button></div></div><div class="view-card"><div class="tabs"><button class="tab-btn active" data-tab="general">General</button><button class="tab-btn" data-tab="cards">Cards</button></div><div id="tabGeneral" class="tab-pane active"><label for="studyName">Study name</label><input type="text" id="studyName" required/><label for="instructionsInput">Welcome Message / Instructions (optional)</label><textarea id="instructionsInput" rows="4"></textarea></div><div id="tabCards" class="tab-pane"><label><input type="checkbox" id="enableDescriptions"/> Add descriptions (tooltips) to cards</label><div id="simpleCardsWrap"><label for="cardsInput">Cards (one per line)</label><textarea id="cardsInput" rows="8"></textarea></div><div id="builderWrap" class="builder-wrap hidden"><div class="builder-head"><strong>Cards and descriptions</strong><button type="button" id="addCardRowBtn" class="btn btn-secondary">Add Card</button></div><div id="builderRows" class="builder-rows"></div></div></div></div></div>`;
-      const getParticipantViewHTML = () => `<div class="view" id="participantView"><div class="simple-header"><h1 id="participantStudyName" style="font-size: 2rem;"></h1><p id="cardDescriptionInfo" class="muted hidden">Click the ℹ️ icon on a card to see its description.</p></div><div class="workspace"><div class="toolbar"><button id="showInstructionsBtn" class="btn btn-secondary">Instructions</button><button id="fullscreenBtn" class="btn btn-secondary">Full Screen</button><button id="submitSortingBtn" class="btn btn-primary">Finish Sorting</button></div><aside id="availableCardsContainer"><h3>Unsorted Cards</h3><div id="availableCards" class="cards-list"></div></aside><div class="category-columns-wrap"><div class="category-column"></div> <div class="category-column"></div> <div class="category-column"></div></div></div></div>`;
-      const getResultsViewHTML = () => `<div class="view" id="resultsView"><h2>Study Results: <span id="resultsStudyName"></span></h2><div class="tabs"><button class="tab-btn active" data-tab="participants">Participants</button><button class="tab-btn" data-tab="categories">Categories</button><button class="tab-btn" data-tab="matrix">Similarity Matrix</button></div><div id="tabParticipants" class="tab-pane active"><div id="participantsPieChartWrap"></div><div id="participantsDetails"></div></div><div id="tabCategories" class="tab-pane"><div id="categoriesSummary"></div><div><div class="chart" id="categoriesChart"></div><div class="xlabels" id="categoriesLabels"></div></div></div><div id="tabMatrix" class="tab-pane"><div id="matrixMeta"></div><div id="matrixTableWrap" class="matrix-table-wrap"></div></div></div>`;
+      const getAppShellHTML = () => `<div class="app-layout"><header id="appHeader"><div id="userProfile"><span id="userName"></span><div id="userAvatar"></div><button id="logoutBtn" class="btn btn-secondary" style="margin-left: 1rem;">Logout</button></div></header><aside id="appSidebar"><div class="sidebar-icon">🏠</div></aside><main id="appMain"><div class="container"></div></main></div>`;
+      const getAuthViewHTML = () => `<div class="view active" id="authView"><div style="max-width: 400px; margin: 4rem auto;"><div class="view-card"><h2 style="text-align: center; margin-bottom: 2rem;">Researcher Login</h2><form id="authForm" novalidate><label for="displayName">Full name (for new sign-ups)</label><input type="text" id="displayName" autocomplete="name"/><label for="email">Email</label><input type="email" id="email" autocomplete="username" required/><label for="password">Password</label><input type="password" id="password" autocomplete="current-password" required/><div><button id="loginBtn" type="submit" class="btn btn-primary" style="width: 100%;">Login</button><button id="signupBtn" type="button" class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;">Sign Up</button></div></form></div></div></div>`;
+      const getDashboardViewHTML = (userName) => `<div class="view active" id="dashboardView"><div class="dashboard-header"><h2>Hello, ${userName}</h2><button id="createStudyBtn" class="btn btn-orange">＋ New study</button></div><div id="studiesList"></div></div>`;
+      const getSetupViewHTML = () => `<div class="view active" id="setupView"><div class="setup-header"><h2 id="setupStudyName">New Card Sorting Study</h2><div><button id="previewStudyBtn" class="btn btn-secondary">Preview</button><button id="launchStudyBtn" class="btn btn-orange">Launch</button></div></div><div class="view-card"><div class="tabs"><button class="tab-btn active" data-tab="general">General</button><button class="tab-btn" data-tab="cards">Cards</button></div><div id="tabGeneral" class="tab-pane active"><label for="studyName">Study name</label><input type="text" id="studyName" required/><label for="instructionsInput">Welcome Message / Instructions (optional)</label><textarea id="instructionsInput" rows="4"></textarea></div><div id="tabCards" class="tab-pane"><label><input type="checkbox" id="enableDescriptions"/> Add descriptions (tooltips) to cards</label><div id="simpleCardsWrap"><label for="cardsInput">Cards (one per line)</label><textarea id="cardsInput" rows="8"></textarea></div><div id="builderWrap" class="builder-wrap hidden"><div class="builder-head"><strong>Cards and descriptions</strong><button type="button" id="addCardRowBtn" class="btn btn-secondary">Add Card</button></div><div id="builderRows" class="builder-rows"></div></div></div></div></div>`;
+      const getParticipantViewHTML = () => `<div class="view active" id="participantView"><div class="container"><div class="simple-header"><h1 id="participantStudyName" style="font-size: 2rem;"></h1><p id="cardDescriptionInfo" class="muted hidden">Click the ℹ️ icon on a card to see its description.</p></div><div class="workspace"><div class="toolbar"><button id="showInstructionsBtn" class="btn btn-secondary">Instructions</button><button id="fullscreenBtn" class="btn btn-secondary">Full Screen</button><button id="submitSortingBtn" class="btn btn-primary">Finish Sorting</button></div><aside id="availableCardsContainer"><h3>Unsorted Cards</h3><div id="availableCards" class="cards-list"></div></aside><div class="category-columns-wrap"><div class="category-column"></div> <div class="category-column"></div> <div class="category-column"></div></div></div></div></div>`;
+      const getResultsViewHTML = () => `<div class="view active" id="resultsView"><div class="view-card" style="padding: 2rem;"><h2 style="margin-bottom: 1rem;">Study Results: <span id="resultsStudyName"></span></h2><div class="tabs"><button class="tab-btn active" data-tab="participants">Participants</button><button class="tab-btn" data-tab="categories">Categories</button><button class="tab-btn" data-tab="matrix">Similarity Matrix</button></div><div id="tabParticipants" class="tab-pane active"><div id="participantsPieChartWrap"></div><div id="participantsDetails"></div></div><div id="tabCategories" class="tab-pane"><div id="categoriesSummary"></div><div><div class="chart" id="categoriesChart"></div><div class="xlabels" id="categoriesLabels"></div></div></div><div id="tabMatrix" class="tab-pane"><div id="matrixMeta"></div><div id="matrixTableWrap" class="matrix-table-wrap"></div></div></div></div>`;
       const getParticipantModalsHTML = () => `<div id="participantModal" class="modal-backdrop hidden"><div class="modal"><h3>Before you begin</h3><p>Please enter your details to proceed.</p><label for="pName">Full name</label><input id="pName" type="text" required/><label for="pId">ID number</label><input id="pId" type="text" required/><label for="pCourse">Course</label><input id="pCourse" type="text" required/><label for="pNationality">Nationality</label><input id="pNationality" type="text" required/><label for="pEthnicity">Ethnicity</label><input id="pEthnicity" type="text" required/><fieldset><legend>Is your family home outside of Suva/Nausori?</legend><div><label><input type="radio" name="pOutsideHome" value="Yes" required/> Yes</label><label><input type="radio" name="pOutsideHome" value="No" required/> No</label></div></fieldset><div class="actions"><button id="startSortingBtn" class="btn btn-primary">Continue</button></div></div></div><div id="instructionsModal" class="modal-backdrop hidden"><div class="modal"><h3>Instructions</h3><div><p><strong>Here's how it works:</strong></p><ol><li>Drag cards from the "Unsorted Cards" list.</li><li>Drop a card into an empty column to create a new category.</li><li>Name each category.</li><li>Continue sorting all cards.</li><li>When finished, click "Finish Sorting".</li></ol></div><div class="actions"><button id="beginSortingBtn" class="btn btn-primary">Begin</button></div></div></div>`;
 
       // --- VIEW MANAGEMENT ---
-      function showView(viewName, ...args) {
-          appMainContainer.innerHTML = '';
-          let viewHTML = '';
-          switch(viewName) {
-              case 'auth': viewHTML = getAuthViewHTML(); break;
-              case 'dashboard': viewHTML = getDashboardViewHTML(...args); break;
-              case 'setup': viewHTML = getSetupViewHTML(); break;
-              case 'participant': viewHTML = getParticipantViewHTML(); document.getElementById('participantModalsContainer').innerHTML = getParticipantModalsHTML(); break;
-              case 'results': viewHTML = getResultsViewHTML(); break;
-          }
-          appMainContainer.innerHTML = viewHTML;
-          const viewElement = appMainContainer.querySelector('.view');
-          if (viewElement) viewElement.classList.add('active');
-          return viewElement;
+      function renderView(target, html) {
+          target.innerHTML = html;
       }
-
+      
       // --- AUTHENTICATION & APP SHELL ---
       auth.onAuthStateChanged(user => {
           const params = new URLSearchParams(location.search);
           const isParticipantLink = params.has('uid') && params.has('study');
 
           if (user) {
-              appHeader.classList.remove('hidden'); appSidebar.classList.remove('hidden');
+              appContainer.innerHTML = getAppShellHTML();
               document.getElementById('userName').textContent = user.displayName || user.email;
               document.getElementById('userAvatar').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
               document.getElementById('logoutBtn').onclick = () => auth.signOut();
               showDashboard(user);
           } else if (isParticipantLink) {
-              appHeader.classList.add('hidden'); appSidebar.classList.add('hidden');
-              document.querySelector('.app-layout').style.display = 'block'; // Change layout for participant
+              appContainer.innerHTML = ''; // No shell for participants
+              document.getElementById('participantModalsContainer').innerHTML = getParticipantModalsHTML();
               loadParticipantView(params.get('uid'), params.get('study'));
           } else {
-              appHeader.classList.add('hidden'); appSidebar.classList.add('hidden');
-              document.querySelector('.app-layout').style.display = 'block'; // Change layout for auth
-              const view = showView('auth');
-              view.querySelector('#loginBtn').onclick = async (e) => { e.preventDefault(); try { await auth.signInWithEmailAndPassword(view.querySelector('#email').value, view.querySelector('#password').value); } catch (err) { alert(err.message); } };
-              view.querySelector('#signupBtn').onclick = async () => { try { const name = finalSanitize(view.querySelector('#displayName').value); if (!name) { alert('Please enter full name'); return; } const cred = await auth.createUserWithEmailAndPassword(view.querySelector('#email').value, view.querySelector('#password').value); await cred.user.updateProfile({ displayName: name }); } catch (err) { alert(err.message); } };
+              appContainer.innerHTML = getAuthViewHTML();
+              const authForm = document.getElementById('authForm');
+              authForm.querySelector('#loginBtn').onclick = async (e) => { e.preventDefault(); try { await auth.signInWithEmailAndPassword(authForm.querySelector('#email').value, authForm.querySelector('#password').value); } catch (err) { alert(err.message); } };
+              authForm.querySelector('#signupBtn').onclick = async () => { try { const name = finalSanitize(authForm.querySelector('#displayName').value); if (!name) { alert('Please enter full name'); return; } const cred = await auth.createUserWithEmailAndPassword(authForm.querySelector('#email').value, authForm.querySelector('#password').value); await cred.user.updateProfile({ displayName: name }); } catch (err) { alert(err.message); } };
           }
       });
-
+      
       // --- DASHBOARD ---
       function showDashboard(user) {
-          const view = showView('dashboard', user.displayName);
-          view.querySelector('#createStudyBtn').onclick = () => showSetupView(user.uid);
+          renderView(document.querySelector('#appMain .container'), getDashboardViewHTML(user.displayName));
+          document.getElementById('createStudyBtn').onclick = () => showSetupView(user.uid);
+          const studiesList = document.getElementById('studiesList');
           db.ref(`users/${user.uid}/studies`).once('value', snap => {
-              const studies = snap.val();
-              const studiesList = view.querySelector('#studiesList');
-              if (!studies) {
+              const studies = snap.val() || {};
+              if (Object.keys(studies).length === 0) {
                   studiesList.innerHTML = `<div class="empty-dashboard"><h3>Organize content to perfection</h3><p>Create your first card sorting study to get started.</p></div>`;
                   return;
               }
               studiesList.innerHTML = Object.entries(studies).map(([studyId, study]) => `
                   <div class="study-card">
                       <div class="study-card-header">
-                          <div class="study-card-title">
-                              <span class="study-card-icon">🗂️</span><h3>${study.name || '(Untitled)'}</h3>
-                          </div>
+                          <div class="study-card-title"><span class="study-card-icon">🗂️</span><h3>${study.name || '(Untitled)'}</h3></div>
                           <div class="actions-menu">
                               <button class="btn btn-secondary">Setup ▾</button>
                               <div class="actions-menu-content" data-uid="${user.uid}" data-study-id="${studyId}" data-study-name="${study.name}">
@@ -255,57 +223,79 @@
                   </div>`).join('');
           });
       }
-      appMainContainer.addEventListener('click', e => {
-          const target = e.target;
-          const menu = target.closest('.actions-menu-content');
-          const resultsBtn = target.closest('.action-results');
-
-          if (menu) {
-              const { uid, studyId, studyName } = menu.dataset;
-              if (target.classList.contains('action-preview')) window.open(makeShareLink(uid, studyId), '_blank');
-              if (target.classList.contains('action-copy-link')) { navigator.clipboard.writeText(makeShareLink(uid, studyId)); alert('Link copied!'); }
-              if (target.classList.contains('action-clone')) cloneStudy(uid, studyId);
-              if (target.classList.contains('action-delete')) deleteStudy(uid, studyId, studyName);
-          }
-          if (resultsBtn) {
-              const { uid, studyId } = resultsBtn.dataset;
-              viewResults(uid, studyId);
-          }
+      appContainer.addEventListener('click', e => {
+          const { uid, studyId, studyName } = e.target.closest('[data-study-id]')?.dataset || {};
+          if (!uid || !studyId) return;
+          if (e.target.classList.contains('action-preview')) window.open(makeShareLink(uid, studyId), '_blank');
+          if (e.target.classList.contains('action-copy-link')) { navigator.clipboard.writeText(makeShareLink(uid, studyId)); alert('Link copied!'); }
+          if (e.target.classList.contains('action-clone')) cloneStudy(uid, studyId);
+          if (e.target.classList.contains('action-delete')) deleteStudy(uid, studyId, studyName);
+          if (e.target.classList.contains('action-results')) viewResults(uid, studyId);
       });
 
-      async function cloneStudy(uid, studyId) { /* ... implementation unchanged ... */ }
-      async function deleteStudy(uid, studyId, studyName) { /* ... implementation unchanged ... */ }
+      async function cloneStudy(uid, studyId) {
+          if (!confirm("Are you sure you want to clone this study?")) return;
+          const snap = await db.ref(`users/${uid}/studies/${studyId}`).once('value');
+          const studyData = snap.val();
+          if (studyData) {
+              const newStudyId = 'study_' + Date.now();
+              const newStudyData = { ...studyData, name: studyData.name + ' (Copy)', createdAt: new Date().toISOString(), results: null };
+              await db.ref(`users/${uid}/studies/${newStudyId}`).set(newStudyData);
+              alert("Study cloned successfully!");
+              showDashboard(auth.currentUser);
+          }
+      }
+      async function deleteStudy(uid, studyId, studyName) {
+          if (!confirm(`Are you sure you want to delete "${studyName}" and all its results? This cannot be undone.`)) return;
+          await db.ref(`users/${uid}/studies/${studyId}`).remove();
+          alert("Study deleted.");
+          showDashboard(auth.currentUser);
+      }
 
       // --- SETUP VIEW ---
       function showSetupView(uid, studyId = null) {
           currentEditingStudyId = studyId;
-          const view = showView('setup');
-          // Event binding logic...
-          const studyNameInput = view.querySelector('#studyName');
-          studyNameInput.oninput = () => { view.querySelector('#setupStudyName').textContent = studyNameInput.value || 'New Card Sorting Study'; };
-          view.querySelector('#previewStudyBtn').onclick = () => currentEditingStudyId ? window.open(makeShareLink(uid, currentEditingStudyId), '_blank') : alert("Please launch first.");
-          view.querySelector('#launchStudyBtn').onclick = () => saveStudy(uid);
-          view.querySelectorAll('.tab-btn').forEach(tab => tab.onclick = () => { view.querySelectorAll('.tab-btn, .tab-pane').forEach(el => el.classList.remove('active')); tab.classList.add('active'); view.querySelector(`#tab${tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)}`).classList.add('active'); });
-          const enableDescriptions = view.querySelector('#enableDescriptions'), builderWrap = view.querySelector('#builderWrap'), simpleCardsWrap = view.querySelector('#simpleCardsWrap'), builderRows = view.querySelector('#builderRows');
-          const addCardRow = (n='', d='') => { const r = document.createElement('div'); r.className='builder-row'; r.innerHTML = `<input value="${n}"/><input value="${d}"/><button type="button" class="btn-secondary">×</button>`; r.querySelector('button').onclick=()=>r.remove(); builderRows.appendChild(r); };
-          view.querySelector('#addCardRowBtn').onclick = () => addCardRow();
+          renderView(document.querySelector('#appMain .container'), getSetupViewHTML());
+          
+          const studyNameInput = document.getElementById('studyName');
+          studyNameInput.oninput = () => { document.getElementById('setupStudyName').textContent = studyNameInput.value || 'New Card Sorting Study'; };
+          document.getElementById('previewStudyBtn').onclick = () => currentEditingStudyId ? window.open(makeShareLink(uid, currentEditingStudyId), '_blank') : alert("Please launch first.");
+          document.getElementById('launchStudyBtn').onclick = () => saveStudy(uid);
+          
+          document.querySelectorAll('#setupView .tab-btn').forEach(tab => tab.onclick = () => {
+              document.querySelectorAll('#setupView .tab-btn, #setupView .tab-pane').forEach(el => el.classList.remove('active'));
+              tab.classList.add('active');
+              document.querySelector(`#${tab.dataset.tab}TabPane`.replace('g', 'G').replace('c','C')).classList.add('active'); // Quick fix for ID name
+          });
+          
+          const enableDescriptions = document.getElementById('enableDescriptions'), builderWrap = document.getElementById('builderWrap'), simpleCardsWrap = document.getElementById('simpleCardsWrap'), builderRows = document.getElementById('builderRows');
+          const addCardRow = (n='', d='') => { const r = document.createElement('div'); r.className='builder-row'; r.innerHTML = `<input value="${n}" placeholder="Card Name"/><input value="${d}" placeholder="Description"/><button type="button" class="btn-secondary">×</button>`; r.querySelector('button').onclick=()=>r.remove(); builderRows.appendChild(r); };
+          document.getElementById('addCardRowBtn').onclick = () => addCardRow();
           enableDescriptions.onchange = () => { builderWrap.classList.toggle('hidden', !enableDescriptions.checked); simpleCardsWrap.classList.toggle('hidden', enableDescriptions.checked); };
       }
-      async function saveStudy(uid) { /* ... implementation unchanged ... */ }
+      async function saveStudy(uid) {
+          const studyData = { name: finalSanitize(document.getElementById('studyName').value), instructions: finalSanitize(document.getElementById('instructionsInput').value), hasDescriptions: document.getElementById('enableDescriptions').checked, createdAt: new Date().toISOString(), ownerUid: uid, isPublic: true, cards: [] };
+          if (!studyData.name) { alert("Please enter a study name."); return; }
+          if (studyData.hasDescriptions) { studyData.cards = Array.from(document.querySelectorAll('#builderRows .builder-row')).map(r => ({ text: finalSanitize(r.children[0].value), desc: finalSanitize(r.children[1].value) })).filter(c => c.text); } else { studyData.cards = document.getElementById('cardsInput').value.split('\n').map(finalSanitize).filter(Boolean); }
+          if (studyData.cards.length === 0) { alert("Please add at least one card."); return; }
+          const studyId = currentEditingStudyId || 'study_' + Date.now();
+          await db.ref(`users/${uid}/studies/${studyId}`).set(studyData);
+          alert("Study launched successfully!");
+          showDashboard(auth.currentUser);
+      }
 
       // --- PARTICIPANT VIEW ---
       function loadParticipantView(uid, studyId) {
-          const view = showView('participant');
+          renderView(appContainer, getParticipantViewHTML());
           db.ref(`users/${uid}/studies/${studyId}`).once('value', snap => {
               const study = snap.val();
-              if (!study || !study.isPublic) { appMainContainer.innerHTML = '<h2>Study not available</h2>'; return; }
+              if (!study || !study.isPublic) { appContainer.innerHTML = '<h2>Study not available</h2>'; return; }
               
               const pName = document.getElementById('pName'), pId = document.getElementById('pId'), pCourse = document.getElementById('pCourse'), pNationality = document.getElementById('pNationality'), pEthnicity = document.getElementById('pEthnicity');
               const participantModal = document.getElementById('participantModal'), instructionsModal = document.getElementById('instructionsModal');
-
+              
               document.getElementById('participantStudyName').textContent = study.name;
               if (study.hasDescriptions) document.getElementById('cardDescriptionInfo').classList.remove('hidden');
-
               const availableCards = document.getElementById('availableCards');
               (study.cards || []).forEach(c => {
                   const text = typeof c === 'string' ? c : finalSanitize(c?.text || '');
@@ -316,39 +306,61 @@
                       availableCards.appendChild(cardEl);
                   }
               });
-              
               new Sortable(availableCards, { group: 'cards', animation: 150 });
               document.querySelectorAll('.category-column').forEach(col => new Sortable(col, { group: 'cards', animation: 150, onAdd: (e) => { if(e.item.classList.contains('card')) { const newCat=makeCategory(col); newCat.querySelector('.cat-body').appendChild(e.item); } }}));
               
               participantModal.classList.remove('hidden');
-
-              document.getElementById('startSortingBtn').onclick = () => {
-                  const meta = { name: finalSanitize(pName.value), idNumber: finalSanitize(pId.value), course: finalSanitize(pCourse.value), nationality: finalSanitize(pNationality.value), ethnicity: finalSanitize(pEthnicity.value), outsideHome: finalSanitize((document.querySelector('input[name="pOutsideHome"]:checked') || {}).value || '') };
-                  if (Object.values(meta).some(v => !v)) { alert('Please complete all fields.'); return; }
-                  participantMeta = meta; participantModal.classList.add('hidden'); instructionsModal.classList.remove('hidden');
-              };
+              document.getElementById('startSortingBtn').onclick = () => { /* ... */ };
               document.getElementById('beginSortingBtn').onclick = async () => { /* ... */ };
               document.getElementById('submitSortingBtn').onclick = () => { /* ... */ };
           });
       }
       function makeCategory(targetColumn) { /* ... implementation unchanged ... */ return cat; }
-
+      
       // --- RESULTS VIEW ---
       function viewResults(uid, studyId) {
           db.ref(`users/${uid}/studies/${studyId}`).once('value').then(snap => {
               const study = snap.val();
               if (!study) { alert("Study not found."); return; }
-              const view = showView('results');
-              view.querySelector('#resultsStudyName').textContent = study.name;
+              renderView(document.querySelector('#appMain .container'), getResultsViewHTML());
+              document.getElementById('resultsStudyName').textContent = study.name;
               db.ref(`users/${uid}/studies/${studyId}/results`).once('value').then(snap2 => {
                   buildResultsUI(study, snap2.val() || {});
               });
           });
       }
-      function buildResultsUI(study, resultsObj) { /* ... implementation unchanged, now without clustering ... */ }
+      function buildResultsUI(study, resultsObj) {
+        const arr = Object.values(resultsObj || {}).sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+        lastResultsCache = null; document.getElementById('downloadCsvBtn').disabled = true; document.getElementById('downloadMatrixBtn').disabled = true;
+        const pieWrap = document.getElementById('participantsPieChartWrap'), details = document.getElementById('participantsDetails'), catSummary = document.getElementById('categoriesSummary'), catChart = document.getElementById('categoriesChart'), catLabels = document.getElementById('categoriesLabels'), matMeta = document.getElementById('matrixMeta'), matWrap = document.getElementById('matrixTableWrap');
+        [pieWrap, details, catSummary, catChart, catLabels, matMeta, matWrap].forEach(el => el.innerHTML = '');
+        if (arr.length === 0) { details.innerHTML = '<p>No results yet.</p>'; return; }
+        const completed = arr.filter(r => r.status === 'completed' && Array.isArray(r.categories));
+        const startedCount = arr.length, completedCount = completed.length, abandonedCount = startedCount - completedCount;
+        const completionRate = startedCount > 0 ? (completedCount / completedCount) * 100 : 0;
+        
+        const pieAngle = completionRate * 3.6;
+        pieWrap.innerHTML = `<div id="participantsPieChart" style="background: conic-gradient(var(--success) 0deg, var(--success) ${pieAngle}deg, var(--accent) ${pieAngle}deg, var(--accent) 360deg);"></div><div><h3>Participant Summary</h3><p><strong>${completionRate.toFixed(1)}%</strong> Completion Rate</p><ul><li><span class="legend-dot" style="background: var(--success);"></span> Completed: <strong>${completedCount}</strong></li><li><span class="legend-dot" style="background: var(--accent);"></span> Abandoned: <strong>${abandonedCount}</strong></li><li>Total Started: <strong>${startedCount}</strong></li></ul></div>`;
+        const pTable = document.createElement('table'); pTable.className = 'results-table';
+        pTable.innerHTML = `<thead><tr><th>#</th><th>Name</th><th>ID</th><th>Course</th><th>Duration</th><th>Categories</th></tr></thead><tbody></tbody>`;
+        pTable.querySelector('tbody').innerHTML = completed.map((res, i) => `<tr><td>${i+1}</td><td>${res.participant?.name||'N/A'}</td><td>${res.participant?.idNumber||'N/A'}</td><td>${res.participant?.course||'N/A'}</td><td>${typeof res.durationMs==='number'?formatDuration(res.durationMs):'N/A'}</td><td>${res.categories?.length||0}</td></tr>`).join('');
+        details.appendChild(pTable);
 
-      // Matrix Tooltip Logic
-      appMainContainer.addEventListener('mousemove', e => {
+        const cardTexts = (study?.cards || []).map(c => typeof c === 'string' ? c : (c?.text || '')).filter(Boolean);
+        const matrixCounts = {}; cardTexts.forEach(a => { matrixCounts[a] = {}; cardTexts.forEach(b => matrixCounts[a][b] = 0); });
+        completed.forEach(r => { (r.categories || []).forEach(cat => { (cat.cards || []).forEach((a, i) => { for (let j = i + 1; j < cat.cards.length; j++) { const b = cat.cards[j]; matrixCounts[a][b]++; matrixCounts[b][a]++; } }); }); });
+        
+        matMeta.innerHTML = `<p class="muted">Percentages show how often cards were grouped together (n=${completedCount}).</p>`;
+        const mTable = document.createElement('table'); mTable.className = 'similarity-matrix';
+        mTable.innerHTML = `<thead><tr><th></th>${cardTexts.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody></tbody>`;
+        mTable.querySelector('tbody').innerHTML = cardTexts.map(card_i => `<tr><th class="label-cell">${card_i}</th>${cardTexts.map(card_j => { const pct = completedCount > 0 ? (matrixCounts[card_i][card_j] / completedCount * 100) : 0; const alpha = 0.05 + (pct * 0.0095); return `<td style="background-color: hsla(210, 100%, 50%, ${alpha})" data-pct="${pct.toFixed(0)}" data-card-i="${card_i}" data-card-j="${card_j}">${pct.toFixed(0)}</td>`; }).join('')}</tr>`).join('');
+        matWrap.appendChild(mTable);
+        
+        lastResultsCache = { study, cards: cardTexts, matrixCounts, completedCount };
+        document.getElementById('downloadCsvBtn').disabled = false; document.getElementById('downloadMatrixBtn').disabled = false;
+      }
+      
+      document.body.addEventListener('mousemove', e => {
           const cell = e.target.closest('td[data-card-i]');
           const tooltip = document.getElementById('matrixTooltip');
           if (!tooltip) return;
