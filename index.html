@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Open Card Sorting Tool - Researcher Accounts</title>
+  <title>Pasifika Open Card Sorting Tool - Researcher Accounts</title>
   <style>
     :root {
       --primary: #4a6fa5;
@@ -108,34 +108,74 @@
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
 
-    /* Simple bar chart */
+    /* Charts */
     .chart-wrap { margin-top: .5rem; }
     .chart { display: flex; align-items: flex-end; gap: 8px; height: 220px; padding: 8px; border-left: 1px solid var(--border); border-bottom: 1px solid var(--border); }
     .bar { background: linear-gradient(180deg, var(--secondary), var(--primary)); flex: 1; min-width: 24px; border-radius: 4px 4px 0 0; position: relative; }
     .bar span { position: absolute; bottom: 100%; transform: translateY(-4px); font-size: .8rem; color: var(--dark); }
     .xlabels { display: flex; gap: 8px; margin-top: 4px; }
     .xlabel { flex: 1; min-width: 24px; text-align: center; font-size: .8rem; color: var(--dark); }
-  
-  /* Fix alignment of Yes/No radios in the participant modal */
-.radio-row {
-  display: flex;         /* lay out Yes and No horizontally */
-  gap: 1rem;             /* space between options */
-  align-items: center;   /* vertically center radio + text */
-  flex-wrap: wrap;       /* wrap nicely on small screens */
-}
-.radio-row label {
-  display: inline-flex;  /* keep radio and text on one line */
-  align-items: center;
-  gap: .4rem;
-  margin: 0;             /* override any global margins */
-  line-height: 1.2;
-}
-/* Override the global input margin that also affects radios */
-input[type="radio"] {
-  margin: 0;
-}
+
+    /* Radios alignment */
+    .radio-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+    .radio-row label { display: inline-flex; align-items: center; gap: .4rem; margin: 0; line-height: 1.2; }
+    input[type="radio"] { margin: 0; }
+
+    /* ===== Pacific Theme Override ===== */
+    :root {
+      --ocean: #1177bb;
+      --lagoon: #2a9d8f;
+      --palm:  #2e7d32;
+      --sand:  #f6efdf;
+      --coconut:#3b3128;
+      --coral: #ef6c57;
+
+      --primary:  var(--ocean);
+      --secondary:var(--lagoon);
+      --accent:   var(--coral);
+      --light:    var(--sand);
+      --dark:     var(--coconut);
+      --success:  var(--palm);
+      --border:   #e6dcc9;
+    }
+    header {
+      position: relative;
+      background: linear-gradient(135deg, var(--primary) 0%, #1c9a96 75%);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      overflow: hidden;
+    }
+    header::before {
+      content: "";
+      position: absolute; inset: 0;
+      pointer-events: none; opacity: .25; mix-blend-mode: overlay;
+      background-size: 160px 160px;
+      background-image:
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='rgba(255,255,255,0.18)' stroke-width='1'><path d='M0 40 L40 0 L80 40 L40 80 Z'/><path d='M40 0 L40 80 M0 40 L80 40'/></g></svg>");
+    }
+    body { background: var(--light); }
+    .view { background: #fff; border: 1px solid #eee7d8; }
+    .left-panel { background: linear-gradient(180deg, #eae2d3 0%, #e4dccb 100%); border: 1px solid #d7ccb9; }
+    .card { border: 1px solid #e5dfd3; transition: transform .12s ease, box-shadow .12s ease; background: #fff; }
+    .card:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+    .info-icon { color: #1f8a70; }
+    .card-desc { background:#1b1b1b; }
+    .stepbox { border: 2px dashed #d6c7b2; background: #fffdfa; }
+    .cat-header { background: linear-gradient(180deg, #4a3b2e, #2f2923); color: #fff; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .cat-body { border-color: #e9dfcd; }
+    .cat-footer { color: #8b857a; }
+    .btn { background: linear-gradient(180deg, var(--primary), #0f6aa6); border: 1px solid rgba(0,0,0,.05); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+    .btn:hover { filter: brightness(1.03); }
+    .btn-success { background: linear-gradient(180deg, var(--success), #246a2a); }
+    .btn-accent { background: linear-gradient(180deg, var(--accent), #d75745); }
+    .chart { background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.8)); }
+    .tab-btn.active { border-bottom-color: var(--primary); color: var(--primary); }
+    .instructions { background: #f4ead7; border: 1px solid #eadfca; }
+    table { border-color: #efe6d6; }
+    th, td { border-color: #efe6d6; }
   </style>
 
+  <!-- Firebase SDK (Compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -144,7 +184,7 @@ input[type="radio"] {
 <body>
   <div class="container">
     <header>
-      <h1>Open Card Sorting Tool</h1>
+      <h1>Pasifika Open Card Sorting Tool</h1>
       <div id="welcomeBanner" class="muted" aria-live="polite"></div>
     </header>
 
@@ -279,7 +319,6 @@ input[type="radio"] {
 
         <label for="pId">ID number</label>
         <input id="pId" type="text" placeholder="Your ID number" required/>
-
 
         <label for="pCourse">Course</label>
         <input id="pCourse" type="text" placeholder="Your course" required/>
@@ -454,7 +493,7 @@ input[type="radio"] {
       const tabCategories = document.getElementById('tabCategories');
       const tabMatrix = document.getElementById('tabMatrix');
 
-      // Event delegation for tabs
+      // Event delegation for tabs (robust)
       function activateTab(name) {
         tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
         tabParticipants.classList.toggle('active', name === 'participants');
@@ -491,7 +530,7 @@ input[type="radio"] {
       let participantMeta = null;
       let lastResultsCache = null;
 
-      // Utils
+      // Helpers
       function show(v) {
         [authView, dashboardView, setupView, studyCreatedView, participantView, resultsView].forEach(x => x.classList.remove('active'));
         v.classList.add('active');
@@ -622,7 +661,6 @@ input[type="radio"] {
         simpleCardsWrap.classList.toggle('hidden', enabled);
 
         if (enabled && builderRows.children.length === 0) {
-          // Import lines from textarea as name rows
           const lines = (cardsInput.value || '').split('\n').map(s => sanitizeText(s)).filter(Boolean);
           if (lines.length === 0) lines.push('');
           lines.forEach(name => addCardRow(name, ''));
@@ -654,7 +692,7 @@ input[type="radio"] {
           return text ? { text, desc } : null;
         }).filter(Boolean);
         return { hasDescriptions: true, cards: list };
-      }
+        }
 
       document.getElementById('createStudyBtn').onclick = () => { show(setupView); setTimeout(() => studyNameInput.focus(), 0); };
       document.getElementById('cancelCreateBtn').onclick = () => show(dashboardView);
@@ -808,12 +846,10 @@ input[type="radio"] {
         return card;
       }
 
-      // Participant flow
+      // Participant flow (from link)
       const studyLinkParams = new URLSearchParams(location.search);
       const linkUid = studyLinkParams.get('uid');
       const linkStudyId = studyLinkParams.get('study');
-
-      document.getElementById('createStudyBtn').focus; // noop: keep
 
       document.getElementById('startSortingBtn').onclick = () => {
         const meta = {
@@ -872,7 +908,6 @@ input[type="radio"] {
 
           new Sortable(availableCardsContainer, { group: 'cards', animation: 150 });
 
-          // Drop anywhere on grid to create category at drop index
           new Sortable(sortingArea, {
             group: 'cards', animation: 150, sort: false,
             onAdd: (evt) => {
@@ -887,7 +922,6 @@ input[type="radio"] {
             }
           });
 
-          // Optional helper zones
           new Sortable(newCategoryDropzone, {
             group: 'cards', animation: 150,
             onAdd: (evt) => {
@@ -907,7 +941,7 @@ input[type="radio"] {
             }
           });
 
-          sortingArea.innerHTML = ''; // ensure empty canvas initially
+          sortingArea.innerHTML = '';
           updateStepsVisibility();
 
           participantView.dataset.uid = uid;
@@ -963,7 +997,7 @@ input[type="radio"] {
           .catch(e => alert(e.message));
       };
 
-      // Results + sharing
+      // Share results
       function setupShareControls(uid, studyId, study) {
         shareSection.classList.remove('hidden');
         toggleResultsPublic.checked = Boolean(study.resultsPublic);
@@ -1039,12 +1073,12 @@ input[type="radio"] {
 
         const completed = arr.filter(r => r.status === 'completed' || Array.isArray(r.categories));
         const startedCount = arr.length;
-        const completedCount = completed.length;
+        theCompletedCount = completed.length;
 
         const durations = completed.map(r => r.durationMs).filter(v => typeof v === 'number' && isFinite(v) && v >= 0);
         const avgDurationMs = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : null;
 
-        participantsSummary.textContent = `Started: ${startedCount} | Completed: ${completedCount} | Avg sorting time: ${avgDurationMs != null ? formatDuration(avgDurationMs) + ` (n=${durations.length})` : 'N/A'}`;
+        participantsSummary.textContent = `Started: ${startedCount} | Completed: ${theCompletedCount} | Avg sorting time: ${avgDurationMs != null ? formatDuration(avgDurationMs) + ` (n=${durations.length})` : 'N/A'}`;
 
         participantsDetails.innerHTML = '';
         completed.forEach((res, i) => {
@@ -1091,7 +1125,7 @@ input[type="radio"] {
         // Categories tab
         const catsPer = completed.map(r => (r.categories || []).length);
         const avgCats = catsPer.length ? (catsPer.reduce((a, b) => a + b, 0) / catsPer.length) : 0;
-        categoriesSummary.textContent = `Average number of categories: ${avgCats.toFixed(2)} (n=${completedCount})`;
+        categoriesSummary.textContent = `Average number of categories: ${avgCats.toFixed(2)} (n=${theCompletedCount})`;
         const dist = new Map();
         catsPer.forEach(n => dist.set(n, (dist.get(n) || 0) + 1));
         const maxBuckets = dist.size ? Math.max(...dist.keys()) : 0;
@@ -1121,7 +1155,7 @@ input[type="radio"] {
           categoriesChart.appendChild(p);
         }
 
-        // Matrix tab
+        // Matrix tab (use card text for headers)
         matrixMeta.innerHTML = '';
         matrixTableWrap.innerHTML = '';
         const cardTexts = (study?.cards || []).map(c => typeof c === 'string' ? c : (c?.text || '')).filter(Boolean);
@@ -1151,9 +1185,9 @@ input[type="radio"] {
             const td = document.createElement('td');
             if (a === b) td.textContent = '—';
             else {
-              const pct = completedCount ? (matrixCounts[a][b] / completedCount * 100) : 0;
+              const pct = theCompletedCount ? (matrixCounts[a][b] / theCompletedCount * 100) : 0;
               td.textContent = `${pct.toFixed(0)}%`;
-              td.title = `${matrixCounts[a][b]} of ${completedCount} participants`;
+              td.title = `${matrixCounts[a][b]} of ${theCompletedCount} participants`;
             }
             tr.appendChild(td);
           });
@@ -1163,10 +1197,10 @@ input[type="radio"] {
         matrixTableWrap.appendChild(table);
 
         const mm = document.createElement('p');
-        mm.textContent = `Percentages are of completed participants (n=${completedCount}).`;
+        mm.textContent = `Percentages are of completed participants (n=${theCompletedCount}).`;
         matrixMeta.appendChild(mm);
 
-        lastResultsCache = { arr, completed, completedCount, study, uid, studyId, cards: cardTexts, matrixCounts };
+        lastResultsCache = { arr, completed, completedCount: theCompletedCount, study, uid, studyId, cards: cardTexts, matrixCounts };
         downloadCsvBtn.disabled = false;
         downloadMatrixBtn.disabled = false;
 
@@ -1220,8 +1254,19 @@ input[type="radio"] {
       // Routing fallback
       if (isPublicResultsLink) { show(resultsView); loadPublicResults(pUid, pStudyId); }
       else if (hasParticipantLink) { show(participantView); loadParticipantView(pUid, pStudyId); }
+
+      // Builder helpers
+      function addCardRow(name = '', desc = '') {
+        const row = document.createElement('div'); row.className = 'builder-row';
+        row.innerHTML = `
+          <input type="text" class="row-name" placeholder="Card name" value="${sanitizeText(name)}" />
+          <input type="text" class="row-desc" placeholder="Description (shown on ℹ️)" value="${sanitizeText(desc)}" />
+          <button type="button" class="row-del" title="Remove">×</button>
+        `;
+        row.querySelector('.row-del').onclick = () => row.remove();
+        builderRows.appendChild(row);
+      }
     });
   </script>
 </body>
 </html>
-
