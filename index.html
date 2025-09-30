@@ -326,7 +326,16 @@
       <!-- Instructions modal content is generated dynamically -->
     </div>
     <div id="matrixTooltip"></div>
-
+  <div id="feedbackModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
+  <div class="modal">
+    <h3 id="feedbackTitle">Additional Feedback</h3>
+    <p>Any other information you may want to share with us after your card sorting?</p>
+    <textarea id="feedbackInput" rows="5" placeholder="Type your feedback here..." style="width:100%;"></textarea>
+    <div class="actions">
+      <button id="submitFeedbackBtn" class="btn btn-success">Submit Feedback</button>
+    </div>
+  </div>
+</div>
   </div>
 
   <script>
@@ -493,16 +502,7 @@ function showFeedbackModal(resultsRef, baseData, resultKey) {
     participantView.innerHTML = '<h2>Thank you!</h2><p>Your responses and feedback have been recorded.</p>';
   };
 }
-  <div id="feedbackModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
-  <div class="modal">
-    <h3 id="feedbackTitle">Additional Feedback</h3>
-    <p>Any other information you may want to share with us after your card sorting?</p>
-    <textarea id="feedbackInput" rows="5" placeholder="Type your feedback here..." style="width:100%;"></textarea>
-    <div class="actions">
-      <button id="submitFeedbackBtn" class="btn btn-success">Submit Feedback</button>
-    </div>
-  </div>
-</div>
+
       // --- RESULTS & TABS LOGIC ---
       resultsView.addEventListener('click', (e) => {
         const tabButton = e.target.closest('.tab-btn');
